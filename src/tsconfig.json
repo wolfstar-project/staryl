@@ -1,0 +1,16 @@
+{
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"baseUrl": ".",
+		"outDir": "../dist",
+		"composite": true,
+		"tsBuildInfoFile": "../dist/tsconfig.tsbuildinfo",
+		"paths": {
+			"#lib/*": ["lib/*"],
+			"#lib/i18n/*": ["lib/i18n/*"],
+			"#lib/i18n/languageKeys": ["lib/i18n/languageKeys/index.ts"]
+		}
+	},
+	"include": ["."]
+}
