@@ -1,16 +1,13 @@
 {
 	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
+		"outDir": "../dist",
 		"rootDir": ".",
 		"baseUrl": ".",
-		"outDir": "../dist",
-		"composite": true,
+		"resolvePackageJsonImports": true,
+		"skipLibCheck": true,
 		"tsBuildInfoFile": "../dist/tsconfig.tsbuildinfo",
-		"paths": {
-			"#lib/*": ["lib/*"],
-			"#lib/i18n/*": ["lib/i18n/*"],
-			"#lib/i18n/languageKeys": ["lib/i18n/languageKeys/index.ts"]
-		}
 	},
-	"include": ["."]
+	"include": ["."],
+	"exclude": ["./tsconfig.json"]
 }

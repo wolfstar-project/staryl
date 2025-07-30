@@ -1,18 +1,19 @@
-import { LanguageKeys } from '#lib/i18n/index';
+import { LanguageKeys } from '#lib/i18n';
 import { Events } from '#lib/types';
-import { floatPromise } from '#utils/common';
+import { floatPromise } from '#common/promises';
 import { streamNotificationDrip } from '#utils/twitch';
 import { extractDetailedMentions } from '#utils/util';
 import { TimestampStyles, time } from '@discordjs/builders';
-import { canSendMessages } from '@sapphire/discord.js-utilities';
 import { Listener } from '@skyra/http-framework';
 import type { TFunction } from '@skyra/http-framework-i18n';
 import { getT } from '@skyra/http-framework-i18n';
 import { isNullish, isNullishOrEmpty } from '@sapphire/utilities';
 import { TwitchEventSubTypes, type TwitchEventSubEvent } from '@skyra/twitch-helpers';
-import { api } from '#lib/utils/discord/api';
+import { api } from '#lib/utils/discord-api';
+import type { APIChannel, APIDMChannel, APIGroupDMChannel, LocaleString } from 'discord-api-types/v10';
+import { canSendMessages } from '#lib/utilities/discord-utilities';
 
-export class UserListener extends Listener<Events.TwitchStreamOffline> {
+export default class extends Listener {
 	public async run(data: TwitchEventSubEvent) {
 		const date = new Date();
 
@@ -32,14 +33,16 @@ export class UserListener extends Listener<Events.TwitchStreamOffline> {
 				}
 
 				// Retrieve the guild, if not found, skip to the next loop cycle.
-				const guild = await api().guilds.get(guildSubscription.guildId);
+				const guild = await api().guilds.get(String(guildSubscription.guildId));
 				if (typeof guild === 'undefined') continue;
 
 				// Retrieve the language for this guild
-				const t = await getT(guild.preferred_locale ?? this.container.i18n.options.defaultName ?? 'en-US');
+				const t = await getT((guild.preferred_locale ?? 'en-US') as LocaleString);
 
 				// Retrieve the channel to send the message to
-				const channel = (await api().guilds.getChannels(guildSubscription.channelId))[0];
+				const channel = (await api().guilds.getChannels(String(guildSubscription.guildId))).find(
+					(c) => c.id === String(guildSubscription.channelId)
+				) as Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>;
 				if (isNullish(channel) || !canSendMessages(channel)) {
 					continue;
 				}
@@ -49,7 +52,7 @@ export class UserListener extends Listener<Events.TwitchStreamOffline> {
 				if (!isNullishOrEmpty(guildSubscription.message)) {
 					const detailedMentions = extractDetailedMentions(guildSubscription.message);
 					floatPromise(
-						await api().channels.createMessage(guildSubscription.channelId, {
+						await api().channels.createMessage(channel.id, {
 							content: this.buildMessage(guildSubscription.message, date, t),
 							allowed_mentions: {
 								parse: detailedMentions.parse,

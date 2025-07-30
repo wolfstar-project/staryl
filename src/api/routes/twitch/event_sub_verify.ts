@@ -1,13 +1,13 @@
 import { Events } from '#lib/types';
 
 import { cast, isObject } from '@sapphire/utilities';
-import { checkSignature, TwitchEventSubTypes, type TwitchEventSubVerificationMessage, TwitchStreamStatus } from '@skyra/twitch-helpers';
+import { checkSignature, TwitchEventSubTypes, type TwitchEventSubVerificationMessage } from '@skyra/twitch-helpers';
 import { container } from '@sapphire/pieces';
 
 container.server.route({
 	url: '/twitch/event_sub_verify',
 	method: 'POST',
-	handler: (request, reply) => {
+	handler: async (request, reply) => {
 		let lastNotificationId: string | null = null;
 
 		// Grab the headers that we need to use for verification
@@ -45,7 +45,7 @@ container.server.route({
 		} = request.body as TwitchEventSubVerificationMessage;
 
 		// Tell the Twitch API this response was OK, then continue processing the request
-		reply.code(200).send(challenge);
+		await reply.code(200).send(challenge);
 
 		// If there is an event then this is an online or offline notification
 		// If there is no event this is an endpoint verification request

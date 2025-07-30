@@ -16,10 +16,10 @@ model Guild {
 
 
 model GuildSubscription {
-  guildId             String              @map("guild_id") @db.VarChar(19)
-  channelId           String              @map("channel_id") @db.VarChar(19)
+  guildId             BigInt              @map("guild_id")
+  channelId           BigInt              @map("channel_id")
   message             String?             @db.VarChar(200)
-  subscriptionId      Int                 @map("subscription_id")
+  subscriptionId      BigInt                @map("subscription_id")
   twitchSubscription TwitchSubscription @relation(fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([guildId, channelId, subscriptionId])
@@ -29,7 +29,7 @@ model GuildSubscription {
 
 
 model TwitchSubscription {
-  id                Int                    @id() @default(autoincrement())
+  id                BigInt                   @id() @default(autoincrement())
   streamerId        String                 @map("streamer_id") @db.VarChar(10)
   subscriptionId    String                 @map("subscription_id") @db.VarChar(36)
   subscriptionType  TwitchSubscriptionType
