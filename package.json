@@ -19,15 +19,16 @@
 	},
 	"scripts": {
 		"build": "tsc -b src",
-		"dev": "yarn build && yarn start",
+		"dev": "pnpm build && pnpm start",
 		"watch": "tsc -b src -w",
-		"prisma:generate": "yarn prisma generate",
+		"prisma:generate": "prisma generate",
 		"clean": "rimraf dist/",
 		"start": "node --enable-source-maps dist/main.js",
 		"lint": "eslint --fix --ext ts src tests",
 		"prettier": "prettier --ignore-path=.prettierignore",
 		"format": "prettier --write --log-level=warn \"{src,tests,scripts}/**/*.{js,ts,json}\"",
-		"update": "yarn upgrade-interactive"
+		"update": "pnpm update -i",
+		"prepare": "husky install"
 	},
 	"dependencies": {
 		"@discordjs/builders": "^1.10.0",
@@ -72,7 +73,8 @@
 		"lint-staged": "^15.4.3",
 		"prettier": "^3.4.2",
 		"prisma": "^6.3.1",
-		"typescript": "~5.7.3"
+		"typescript": "~5.7.3",
+		"husky": "^8.0.0"
 	},
 	"resolutions": {
 		"ansi-regex": "^5.0.1",
@@ -100,8 +102,8 @@
 	"eslintConfig": {
 		"extends": "@sapphire"
 	},
-	"packageManager": "yarn@4.6.0",
+	"packageManager": "pnpm@10.13.1",
 	"volta": {
-		"node": "20.15.0"
+		"node": "22.17.1"
 	}
 }

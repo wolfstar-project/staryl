@@ -12,8 +12,8 @@ on:
       - 'package.json'
 
 jobs:
-  PublishHTTPBotTemplate:
-    name: Publish HTTPBotTemplate image to container registries
+  PublishStaryl:
+    name: Publish Staryl image to container registries
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project
@@ -26,9 +26,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push HTTPBotTemplate Docker image
+      - name: Build and push Staryl Docker image
         uses: docker/build-push-action@v6.3.0
         with:
           push: true
           context: .
-          tags: ghcr.io/your-repo/http-bot-template:latest
+          tags: ghcr.io/${{ github.repository_owner }}/starly:latest
