@@ -75,7 +75,7 @@
 		"typescript": "~5.7.3"
 	},
 	"resolutions": {
-		"ansi-regex": "^5.0.1",
+		"ansi-regex": "^6.2.2",
 		"discord-api-types": "^0.37.92",
 		"minimist": "^1.2.8"
 	},
