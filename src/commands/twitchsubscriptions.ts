@@ -3,7 +3,7 @@ import type {
   TwitchSubscriptionType,
 } from "#lib/setup/prisma";
 import type { APIChannel } from "discord-api-types/v10";
-import { LanguageKeys } from "#lib/i18n/languageKeys";
+import { LanguageKeys } from "#i18n/languageKeys";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { cast, isNullishOrEmpty } from "@sapphire/utilities";

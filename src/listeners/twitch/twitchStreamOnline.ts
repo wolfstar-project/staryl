@@ -11,7 +11,7 @@ import type {
   APIGroupDMChannel,
   Locale,
 } from "discord-api-types/v10";
-import { LanguageKeys } from "#lib/i18n";
+import { LanguageKeys } from "#i18n";
 import { canSendEmbeds } from "#lib/utilities/discord-utilities";
 import { floatPromise } from "#lib/utils/common";
 import { api } from "#utils/discord-api";

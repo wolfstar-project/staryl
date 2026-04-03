@@ -1,5 +1,5 @@
 import type { TFunction } from "@sapphire/plugin-i18next";
-import { LanguageKeys } from "#lib/i18n/languageKeys";
+import { LanguageKeys } from "#i18n/languageKeys";
 import { DiscordAPIError, HTTPError } from "@discordjs/rest";
 import { RESTJSONErrorCodes } from "discord-api-types/v10";
 import { exists } from "i18next";
