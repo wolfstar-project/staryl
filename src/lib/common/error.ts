@@ -1,7 +1,7 @@
 import type { TFunction } from "@sapphire/plugin-i18next";
 import { LanguageKeys } from "#lib/i18n/languageKeys";
-import { ResultError, UserError } from "@sapphire/framework";
-import { DiscordAPIError, HTTPError, RESTJSONErrorCodes } from "discord.js";
+import { DiscordAPIError, HTTPError } from "@discordjs/rest";
+import { RESTJSONErrorCodes } from "discord-api-types/v10";
 import { exists } from "i18next";
 
 const Root = LanguageKeys.Errors;
@@ -42,9 +42,6 @@ const isSuppressedError =
 function stringifyErrorException(t: TFunction, error: Error): string {
   if (error.name === "AbortError")
     return t(LanguageKeys.System.DiscordAbortError);
-  if (error instanceof UserError)
-    return t(error.identifier, error.context as any) as string;
-  if (error instanceof ResultError) return stringifyError(t, error.value);
   if (error instanceof DiscordAPIError)
     return stringifyDiscordAPIError(t, error);
   if (error instanceof HTTPError) return stringifyHTTPError(t, error);
