@@ -1,6 +1,6 @@
 overrides:
   ansi-regex: ^6.2.2
-  discord-api-types: ^0.38.25
+  discord-api-types: ^0.38.44
   minimist: ^1.2.8
 onlyBuiltDependencies:
   - "@prisma/client"
