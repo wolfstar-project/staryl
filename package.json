@@ -73,7 +73,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
     "@rollup/plugin-alias": "^6.0.0",
     "@sapphire/ts-config": "^5.0.3",
-    "@types/node": "^22.19.17",
+    "@types/node": "^24.12.2",
     "cz-conventional-changelog": "^3.3.0",
     "eslint-plugin-regexp": "^3.1.0",
     "husky": "^9.1.7",
