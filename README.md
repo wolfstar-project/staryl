@@ -14,7 +14,8 @@
 
 # Steps after creating a repo with this template
 
-1. Find and replace all instances of `http-bot-template` with the proper name for your bot.
+1. Find and replace all instances of `http-bot-template` with the proper name
+   for your bot.
 1. Ensure the primary branch is called `main`.
 1. Ensure branch protection is enabled.
 1. Enable Codecov for the repository.
@@ -22,27 +23,29 @@
 
 ## Features
 
--   This
--   Needs
--   Some
--   More
--   Filling
--   In
+- This
+- Needs
+- Some
+- More
+- Filling
+- In
 
 ## Support the Project
 
-If you find this template helpful, consider supporting the project by donating. Your support is greatly appreciated!
+If you find this template helpful, consider supporting the project by donating.
+Your support is greatly appreciated!
 
-|   Donate With   |                       Address                       |
-| :-------------: | :-------------------------------------------------: |
-| Open Collective | [Click Here](https://example.com/open-collective)   |
-|      Ko-fi      |      [Click Here](https://example.com/ko-fi)        |
-|     Patreon     |    [Click Here](https://example.com/patreon)        |
-|     PayPal      |     [Click Here](https://example.com/paypal)        |
+|   Donate With   |                      Address                      |
+| :-------------: | :-----------------------------------------------: |
+| Open Collective | [Click Here](https://example.com/open-collective) |
+|      Ko-fi      |      [Click Here](https://example.com/ko-fi)      |
+|     Patreon     |     [Click Here](https://example.com/patreon)     |
+|     PayPal      |     [Click Here](https://example.com/paypal)      |
 
 ## Contributors
 
-Please make sure to read the [Contributing Guide][contributing] before making a pull request.
+Please make sure to read the [Contributing Guide][contributing] before making a
+pull request.
 
 Thank you to all the people who have contributed to this project!
 
@@ -50,4 +53,5 @@ Thank you to all the people who have contributed to this project!
 	<img src="https://contrib.rocks/image?repo=your-username/http-bot-template" />
 </a>
 
-[contributing]: https://github.com/your-username/http-bot-template/blob/main/CONTRIBUTING.md
+[contributing]:
+  https://github.com/your-username/http-bot-template/blob/main/CONTRIBUTING.md

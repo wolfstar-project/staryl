@@ -9,10 +9,10 @@ services:
     build:
       context: ./
     ports:
-      - '3000:3000'
-    restart: 'no'
+      - "3000:3000"
+    restart: no
     environment:
-      DATABASE_URL: 'postgresql://postgres:postgres@host.docker.internal:5432/staryl?schema=public'
+      DATABASE_URL: "postgresql://postgres:postgres@host.docker.internal:5432/staryl?schema=public"
       INTERNAL_RING_URL: http://host.docker.internal:3001/guilds
       REDIS_HOST: host.docker.internal
     env_file:
@@ -21,32 +21,32 @@ services:
 
   postgres:
     container_name: staryl-postgres
-    image: 'postgres:15-alpine'
+    image: "postgres:15-alpine"
     ports:
-      - '5432:5432'
-    restart: 'no'
+      - "5432:5432"
+    restart: no
     volumes:
-      - 'staryl-postgres-data:/var/lib/postgresql/data'
+      - "staryl-postgres-data:/var/lib/postgresql/data"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=staryl
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready']
+      test: [CMD-SHELL, pg_isready]
       interval: 30s
       timeout: 60s
       retries: 5
       start_period: 80s
 
   redis:
-    command: 'redis-server --port 8287 --requirepass redis'
+    command: redis-server --port 8287 --requirepass redis
     container_name: staryl-redis
-    image: 'redis:alpine'
+    image: "redis:alpine"
     ports:
-      - '8287:8287'
-    restart: 'no'
+      - "8287:8287"
+    restart: no
     healthcheck:
-      test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
+      test: [CMD-SHELL, "redis-cli ping | grep PONG"]
       interval: 1s
       timeout: 3s
       retries: 5

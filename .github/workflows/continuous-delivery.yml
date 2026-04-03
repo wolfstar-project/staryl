@@ -6,10 +6,10 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'Dockerfile'
-      - '.github/workflows/continuous-delivery.yml'
-      - 'package.json'
+      - "src/**"
+      - Dockerfile
+      - .github/workflows/continuous-delivery.yml
+      - package.json
 
 jobs:
   PublishStaryl:
