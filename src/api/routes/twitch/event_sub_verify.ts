@@ -12,9 +12,15 @@ container.server.route({
     let lastNotificationId: string | null = null;
 
     // Grab the headers that we need to use for verification
-    const twitchEventSubMessageSignature = cast<string>(request.headers["twitch-eventsub-message-signature"]);
-    const twitchEventSubMessageId = cast<string>(request.headers["twitch-eventsub-message-id"]);
-    const twitchEventSubMessageTimestamp = cast<string>(request.headers["twitch-eventsub-message-timestamp"]);
+    const twitchEventSubMessageSignature = cast<string>(
+      request.headers["twitch-eventsub-message-signature"],
+    );
+    const twitchEventSubMessageId = cast<string>(
+      request.headers["twitch-eventsub-message-id"],
+    );
+    const twitchEventSubMessageTimestamp = cast<string>(
+      request.headers["twitch-eventsub-message-timestamp"],
+    );
 
     // If this notification is the same as before, then send ok back
     if (lastNotificationId && lastNotificationId === twitchEventSubMessageId)
@@ -25,15 +31,24 @@ container.server.route({
       return reply.code(400).send("Malformed data received");
 
     // If any of the headers is missing tell Twitch they are sending invalid data
-    if (!twitchEventSubMessageSignature || !twitchEventSubMessageId || !twitchEventSubMessageTimestamp) {
+    if (
+      !twitchEventSubMessageSignature ||
+      !twitchEventSubMessageId ||
+      !twitchEventSubMessageTimestamp
+    ) {
       return reply.code(400).send("Missing required Twitch Eventsub headers");
     }
 
     // Construct the verification signature
-    const twitchEventSubMessage = twitchEventSubMessageId + twitchEventSubMessageTimestamp + JSON.stringify(request.body);
+    const twitchEventSubMessage =
+      twitchEventSubMessageId +
+      twitchEventSubMessageTimestamp +
+      JSON.stringify(request.body);
 
     // Split the algorithm from the signature
-    const [algorithm, signature] = twitchEventSubMessageSignature.toString().split("=", 2);
+    const [algorithm, signature] = twitchEventSubMessageSignature
+      .toString()
+      .split("=", 2);
 
     // Verify the signature
     if (!checkSignature(algorithm, signature, twitchEventSubMessage)) {
@@ -55,11 +70,16 @@ container.server.route({
     if (event) {
       const { client } = container;
       if (type === TwitchEventSubTypes.StreamOnline) {
-        client.emit(Events.TwitchStreamHookedAnalytics, TwitchStreamStatus.Online);
+        client.emit(
+          Events.TwitchStreamHookedAnalytics,
+          TwitchStreamStatus.Online,
+        );
         client.emit(Events.TwitchStreamOnline, event);
-      }
-      else {
-        client.emit(Events.TwitchStreamHookedAnalytics, TwitchStreamStatus.Offline);
+      } else {
+        client.emit(
+          Events.TwitchStreamHookedAnalytics,
+          TwitchStreamStatus.Offline,
+        );
         client.emit(Events.TwitchStreamOffline, event);
       }
     }

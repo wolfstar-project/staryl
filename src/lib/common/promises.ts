@@ -5,22 +5,28 @@ import { container, err, ok } from "@sapphire/framework";
 import { isThenable } from "@sapphire/utilities";
 import { DiscordAPIError } from "discord-api-types/v10";
 
-export async function resolveOnErrorCodes<T>(promise: Promise<T>, ...codes: readonly RESTJSONErrorCodes[]) {
+export async function resolveOnErrorCodes<T>(
+  promise: Promise<T>,
+  ...codes: readonly RESTJSONErrorCodes[]
+) {
   try {
     return await promise;
-  }
-  catch (error) {
-    if (error instanceof DiscordAPIError && codes.includes(error.code as RESTJSONErrorCodes))
+  } catch (error) {
+    if (
+      error instanceof DiscordAPIError &&
+      codes.includes(error.code as RESTJSONErrorCodes)
+    )
       return null;
     throw error;
   }
 }
 
-export async function toErrorCodeResult<T>(promise: Promise<T>): Promise<Result<T, RESTJSONErrorCodes>> {
+export async function toErrorCodeResult<T>(
+  promise: Promise<T>,
+): Promise<Result<T, RESTJSONErrorCodes>> {
   try {
     return ok(await promise);
-  }
-  catch (error) {
+  } catch (error) {
     if (error instanceof DiscordAPIError)
       return err(error.code as RESTJSONErrorCodes);
     throw error;

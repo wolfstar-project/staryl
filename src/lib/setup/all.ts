@@ -1,6 +1,10 @@
 /* oxlint-disable import/first */
 import { setup as envRun } from "@skyra/env-utilities";
-import { initializeSentry, setInvite, setRepository } from "@skyra/shared-http-pieces";
+import {
+  initializeSentry,
+  setInvite,
+  setRepository,
+} from "@skyra/shared-http-pieces";
 import "@skyra/shared-http-pieces/register";
 
 envRun(new URL("../../../src/.env", import.meta.url));

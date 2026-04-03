@@ -24,7 +24,10 @@ export function makeActionRow<Component extends APIComponentInActionRow>(
   return { type: ComponentType.ActionRow, components };
 }
 
-export function displaySelectMenuIndex(component: APIStringSelectComponent, index: number): APIStringSelectComponent {
+export function displaySelectMenuIndex(
+  component: APIStringSelectComponent,
+  index: number,
+): APIStringSelectComponent {
   return {
     ...component,
     options: component.options.map((option, optionIndex) => ({
@@ -36,15 +39,15 @@ export function displaySelectMenuIndex(component: APIStringSelectComponent, inde
 
 const permissionsBitField = new BitField(PermissionFlagsBits);
 
-const canReadMessagesPermissions = permissionsBitField.resolve([PermissionFlagsBits.ViewChannel]);
+const canReadMessagesPermissions = permissionsBitField.resolve([
+  PermissionFlagsBits.ViewChannel,
+]);
 
 export async function canReadMessages(
   channel: Exclude<APIChannel, APIDMChannel | APIGroupDMChannel> | Nullish,
 ): Promise<boolean> {
-  if (isNullish(channel))
-    return false;
-  if (isDMChannel(channel))
-    return true;
+  if (isNullish(channel)) return false;
+  if (isDMChannel(channel)) return true;
 
   return canDoUtility(channel, canReadMessagesPermissions);
 }
@@ -57,12 +60,9 @@ const canSendMessagesPermissions = permissionsBitField.resolve([
 export async function canSendMessages(
   channel: Exclude<APIChannel, APIDMChannel | APIGroupDMChannel> | Nullish,
 ): Promise<boolean> {
-  if (isNullish(channel))
-    return false;
-  if (isDMChannel(channel))
-    return true;
-  if (isThreadChannel(channel))
-    return false;
+  if (isNullish(channel)) return false;
+  if (isDMChannel(channel)) return true;
+  if (isThreadChannel(channel)) return false;
 
   return canDoUtility(channel, canSendMessagesPermissions);
 }
@@ -76,12 +76,9 @@ const canSendEmbedsPermissions = permissionsBitField.resolve([
 export async function canSendEmbeds(
   channel: Exclude<APIChannel, APIDMChannel | APIGroupDMChannel> | Nullish,
 ): Promise<boolean> {
-  if (isNullish(channel))
-    return false;
-  if (isDMChannel(channel))
-    return true;
-  if (isThreadChannel(channel))
-    return false;
+  if (isNullish(channel)) return false;
+  if (isDMChannel(channel)) return true;
+  if (isThreadChannel(channel)) return false;
 
   return canDoUtility(channel, canSendEmbedsPermissions);
 }
@@ -90,22 +87,21 @@ async function canDoUtility(
   channel: Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>,
   permissions: bigint,
 ): Promise<boolean> {
-  if (!isGuildChannel(channel))
-    return true;
+  if (!isGuildChannel(channel)) return true;
 
   const memberPermissions = await getMemberPermissions(channel);
-  if (memberPermissions === null)
-    return false;
+  if (memberPermissions === null) return false;
 
   return permissionsBitField.has(memberPermissions, permissions);
 }
 
 // Type guards
-function isDMChannel(channel: APIChannel): channel is Exclude<
-  APIChannel,
-  APIDMChannel | APIGroupDMChannel
-> {
-  return channel.type === ChannelType.DM || channel.type === ChannelType.GroupDM;
+function isDMChannel(
+  channel: APIChannel,
+): channel is Exclude<APIChannel, APIDMChannel | APIGroupDMChannel> {
+  return (
+    channel.type === ChannelType.DM || channel.type === ChannelType.GroupDM
+  );
 }
 
 function isGuildChannel(
@@ -116,9 +112,10 @@ function isGuildChannel(
 
 function isThreadChannel(channel: APIChannel): channel is APIThreadChannel {
   return (
-    channel.type === ChannelType.PrivateThread
-    || channel.type === ChannelType.PublicThread
-    || (channel.type === ChannelType.AnnouncementThread && channel.thread_metadata?.archived === false)
+    channel.type === ChannelType.PrivateThread ||
+    channel.type === ChannelType.PublicThread ||
+    (channel.type === ChannelType.AnnouncementThread &&
+      channel.thread_metadata?.archived === false)
   );
 }
 
@@ -128,11 +125,13 @@ async function getMemberPermissions(
 ): Promise<bigint | null> {
   try {
     const currentUser = await api().users.getCurrent();
-    const member = (await api().guilds.getMember(String(channel.guild_id), currentUser.id)) as APIGuildMember & { permissions: string };
+    const member = (await api().guilds.getMember(
+      String(channel.guild_id),
+      currentUser.id,
+    )) as APIGuildMember & { permissions: string };
 
     return member.permissions ? BigInt(member.permissions) : null;
-  }
-  catch {
+  } catch {
     return null;
   }
 }

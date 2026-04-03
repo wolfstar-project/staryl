@@ -1,10 +1,14 @@
 # WARP.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+This file provides guidance to WARP (warp.dev) when working with code in this
+repository.
 
 ## Project Overview
 
-**Starly** is a Discord notification bot built with TypeScript that integrates with Twitch EventSub to provide stream status notifications. It uses HTTP interactions via Discord's HTTP-based bot architecture rather than a persistent WebSocket connection.
+**Starly** is a Discord notification bot built with TypeScript that integrates
+with Twitch EventSub to provide stream status notifications. It uses HTTP
+interactions via Discord's HTTP-based bot architecture rather than a persistent
+WebSocket connection.
 
 ### Technology Stack
 
@@ -20,10 +24,14 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ### Core Components
 
-1. **HTTP Framework**: Built on `@skyra/http-framework` which provides Discord slash command handling via HTTP endpoints instead of WebSocket gateway
-2. **Database Layer**: Prisma-based with PostgreSQL for persistent storage of guild subscriptions and Twitch subscription mappings
-3. **Event System**: Twitch EventSub webhook handling for stream online/offline notifications
-4. **Internationalization**: Multi-language support via `@skyra/http-framework-i18n`
+1. **HTTP Framework**: Built on `@skyra/http-framework` which provides Discord
+   slash command handling via HTTP endpoints instead of WebSocket gateway
+2. **Database Layer**: Prisma-based with PostgreSQL for persistent storage of
+   guild subscriptions and Twitch subscription mappings
+3. **Event System**: Twitch EventSub webhook handling for stream online/offline
+   notifications
+4. **Internationalization**: Multi-language support via
+   `@skyra/http-framework-i18n`
 
 ### Directory Structure
 
@@ -46,10 +54,14 @@ src/
 
 ### Key Architecture Patterns
 
-- **Path Mapping**: Uses TypeScript path mapping with `#lib/*`, `#api/*`, etc. for clean imports
-- **Command Structure**: Discord commands use decorators (`@RegisterCommand`, `@RegisterSubcommand`)
-- **Event-Driven**: Twitch webhooks trigger internal events that listeners handle
-- **Database Relations**: Guild subscriptions link Discord channels to Twitch stream subscriptions
+- **Path Mapping**: Uses TypeScript path mapping with `#lib/*`, `#api/*`, etc.
+  for clean imports
+- **Command Structure**: Discord commands use decorators (`@RegisterCommand`,
+  `@RegisterSubcommand`)
+- **Event-Driven**: Twitch webhooks trigger internal events that listeners
+  handle
+- **Database Relations**: Guild subscriptions link Discord channels to Twitch
+  stream subscriptions
 
 ## Development Commands
 
@@ -174,7 +186,8 @@ For testing individual commands during development:
 
 - Uses Node 20 Alpine base image
 - Multi-stage build separates dependencies from runtime
-- **Important**: Dockerfile filename is misspelled as `Dockefile` (should be `Dockerfile`)
+- **Important**: Dockerfile filename is misspelled as `Dockefile` (should be
+  `Dockerfile`)
 - Uses Yarn in Docker but pnpm locally - consider standardizing
 
 ### Production Deployment
@@ -188,9 +201,12 @@ For testing individual commands during development:
 
 ### Common Issues
 
-- **Command Registration**: Commands auto-register on startup; check Discord developer portal
-- **Database Connection**: Ensure PostgreSQL is running and `DATABASE_URL` is correct
-- **Twitch Webhooks**: Verify webhook URL is accessible from internet and uses HTTPS in production
+- **Command Registration**: Commands auto-register on startup; check Discord
+  developer portal
+- **Database Connection**: Ensure PostgreSQL is running and `DATABASE_URL` is
+  correct
+- **Twitch Webhooks**: Verify webhook URL is accessible from internet and uses
+  HTTPS in production
 - **Prisma Client**: Run `pnpm prisma:generate` after schema changes
 
 ### Development Tips

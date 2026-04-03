@@ -1,12 +1,21 @@
 import type { Events } from "#lib/types";
 import type { TwitchStreamStatus } from "#lib/types/AnalyticsSchema";
 import type { IntegerString } from "@skyra/env-utilities";
-import type { TwitchEventSubEvent, TwitchEventSubOnlineEvent } from "@skyra/twitch-helpers";
+import type {
+  TwitchEventSubEvent,
+  TwitchEventSubOnlineEvent,
+} from "@skyra/twitch-helpers";
 
 declare module "@skyra/http-framework-i18n" {
   interface Client {
-    emit(event: Events.TwitchStreamHookedAnalytics, status: TwitchStreamStatus): boolean;
-    emit(event: Events.TwitchStreamOnline, data: TwitchEventSubOnlineEvent): boolean;
+    emit(
+      event: Events.TwitchStreamHookedAnalytics,
+      status: TwitchStreamStatus,
+    ): boolean;
+    emit(
+      event: Events.TwitchStreamOnline,
+      data: TwitchEventSubOnlineEvent,
+    ): boolean;
     emit(event: Events.TwitchStreamOffline, data: TwitchEventSubEvent): boolean;
     emit(event: string | symbol, ...args: any[]): boolean;
   }

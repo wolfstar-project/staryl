@@ -1,5 +1,10 @@
 {
-  "extends": ["@sapphire/ts-config", "@sapphire/ts-config/extra-strict", "@sapphire/ts-config/decorators", "@sapphire/ts-config/verbatim"],
+  "extends": [
+    "@sapphire/ts-config",
+    "@sapphire/ts-config/extra-strict",
+    "@sapphire/ts-config/decorators",
+    "@sapphire/ts-config/verbatim"
+  ],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"]
   }

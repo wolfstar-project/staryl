@@ -10,4 +10,8 @@ declare module "@sapphire/pieces" {
   }
 }
 
-export type { GuildSubscription, TwitchSubscription, TwitchSubscriptionType } from "@prisma/client";
+export type {
+  GuildSubscription,
+  TwitchSubscription,
+  TwitchSubscriptionType,
+} from "@prisma/client";

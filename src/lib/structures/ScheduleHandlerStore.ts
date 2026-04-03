@@ -8,21 +8,24 @@ export class ScheduleHandlerStore extends Store<ScheduleHandler> {
     super(ScheduleHandler, { name: "schedule-handlers" });
   }
 
-  public async run<T extends BaseScheduler.Value>(scheduler: BaseScheduler<T>, data: BaseScheduler.AddId<T>) {
+  public async run<T extends BaseScheduler.Value>(
+    scheduler: BaseScheduler<T>,
+    data: BaseScheduler.AddId<T>,
+  ) {
     const handler = this.get(scheduler.name);
     if (isNullish(handler))
-      throw new TypeError(`Expected ${scheduler.name} to exist in the store, but it does not.`);
+      throw new TypeError(
+        `Expected ${scheduler.name} to exist in the store, but it does not.`,
+      );
 
     try {
       const response = await handler.run(data);
       if (response.type === ScheduleHandler.Type.Reschedule) {
         await scheduler.reschedule(data.id, response.value);
-      }
-      else {
+      } else {
         await scheduler.remove(data.id);
       }
-    }
-    catch (error) {
+    } catch (error) {
       this.container.client.emit("error", error);
     }
   }
