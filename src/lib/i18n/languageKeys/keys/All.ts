@@ -1,3 +1,3 @@
-export * as Commands from '#lib/i18n/languageKeys/keys/Commands';
-import * as Events from '#lib/i18n/Events/All.ts';
+export * as Commands from "#lib/i18n/languageKeys/keys/Commands";
+export * as Events from "#lib/i18n/languageKeys/keys/Events";
 // import * as Common '#lib/i18n/Common.ts';
