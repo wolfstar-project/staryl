@@ -1,55 +1,61 @@
-name: Continuous Integration
-
+name: ci
 on:
+  pull_request:
+    branches:
+      - main
+      - release
   push:
     branches:
       - main
-  pull_request:
+  merge_group:
+    branches:
+      - main
+
+# cancel in-progress runs on new commits to same PR (gitub.event.number)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  Linting:
-    name: Linting NodeJS
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Project
-        uses: actions/checkout@v4
-      - name: Add problem matchers
-        run: echo "::add-matcher::.github/problemMatchers/eslint.json"
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          version: 10
-          run_install: false
-      - name: Use Node.js v22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+  lint:
+    name: 🔠 Lint project
+    runs-on: ubuntu-24.04-arm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Run ESLint
-        run: pnpm lint --fix=false
-
-  Building:
-    name: Compile source code
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Project
-        uses: actions/checkout@v4
-      - name: Add problem matchers
-        run: echo "::add-matcher::.github/problemMatchers/tsc.json"
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          version: 10
-          run_install: false
-      - name: Use Node.js v22
-        uses: actions/setup-node@v4
+          node-version: lts/*
+
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # 4e1c8eafbd745f64b1ef30a7d7ed7965034c486c
+        name: 🟧 Install pnpm
+
+      - name: 📦 Install dependencies (root only, no scripts)
+        run: pnpm install --filter . --ignore-scripts
+
+      - name: 🔠 Lint project
+        run: pnpm lint
+
+  build:
+    name: � Build project
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: 22
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Build code
+          node-version: lts/*
+
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # 4e1c8eafbd745f64b1ef30a7d7ed7965034c486c
+        name: 🟧 Install pnpm
+
+      - name: 📦 Install dependencies (root only, no scripts)
+        run: pnpm install --filter . --ignore-scripts
+
+      - name: � Build project
         run: pnpm build
