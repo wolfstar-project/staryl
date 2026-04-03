@@ -313,6 +313,20 @@
       ]
     },
     {
+      "files": ["**/types/augments.ts", "**/setup/*.ts", "**/setup/**/*.ts"],
+      "rules": {
+        "unused-imports/no-unused-vars": "off",
+        "@typescript-eslint/no-namespace": "off"
+      },
+      "jsPlugins": ["eslint-plugin-unused-imports"]
+    },
+    {
+      "files": ["**/setup/all.ts", "**/routes/_load.ts"],
+      "rules": {
+        "import/no-unassigned-import": "off"
+      }
+    },
+    {
       "files": ["**/*.js", "**/*.cjs"],
       "rules": {
         "@typescript-eslint/no-require-imports": "off"
