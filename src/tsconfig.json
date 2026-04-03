@@ -1,13 +1,13 @@
 {
-	"extends": "../tsconfig.base.json",
-	"compilerOptions": {
-		"outDir": "../dist",
-		"rootDir": ".",
-		"baseUrl": ".",
-		"resolvePackageJsonImports": true,
-		"skipLibCheck": true,
-		"tsBuildInfoFile": "../dist/tsconfig.tsbuildinfo",
-	},
-	"include": ["."],
-	"exclude": ["./tsconfig.json"]
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": ".",
+    "resolvePackageJsonImports": true,
+    "allowJs": true,
+    "outDir": "../dist",
+    "skipLibCheck": true
+  },
+  "include": [".", "./**/*.json"],
+  "exclude": ["./tsconfig.json"]
 }
