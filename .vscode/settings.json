@@ -1,12 +1,11 @@
 {
-  // Disable the default formatter, use eslint instead
   "prettier.enable": false,
   "eslint.enable": false,
   "editor.formatOnSave": true,
-  "oxc.fmt.configPath": ".oxfmtrc.json",
+  "editor.formatOnSaveMode": "file",
+  "oxc.fmt.configPath": "./vite.config.ts",
   "oxc.fixKind": "safe_fix_or_suggestion",
   "editor.defaultFormatter": "oxc.oxc-vscode",
-
   "editor.gotoLocation.multipleDefinitions": "goto",
   "editor.quickSuggestions": {
     "strings": "on"
