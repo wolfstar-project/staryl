@@ -1,4 +1,3 @@
-// oxlint-disable unused-imports/no-unused-vars
 import { RateLimitManager } from "@sapphire/ratelimits";
 import { Result } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";

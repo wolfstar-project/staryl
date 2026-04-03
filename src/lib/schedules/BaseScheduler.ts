@@ -1,4 +1,3 @@
-// oxlint-disable unused-imports/no-unused-vars
 import type { Redis } from "ioredis";
 import { isNullishOrEmpty } from "@sapphire/utilities";
 import { container } from "@skyra/http-framework";
@@ -19,9 +18,12 @@ export abstract class BaseScheduler<T extends BaseScheduler.Value> {
   }
 
   public start() {
-    if (this._interval)
-      this._interval.refresh();
-    else this._interval = setInterval(() => this.requestPendingItems(), this.interval);
+    if (this._interval) this._interval.refresh();
+    else
+      this._interval = setInterval(
+        () => this.requestPendingItems(),
+        this.interval,
+      );
   }
 
   public stop() {
@@ -44,7 +46,11 @@ export abstract class BaseScheduler<T extends BaseScheduler.Value> {
     return result || count !== 0;
   }
 
-  public async reschedule(id: string, time: number, extras?: Partial<T>): Promise<boolean> {
+  public async reschedule(
+    id: string,
+    time: number,
+    extras?: Partial<T>,
+  ): Promise<boolean> {
     const result = await this.onReschedule(id, time, extras);
     const count = await this.redis.zadd(this.queue, "XX", "CH", time, id);
     return result || count !== 0;
@@ -54,17 +60,22 @@ export abstract class BaseScheduler<T extends BaseScheduler.Value> {
 
   protected abstract onRemove(id: string): Promise<boolean>;
 
-  protected abstract onReschedule(id: string, time: number, extras?: Partial<T>): Promise<boolean>;
+  protected abstract onReschedule(
+    id: string,
+    time: number,
+    extras?: Partial<T>,
+  ): Promise<boolean>;
 
-  protected abstract handle(ids: readonly string[]): Promise<BaseScheduler.AddId<T>[]>;
+  protected abstract handle(
+    ids: readonly string[],
+  ): Promise<BaseScheduler.AddId<T>[]>;
 
   private async requestPendingItems() {
     const min = this._lastMaximum;
 
     const max = (this._lastMaximum = Date.now());
     const ids = await this.redis.zrange(this.queue, min, max, "BYSCORE");
-    if (isNullishOrEmpty(ids))
-      return;
+    if (isNullishOrEmpty(ids)) return;
 
     const values = await this.handle(ids);
     const store = container.stores.get("schedule-handlers");
