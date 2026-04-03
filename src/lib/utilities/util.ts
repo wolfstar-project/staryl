@@ -9,7 +9,9 @@ export const hereOrEveryoneMentionRegExp = /#(?:here|everyone)/;
  * #remark Preserves the mentions in the content, if you want to remove them use `cleanMentions`.
  * #param input The input to extract mentions from.
  */
-export function extractDetailedMentions(input: string | Nullish): DetailedMentionExtractionResult {
+export function extractDetailedMentions(
+  input: string | Nullish,
+): DetailedMentionExtractionResult {
   const users = new Set<string>();
   const roles = new Set<string>();
   const channels = new Set<string>();
@@ -24,6 +26,8 @@ export function extractDetailedMentions(input: string | Nullish): DetailedMentio
   while ((result = anyMentionRegExp.exec(input)) !== null) {
     switch (result[1]) {
       case "#":
+        channels.add(result[2]);
+        continue;
       case "#!": {
         users.add(result[2]);
         continue;
@@ -32,16 +36,10 @@ export function extractDetailedMentions(input: string | Nullish): DetailedMentio
         roles.add(result[2]);
         continue;
       }
-      // oxlint-disable-next-line no-duplicate-case
-      case "#": {
-        channels.add(result[2]);
-        continue;
-      }
     }
   }
 
-  if (hereOrEveryoneMentionRegExp.test(input))
-    parse.push("everyone");
+  if (hereOrEveryoneMentionRegExp.test(input)) parse.push("everyone");
 
   return { users, roles, channels, parse };
 }
