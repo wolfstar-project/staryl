@@ -1,109 +1,110 @@
 {
-	"name": "@wolfstar/staryl",
-	"version": "1.0.0",
-	"description": "Your favourite Discord bot for notification, part of WolfStar Network",
-	"author": "WolfStar Project <contact@wolfstar.rocks>",
-	"license": "Apache-2.0",
-	"private": true,
-	"main": "dist/main.js",
-	"type": "module",
-	"imports": {
-		"#lib/*": "./dist/lib/*.js",
-		"#lib/i18n": "./dist/lib/i18n/index.js",
-		"#lib/utils/*": "./dist/lib/utilities/*.js",
-		"#common/*": "./dist/lib/common/*.js",
+  "name": "@wolfstar/staryl",
+  "version": "1.0.0",
+  "description": "Your favourite Discord bot for notification, part of WolfStar Network",
+  "author": "WolfStar Project <contact@wolfstar.rocks>",
+  "license": "Apache-2.0",
+  "private": true,
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "pnpm build && pnpm start",
+    "watch": "tsdown -w",
+    "prisma:generate": "prisma generate",
+    "clean": "rimraf dist/",
+    "start": "node --enable-source-maps dist/main.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "update": "pnpm update -i",
+    "prepare": "husky install"
+  },
+  "imports": {
+		"#i18n": "./dist/lib/i18n/index.js",
+		"#i18n/languageKeys": "./dist/lib/i18n/languageKeys/index.js",
 		"#lib/types": "./dist/lib/types/index.js",
-		"#lib/types/*": "./dist/lib/types/*.js",
-		"#api/*": "./dist/api/*.js",
-		"#lib/i18n/languageKeys": "./dist/lib/i18n/languageKeys/index.js"
-	},
-	"scripts": {
-		"build": "tsc -b src",
-		"dev": "pnpm build && pnpm start",
-		"watch": "tsc -b src -w",
-		"prisma:generate": "prisma generate",
-		"clean": "rimraf dist/",
-		"start": "node --enable-source-maps dist/main.js",
-		"lint": "eslint --fix --ext ts src tests",
-		"prettier": "prettier --ignore-path=.prettierignore",
-		"format": "prettier --write --log-level=warn \"{src,tests,scripts}/**/*.{js,ts,json}\"",
-		"update": "pnpm update -i",
-		"prepare": "husky install"
-	},
-	"dependencies": {
-		"@discordjs/builders": "^1.10.0",
-		"@discordjs/collection": "^2.1.1",
-		"@discordjs/core": "^2.0.1",
-		"@prisma/client": "^6.3.1",
-		"@sapphire/bitfield": "^1.2.4",
-		"@sapphire/discord.js-utilities": "^7.3.2",
-		"@sapphire/iterator-utilities": "^2.0.1",
-		"@sapphire/ratelimits": "^2.4.11",
-		"@sapphire/result": "^2.7.2",
-		"@sapphire/time-utilities": "^1.7.14",
-		"@sapphire/utilities": "^3.18.2",
-		"@skyra/env-utilities": "^1.3.0",
-		"@skyra/http-framework": "^2.2.0",
-		"@skyra/http-framework-i18n": "^1.2.0",
-		"@skyra/logger": "^2.0.3",
-		"@skyra/safe-fetch": "^1.1.3",
-		"@skyra/shared-http-pieces": "^1.2.2",
-		"@skyra/start-banner": "^2.0.1",
-		"@skyra/twitch-helpers": "^2.0.1",
-		"discord-api-types": "^0.37.119",
-		"fastify": "^5.2.1",
-		"gradient-string": "^3.0.0",
-		"ioredis": "^5.4.1",
-		"nanoid": "^5.0.7",
-		"tslib": "^2.8.1"
-	},
-	"devDependencies": {
-		"@commitlint/cli": "^19.7.1",
-		"@commitlint/config-conventional": "^19.7.1",
-		"@sapphire/eslint-config": "^5.0.5",
-		"@sapphire/prettier-config": "^2.0.0",
-		"@sapphire/ts-config": "^5.0.1",
-		"@types/node": "^22.13.1",
-		"@typescript-eslint/eslint-plugin": "^8.23.0",
-		"@typescript-eslint/parser": "^8.23.0",
-		"cz-conventional-changelog": "^3.3.0",
-		"eslint": "^8.57.0",
-		"eslint-config-prettier": "^9.1.0",
-		"eslint-plugin-prettier": "^5.1.3",
-		"lint-staged": "^15.4.3",
-		"prettier": "^3.4.2",
-		"prisma": "^6.3.1",
-		"typescript": "~5.7.3",
-		"husky": "^8.0.0"
-	},
-	"resolutions": {
-		"ansi-regex": "^5.0.1",
-		"discord-api-types": "^0.37.92",
-		"minimist": "^1.2.8"
-	},
-	"engines": {
-		"node": ">=18.0.0"
-	},
-	"commitlint": {
-		"extends": [
-			"@commitlint/config-conventional"
-		]
-	},
-	"lint-staged": {
-		"*": "prettier --ignore-unknown --write",
-		"*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts"
-	},
-	"config": {
-		"commitizen": {
-			"path": "./node_modules/cz-conventional-changelog"
-		}
-	},
-	"prettier": "@sapphire/prettier-config",
-	"eslintConfig": {
-		"extends": "@sapphire"
-	},
-	"packageManager": "pnpm@10.13.1",
-	"volta": {
-		"node": "22.17.1"
-	}
+		"#lib/utils/common": "./dist/lib/common/promises.js",
+		"#lib/utils/twitch": "./dist/lib/utilities/twitch.js",
+		"#lib/utils/util": "./dist/lib/utilities/util.js",
+		"#lib/utilities": "./dist/lib/utilities/*.js",
+		"#lib/*": "./dist/lib/*.js",
+		"#common/*": "./dist/lib/common/*.js",
+		"#api/*": "./dist/api/*",
+		"#utils/*": "./dist/lib/utilities/*.js",
+		"#lib": "./dist/lib/index.js",
+		"#common": "./dist/lib/common/index.js",
+		"#api": "./dist/api/index.js",
+		"#utils": "./dist/lib/utilities/index.js"
+  },
+  "dependencies": {
+    "@discordjs/builders": "catalog:build",
+    "@discordjs/collection": "catalog:prod",
+    "@discordjs/core": "catalog:prod",
+    "@prisma/client": "catalog:database",
+    "@sapphire/bitfield": "catalog:prod",
+    "@sapphire/discord.js-utilities": "catalog:prod",
+    "@sapphire/iterator-utilities": "catalog:prod",
+    "@sapphire/ratelimits": "catalog:prod",
+    "@sapphire/result": "catalog:prod",
+    "@sapphire/time-utilities": "catalog:prod",
+    "@sapphire/utilities": "catalog:prod",
+    "@skyra/env-utilities": "catalog:node",
+    "@skyra/http-framework": "catalog:prod",
+    "@skyra/http-framework-i18n": "catalog:i18n",
+    "@skyra/logger": "catalog:prod",
+    "@skyra/safe-fetch": "catalog:network",
+    "@skyra/shared-http-pieces": "catalog:prod",
+    "@skyra/start-banner": "catalog:prod",
+    "@skyra/twitch-helpers": "catalog:prod",
+    "discord-api-types": "catalog:prod",
+    "fastify": "catalog:backend",
+    "gradient-string": "catalog:prod",
+    "ioredis": "catalog:prod",
+    "nanoid": "catalog:utils",
+    "pncat": "catalog:cli",
+    "tsdown": "catalog:build",
+    "tslib": "catalog:prod"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:lint",
+    "@commitlint/cli": "catalog:lint",
+    "@commitlint/config-conventional": "catalog:lint",
+    "@sapphire/eslint-config": "catalog:lint",
+    "@sapphire/ts-config": "catalog:dev",
+    "@types/node": "catalog:types",
+    "@typescript-eslint/eslint-plugin": "catalog:types",
+    "@typescript-eslint/parser": "catalog:types",
+    "cz-conventional-changelog": "catalog:dev",
+    "eslint": "catalog:lint",
+    "eslint-config-prettier": "catalog:lint",
+    "eslint-plugin-format": "catalog:lint",
+    "eslint-plugin-package-json": "catalog:lint",
+    "eslint-plugin-prettier": "catalog:lint",
+    "husky": "catalog:lint",
+    "lint-staged": "catalog:lint",
+    "prisma": "catalog:database",
+    "typescript": "catalog:tsc",
+    "vite": "catalog:build"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "lint-staged": {
+    "*": "eslint --fix ."
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "packageManager": "pnpm@10.16.1",
+  "volta": {
+    "node": "22.17.1"
+  }
 }
