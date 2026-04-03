@@ -1,10 +1,13 @@
+# syntax=docker/dockerfile:1.7
+
 # ================ #
-#   Base Stage     #
+#    Base Stage    #
 # ================ #
 
 FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
+ARG NODE_OPTIONS
 
 ENV CI="true"
 ENV PNPM_HOME="/pnpm"
@@ -12,17 +15,18 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV LOG_LEVEL=info
 ENV FORCE_COLOR=true
 
-RUN apk add --no-cache dumb-init
-RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
+RUN apk add --no-cache dumb-init g++ make python3
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 COPY --chown=node:node pnpm-lock.yaml .
+COPY --chown=node:node pnpm-workspace.yaml .
 COPY --chown=node:node package.json .
 COPY --chown=node:node .npmrc .
 
 ENTRYPOINT ["dumb-init", "--"]
 
 # ================ #
-#   Builder Stage   #
+#  Builder Stage   #
 # ================ #
 
 FROM base AS builder
