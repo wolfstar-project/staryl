@@ -1,0 +1,335 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "unicorn",
+    "typescript",
+    "oxc",
+    "node",
+    "jsdoc",
+    "import",
+    "vitest"
+  ],
+  "jsPlugins": [
+    "eslint-plugin-antfu",
+    "eslint-plugin-unused-imports",
+    "@eslint-community/eslint-plugin-eslint-comments",
+    "eslint-plugin-regexp"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "rules": {
+    "accessor-pairs": [
+      "error",
+      {
+        "enforceForClassMembers": true,
+        "setWithoutGet": true
+      }
+    ],
+    "eqeqeq": "off",
+    "new-cap": [
+      "error",
+      {
+        "capIsNew": false,
+        "newIsCap": true,
+        "properties": true
+      }
+    ],
+    "no-async-promise-executor": "off",
+    "no-cond-assign": ["error", "always"],
+    "no-console": "off",
+    "no-debugger": "off",
+    "no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
+    "no-labels": [
+      "error",
+      {
+        "allowLoop": false,
+        "allowSwitch": false
+      }
+    ],
+    "no-redeclare": [
+      "error",
+      {
+        "builtinGlobals": false
+      }
+    ],
+    "no-restricted-globals": [
+      "error",
+      {
+        "message": "Use `globalThis` instead.",
+        "name": "global"
+      },
+      {
+        "message": "Use `globalThis` instead.",
+        "name": "self"
+      }
+    ],
+    "no-self-assign": [
+      "error",
+      {
+        "props": true
+      }
+    ],
+    "no-unneeded-ternary": [
+      "error",
+      {
+        "defaultAssignment": false
+      }
+    ],
+    "no-unused-expressions": [
+      "error",
+      {
+        "allowShortCircuit": true,
+        "allowTaggedTemplates": true,
+        "allowTernary": true
+      }
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none",
+        "caughtErrors": "none",
+        "ignoreRestSiblings": true,
+        "vars": "all"
+      }
+    ],
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "all",
+        "ignoreReadBeforeAssign": true
+      }
+    ],
+    "unicode-bom": ["error", "never"],
+    "use-isnan": [
+      "error",
+      {
+        "enforceForIndexOf": true,
+        "enforceForSwitchCase": true
+      }
+    ],
+    "valid-typeof": [
+      "error",
+      {
+        "requireStringLiterals": true
+      }
+    ],
+    "yoda": ["error", "never"],
+    "unused-imports/no-unused-imports": "error",
+    "unused-imports/no-unused-vars": [
+      "error",
+      {
+        "args": "after-used",
+        "argsIgnorePattern": "^_",
+        "ignoreRestSiblings": true,
+        "vars": "all",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "@eslint-community/eslint-comments/no-aggregating-enable": "error",
+    "@eslint-community/eslint-comments/no-duplicate-disable": "error",
+    "@eslint-community/eslint-comments/no-unlimited-disable": "error",
+    "@eslint-community/eslint-comments/no-unused-enable": "error",
+    "node/handle-callback-err": ["error", "^(err|error)$"],
+    "jsdoc/check-access": "warn",
+    "jsdoc/check-property-names": "warn",
+    "jsdoc/empty-tags": "warn",
+    "jsdoc/implements-on-classes": "warn",
+    "jsdoc/no-defaults": "warn",
+    "jsdoc/require-param-name": "warn",
+    "jsdoc/require-property": "warn",
+    "jsdoc/require-property-description": "warn",
+    "jsdoc/require-property-name": "warn",
+    "jsdoc/require-returns-description": "warn",
+    "antfu/no-top-level-await": "error",
+    "antfu/import-dedupe": "error",
+    "antfu/no-import-dist": "error",
+    "antfu/no-import-node-modules-by-path": "error",
+    "antfu/consistent-chaining": "error",
+    "antfu/consistent-list-newline": "error",
+    "antfu/curly": "error",
+    "antfu/if-newline": "error",
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "unicorn/consistent-empty-array-spread": "error",
+    "unicorn/error-message": "error",
+    "unicorn/escape-case": "error",
+    "unicorn/new-for-builtins": "error",
+    "unicorn/no-instanceof-builtins": "error",
+    "unicorn/no-new-array": "error",
+    "unicorn/no-new-buffer": "error",
+    "unicorn/number-literal-case": "error",
+    "unicorn/prefer-dom-node-text-content": "error",
+    "unicorn/prefer-includes": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-number-properties": "error",
+    "unicorn/prefer-string-starts-ends-with": "error",
+    "unicorn/prefer-type-error": "error",
+    "unicorn/throw-new-error": "error",
+    "unicorn/no-await-expression-member": "off",
+    "unicorn/prefer-global-this": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-null": "off",
+    "regexp/confusing-quantifier": "warn",
+    "regexp/control-character-escape": "error",
+    "regexp/match-any": "error",
+    "regexp/negation": "error",
+    "regexp/no-contradiction-with-assertion": "error",
+    "regexp/no-dupe-characters-character-class": "error",
+    "regexp/no-dupe-disjunctions": "error",
+    "regexp/no-empty-alternative": "warn",
+    "regexp/no-empty-capturing-group": "error",
+    "regexp/no-empty-character-class": "error",
+    "regexp/no-empty-group": "error",
+    "regexp/no-empty-lookarounds-assertion": "error",
+    "regexp/no-empty-string-literal": "error",
+    "regexp/no-escape-backspace": "error",
+    "regexp/no-extra-lookaround-assertions": "error",
+    "regexp/no-invalid-regexp": "error",
+    "regexp/no-invisible-character": "error",
+    "regexp/no-lazy-ends": "warn",
+    "regexp/no-legacy-features": "error",
+    "regexp/no-misleading-capturing-group": "error",
+    "regexp/no-misleading-unicode-character": "error",
+    "regexp/no-missing-g-flag": "error",
+    "regexp/no-non-standard-flag": "error",
+    "regexp/no-obscure-range": "error",
+    "regexp/no-optional-assertion": "error",
+    "regexp/no-potentially-useless-backreference": "warn",
+    "regexp/no-super-linear-backtracking": "error",
+    "regexp/no-trivially-nested-assertion": "error",
+    "regexp/no-trivially-nested-quantifier": "error",
+    "regexp/no-unused-capturing-group": "error",
+    "regexp/no-useless-assertions": "error",
+    "regexp/no-useless-backreference": "error",
+    "regexp/no-useless-character-class": "error",
+    "regexp/no-useless-dollar-replacements": "error",
+    "regexp/no-useless-escape": "error",
+    "regexp/no-useless-flag": "warn",
+    "regexp/no-useless-lazy": "error",
+    "regexp/no-useless-non-capturing-group": "error",
+    "regexp/no-useless-quantifier": "error",
+    "regexp/no-useless-range": "error",
+    "regexp/no-useless-set-operand": "error",
+    "regexp/no-useless-string-literal": "error",
+    "regexp/no-useless-two-nums-quantifier": "error",
+    "regexp/no-zero-quantifier": "error",
+    "regexp/optimal-lookaround-quantifier": "warn",
+    "regexp/optimal-quantifier-concatenation": "error",
+    "regexp/prefer-character-class": "error",
+    "regexp/prefer-d": "error",
+    "regexp/prefer-plus-quantifier": "error",
+    "regexp/prefer-predefined-assertion": "error",
+    "regexp/prefer-question-quantifier": "error",
+    "regexp/prefer-range": "error",
+    "regexp/prefer-set-operation": "error",
+    "regexp/prefer-star-quantifier": "error",
+    "regexp/prefer-unicode-codepoint-escapes": "error",
+    "regexp/prefer-w": "error",
+    "regexp/simplify-set-operations": "error",
+    "regexp/sort-flags": "error",
+    "regexp/strict": "error",
+    "regexp/use-ignore-case": "error"
+  },
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", ".vscode/**"],
+  "overrides": [
+    {
+      "files": ["**/*.?([cm])ts", "**/*.?([cm])tsx"],
+      "plugins": ["typescript"],
+      "rules": {
+        "no-undef": "off",
+        "no-redeclare": ["error", { "builtinGlobals": false }],
+        "no-unused-vars": "off",
+        "no-useless-constructor": "off",
+        "no-unused-expressions": [
+          "error",
+          {
+            "allowShortCircuit": true,
+            "allowTaggedTemplates": true,
+            "allowTernary": true
+          }
+        ],
+        "@typescript-eslint/ban-ts-comment": [
+          "error",
+          {
+            "ts-expect-error": "allow-with-description"
+          }
+        ],
+        "@typescript-eslint/consistent-type-definitions": [
+          "error",
+          "interface"
+        ],
+        "@typescript-eslint/consistent-type-imports": [
+          "error",
+          {
+            "disallowTypeAnnotations": false,
+            "fixStyle": "separate-type-imports",
+            "prefer": "type-imports"
+          }
+        ],
+        "@typescript-eslint/no-dynamic-delete": "off",
+        "@typescript-eslint/no-empty-object-type": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-extraneous-class": "off",
+        "@typescript-eslint/no-import-type-side-effects": "error",
+        "@typescript-eslint/no-namespace": "error",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-require-imports": "error",
+        "@typescript-eslint/prefer-as-const": "error",
+        "@typescript-eslint/triple-slash-reference": "off"
+      }
+    },
+    {
+      "files": [
+        "**/__tests__/**/*.?([cm])[jt]s?(x)",
+        "**/*.spec.?([cm])[jt]s?(x)",
+        "**/*.test.?([cm])[jt]s?(x)",
+        "**/*.bench.?([cm])[jt]s?(x)",
+        "**/*.benchmark.?([cm])[jt]s?(x)"
+      ],
+      "plugins": ["vitest", "typescript"],
+      "rules": {
+        "vitest/no-import-node-test": "error",
+        "antfu/no-top-level-await": "off",
+        "no-unused-expressions": "off"
+      },
+      "jsPlugins": ["eslint-plugin-antfu"]
+    },
+    {
+      "files": ["**/*.d.?([cm])ts"],
+      "rules": {
+        "@eslint-community/eslint-comments/no-unlimited-disable": "off",
+        "unused-imports/no-unused-vars": "off"
+      },
+      "jsPlugins": [
+        "@eslint-community/eslint-plugin-eslint-comments",
+        "eslint-plugin-unused-imports"
+      ]
+    },
+    {
+      "files": ["**/*.js", "**/*.cjs"],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.config.?([cm])[jt]s?(x)",
+        "**/*.config.*.?([cm])[jt]s?(x)",
+        "**/scripts/**/*.?([cm])[jt]s?(x)"
+      ],
+      "plugins": ["typescript"],
+      "rules": {
+        "antfu/no-top-level-await": "off",
+        "no-console": "off"
+      },
+      "jsPlugins": ["eslint-plugin-antfu"]
+    }
+  ]
+}

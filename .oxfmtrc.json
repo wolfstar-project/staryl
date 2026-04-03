@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": false,
+  "quoteProps": "as-needed",
+  "trailingComma": "all",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "proseWrap": "always",
+  "sortPackageJson": true,
+  "experimentalSortImports": {
+    "groups": [
+      "type-import",
+      ["type-parent", "type-sibling", "type-index", "type-internal"],
+      "value-builtin",
+      "value-external",
+      "value-internal",
+      ["value-parent", "value-sibling", "value-index"],
+      "side_effect",
+      "import",
+      "unknown"
+    ],
+    "newlinesBetween": false,
+    "internalPattern": ["@/**", "~/**", "~~/**", "#server/**", "#shared/**"]
+  },
+  "overrides": [
+    {
+      "files": ["*.yml"],
+      "options": {
+        "tabWidth": 2,
+        "useTabs": false
+      }
+    },
+    {
+      "files": ["README.md"],
+      "options": {
+        "tabWidth": 2,
+        "useTabs": false,
+        "printWidth": 80,
+        "proseWrap": "always"
+      }
+    }
+  ]
+}

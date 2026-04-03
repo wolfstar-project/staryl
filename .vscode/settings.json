@@ -1,61 +1,33 @@
 {
-	"editor.tabSize": 4,
-	"editor.useTabStops": true,
-	"editor.insertSpaces": false,
-	"editor.detectIndentation": false,
-	"files.eol": "\n",
-	"typescript.tsdk": "node_modules\\typescript\\lib",
-	"search.exclude": {
-		"**/node_modules": true,
-		"**/bower_components": true,
-		"**/*.code-search": true,
-		"**/.yarn": true,
-		"**/dist/": true,
-		"**/.git/": true
-	},
-	// Disable the default formatter, use eslint instead
-	"prettier.enable": false,
-	"editor.formatOnSave": false,
-	// Auto fix
-	"editor.codeActionsOnSave": {
-		"source.fixAll.eslint": "explicit",
-		"source.organizeImports": "never"
-	},
-	// Silent the stylistic rules in you IDE, but still auto fix them
-	"eslint.rules.customizations": [
-		{ "rule": "style/*", "severity": "off", "fixable": true },
-		{ "rule": "format/*", "severity": "off", "fixable": true },
-		{ "rule": "*-indent", "severity": "off", "fixable": true },
-		{ "rule": "*-spacing", "severity": "off", "fixable": true },
-		{ "rule": "*-spaces", "severity": "off", "fixable": true },
-		{ "rule": "*-order", "severity": "off", "fixable": true },
-		{ "rule": "*-dangle", "severity": "off", "fixable": true },
-		{ "rule": "*-newline", "severity": "off", "fixable": true },
-		{ "rule": "*quotes", "severity": "off", "fixable": true },
-		{ "rule": "*semi", "severity": "off", "fixable": true }
-	],
-	// Enable eslint for all supported languages
-	"eslint.validate": [
-		"javascript",
-		"javascriptreact",
-		"typescript",
-		"typescriptreact",
-		"vue",
-		"html",
-		"markdown",
-		"json",
-		"jsonc",
-		"yaml",
-		"toml",
-		"xml",
-		"gql",
-		"graphql",
-		"astro",
-		"svelte",
-		"css",
-		"less",
-		"scss",
-		"pcss",
-		"postcss"
-	]
+  // Disable the default formatter, use eslint instead
+  "prettier.enable": false,
+  "eslint.enable": false,
+  "editor.formatOnSave": true,
+  "oxc.fmt.configPath": ".oxfmtrc.json",
+  "oxc.fixKind": "safe_fix_or_suggestion",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+
+  // Auto fix
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "always"
+  },
+
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+  "prisma.pinToPrisma6": true,
+  // Exclude large folders from search
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/*.agent": true,
+    "**/*.github/agents": true,
+    "**/*.github/instructions": true,
+    "**/*/skills": true,
+    "**/plans": true
+  }
 }
