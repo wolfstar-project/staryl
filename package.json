@@ -22,7 +22,8 @@
     "#lib": "./dist/lib/index.mjs",
     "#common": "./dist/lib/common/index.mjs",
     "#api": "./dist/api/index.mjs",
-    "#utils": "./dist/lib/utilities/index.mjs"
+    "#utils": "./dist/lib/utilities/index.mjs",
+    "#generated/prisma": "./generated/prisma/client.js"
   },
   "scripts": {
     "build": "tsdown",
@@ -40,7 +41,8 @@
     "@discordjs/builders": "^1.11.3",
     "@discordjs/collection": "^2.1.1",
     "@discordjs/core": "^2.2.2",
-    "@prisma/client": "^6.16.2",
+    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/client": "^7.6.0",
     "@sapphire/bitfield": "^1.2.4",
     "@sapphire/discord.js-utilities": "^7.3.3",
     "@sapphire/iterator-utilities": "^2.0.1",
@@ -77,7 +79,7 @@
     "husky": "^9.1.7",
     "oxfmt": "^0.43.0",
     "oxlint": "^1.58.0",
-    "prisma": "^6.16.2",
+    "prisma": "^7.5.0",
     "taze": "^19.11.0",
     "typescript": "~5.9.2",
     "vite": "^7.1.5"
@@ -101,7 +103,7 @@
     }
   },
   "engines": {
-    "node": ">=22.0.0",
+    "node": "24.0.0",
     "pnpm": ">=10"
   },
   "packageManager": "pnpm@10.16.1"

@@ -1,7 +1,20 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "#generated/prisma";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { container } from "@skyra/http-framework";
 
-const prisma = new PrismaClient();
+interface GetDbParams {
+  connectionString: string;
+}
+
+function getDb({ connectionString }: GetDbParams) {
+  const pool = new PrismaPg({ connectionString });
+
+  const prisma = new PrismaClient({ adapter: pool });
+
+  return prisma;
+}
+const connectionString = `${process.env.DATABASE_URL}`;
+const prisma = getDb({ connectionString });
 container.prisma = prisma;
 
 declare module "@sapphire/pieces" {
@@ -14,4 +27,4 @@ export type {
   GuildSubscription,
   TwitchSubscription,
   TwitchSubscriptionType,
-} from "@prisma/client";
+} from "#generated/prisma";

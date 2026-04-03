@@ -12,6 +12,9 @@ node_modules/
 dist/
 dist-tsc/
 
+# Prisma generated client
+generated/
+
 # Ignore heapsnapshot and log files
 *.heapsnapshot
 *.log
