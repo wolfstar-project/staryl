@@ -1,3 +1,4 @@
+// oxlint-disable unused-imports/no-unused-vars
 import { RateLimitManager } from "@sapphire/ratelimits";
 import { Result } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
@@ -8,7 +9,7 @@ export function streamNotificationDrip(id: string) {
   return Result.from(() => manager.acquire(id).consume()).isOk();
 }
 
-// eslint-disable-next-line no-restricted-syntax
+// oxlint-disable-next-line no-restricted-syntax
 export const enum TwitchStreamStatus {
   Online = "online",
   Offline = "offline",

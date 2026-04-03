@@ -1,3 +1,4 @@
+// oxlint-disable unused-imports/no-unused-vars
 import type { BaseScheduler } from "#lib/schedules/BaseScheduler";
 import type { Awaitable } from "@sapphire/utilities";
 import { Piece } from "@skyra/http-framework";
@@ -17,9 +18,9 @@ export abstract class ScheduleHandler<T extends BaseScheduler.Value = BaseSchedu
   }
 }
 
-// eslint-disable-next-line ts/no-namespace
+// oxlint-disable-next-line typescript/no-namespace
 export namespace ScheduleHandler {
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line no-restricted-syntax
   export const enum Type {
     Reschedule,
     Finish,

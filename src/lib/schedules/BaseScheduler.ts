@@ -1,3 +1,4 @@
+// oxlint-disable unused-imports/no-unused-vars
 import type { Redis } from "ioredis";
 import { isNullishOrEmpty } from "@sapphire/utilities";
 import { container } from "@skyra/http-framework";
@@ -73,7 +74,7 @@ export abstract class BaseScheduler<T extends BaseScheduler.Value> {
   }
 }
 
-// eslint-disable-next-line ts/no-namespace
+// oxlint-disable-next-line typescript/no-namespace
 export namespace BaseScheduler {
   export interface Options {
     redis: Redis;

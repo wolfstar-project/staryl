@@ -1,7 +1,7 @@
 import type { Nullish } from "@sapphire/utilities";
 import { isNullishOrEmpty } from "@sapphire/utilities";
 
-// eslint-disable-next-line regexp/no-dupe-disjunctions
+// oxlint-disable-next-line regexp/no-dupe-disjunctions
 export const anyMentionRegExp = /<(#[!&]?|#)(\d{17,19})>/g;
 export const hereOrEveryoneMentionRegExp = /#(?:here|everyone)/;
 /**
@@ -20,7 +20,7 @@ export function extractDetailedMentions(input: string | Nullish): DetailedMentio
   }
 
   let result: RegExpExecArray | null;
-  // eslint-disable-next-line no-cond-assign
+  // oxlint-disable-next-line no-cond-assign
   while ((result = anyMentionRegExp.exec(input)) !== null) {
     switch (result[1]) {
       case "#":
@@ -32,7 +32,7 @@ export function extractDetailedMentions(input: string | Nullish): DetailedMentio
         roles.add(result[2]);
         continue;
       }
-      // eslint-disable-next-line no-duplicate-case
+      // oxlint-disable-next-line no-duplicate-case
       case "#": {
         channels.add(result[2]);
         continue;
