@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Add problem matchers
         run: echo "::add-matcher::.github/problemMatchers/eslint.json"
       - uses: pnpm/action-setup@v4
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Add problem matchers
         run: echo "::add-matcher::.github/problemMatchers/tsc.json"
       - uses: pnpm/action-setup@v4
