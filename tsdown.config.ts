@@ -92,7 +92,7 @@ export default defineConfig({
     }),
     copyPlugin(),
   ],
-  dts: true,
+  dts: false,
   unbundle: true,
   sourcemap: true,
   minify: false,
