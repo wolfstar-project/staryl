@@ -80,11 +80,12 @@ stream notifications in their servers.
    Required variables:
    - `DATABASE_URL` -- PostgreSQL connection string
    - `REDIS_HOST` -- Redis server host
-   - `DISCORD_TOKEN` -- Bot token
    - `TWITCH_CLIENT_ID` -- Twitch application client ID
    - `TWITCH_CLIENT_SECRET` -- Twitch application secret
    - `HTTP_ADDRESS` -- Server bind address (default: `0.0.0.0`)
    - `HTTP_PORT` -- Server port (default: `3000`)
+   - `API_ADDRESS` -- API server bind address (default: `0.0.0.0`)
+   - `API_PORT` -- API server port (default: `3001`)
 
 4. Set up the database:
 

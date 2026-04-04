@@ -124,7 +124,6 @@ Create `src/.env` with:
 
 - `DATABASE_URL`: PostgreSQL connection string
 - `REDIS_HOST`: Redis server host
-- `DISCORD_TOKEN`: Bot token
 - `TWITCH_CLIENT_ID`: Twitch application client ID
 - `TWITCH_CLIENT_SECRET`: Twitch application secret
 - `HTTP_ADDRESS`: Server bind address (default: localhost)
