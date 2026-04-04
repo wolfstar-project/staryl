@@ -6,7 +6,8 @@
     "rootDir": "..",
     "allowJs": true,
     "skipLibCheck": true,
-    "resolvePackageJsonImports": true
+    "resolvePackageJsonImports": true,
+    "types": ["@types/node"]
   },
   "include": [".", "./**/*.json"],
   "exclude": ["./tsconfig.json", "../dist"]
