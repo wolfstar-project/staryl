@@ -1,11 +1,9 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "rootDir": ".",
     "resolvePackageJsonImports": true,
     "allowJs": true,
-    "outDir": "../dist",
     "skipLibCheck": true
   },
   "include": [".", "./**/*.json"],
