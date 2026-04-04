@@ -7,18 +7,23 @@ import { registerCommands } from "@skyra/shared-http-pieces";
 import { createBanner } from "@skyra/start-banner";
 import { vice } from "gradient-string";
 
-setup();
+await setup();
 
 await load(new URL("../src/locales", import.meta.url));
 await init({
   fallbackLng: "en-US",
   returnNull: false,
-  returnEmptyString: false,
   returnObjects: true,
+  returnEmptyString: false,
 });
 
 const client = new Client();
 await client.load();
+
+await container.server.listen({
+  host: envParseString("API_ADDRESS"),
+  port: envParseInteger("API_PORT"),
+});
 
 void registerCommands();
 
@@ -65,3 +70,5 @@ console.log(
     }),
   ),
 );
+
+container.logger.info("Ready");
