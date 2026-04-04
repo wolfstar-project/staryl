@@ -82,6 +82,9 @@ importers:
       gradient-string:
         specifier: ^3.0.0
         version: 3.0.0
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       ioredis:
         specifier: ^5.10.1
         version: 5.10.1
@@ -122,9 +125,6 @@ importers:
       eslint-plugin-regexp:
         specifier: ^3.1.0
         version: 3.1.0(eslint@9.35.0(jiti@2.6.1))
-      husky:
-        specifier: ^9.1.7
-        version: 9.1.7
       oxfmt:
         specifier: ^0.43.0
         version: 0.43.0
