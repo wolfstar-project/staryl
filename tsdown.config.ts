@@ -99,6 +99,5 @@ export default defineConfig({
   platform: "node",
   tsconfig: "src/tsconfig.json",
   treeshake: true,
-  skipNodeModulesBundle: true,
-  external: ["#generated/prisma"],
+  deps: { neverBundle: ["#generated/prisma"], skipNodeModulesBundle: true },
 });
