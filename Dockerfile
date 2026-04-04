@@ -16,7 +16,7 @@ ENV LOG_LEVEL=info
 ENV FORCE_COLOR=true
 
 RUN apk add --no-cache dumb-init g++ make python3
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY --chown=node:node pnpm-lock.yaml .
 COPY --chown=node:node pnpm-workspace.yaml .
