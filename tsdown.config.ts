@@ -19,11 +19,11 @@ function copyPlugin(): RolldownPluginOption {
     name: "copy-mjs-files",
     buildEnd() {
       const srcDir = resolve(__dirname, "src/locales");
-      const destLocalesDir = resolve(__dirname, "dist/locales");
+      const distLocalesDir = resolve(__dirname, "dist/locales");
 
       if (existsSync(srcDir)) {
-        mkdirSync(destLocalesDir, { recursive: true });
-        cpSync(srcDir, destLocalesDir, { recursive: true });
+        mkdirSync(distLocalesDir, { recursive: true });
+        cpSync(srcDir, distLocalesDir, { recursive: true });
         console.log("✓ Copied locales to dist");
       }
     },
@@ -61,7 +61,7 @@ export default defineConfig({
               return resolve("src/lib/i18n/languageKeys/keys/All.ts");
             if (source === "#i18n") return resolve("src/lib/i18n/index.ts");
             const subPath = source.replace("#i18n/", "");
-            return resolve(__dirname, "src/lib/i18n", `${subPath}.ts`);
+            return resolveSource("src/lib/i18n", subPath);
           },
         },
         {
@@ -69,7 +69,7 @@ export default defineConfig({
           replacement: "#common",
           customResolver(source) {
             const subPath = source.replace("#common/", "");
-            return resolve(__dirname, "src/lib/common", `${subPath}.ts`);
+            return resolveSource("src/lib/common", subPath);
           },
         },
         {
@@ -85,7 +85,7 @@ export default defineConfig({
           replacement: "#utils",
           customResolver(source) {
             const subPath = source.replace("#utils/", "");
-            return resolve(__dirname, "src/lib/utilities", `${subPath}.ts`);
+            return resolveSource("src/lib/utilities", subPath);
           },
         },
       ],
@@ -100,5 +100,5 @@ export default defineConfig({
   tsconfig: "src/tsconfig.json",
   treeshake: true,
   skipNodeModulesBundle: true,
-  external: ["#generated/prisma", "#lib/setup/i18n"],
+  external: ["#generated/prisma"],
 });
