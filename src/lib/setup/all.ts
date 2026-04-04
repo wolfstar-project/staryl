@@ -15,7 +15,6 @@ initializeSentry();
 import "#lib/setup/fastify";
 import "#lib/setup/logger";
 import "#lib/setup/prisma";
-import "#lib/setup/i18n";
 import "#lib/setup/schedules";
 
 export async function setup() {
