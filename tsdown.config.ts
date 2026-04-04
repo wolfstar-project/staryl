@@ -1,12 +1,11 @@
 import { existsSync, mkdirSync, cpSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import alias from "@rollup/plugin-alias";
 import { defineConfig } from "tsdown";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-// oxlint-disable-next-line import/first
 import type { RolldownPluginOption } from "rolldown";
+import alias from "@rollup/plugin-alias";
 
 function resolveSource(base: string, subPath: string): string {
   if (subPath.endsWith(".ts")) return resolve(__dirname, base, subPath);
