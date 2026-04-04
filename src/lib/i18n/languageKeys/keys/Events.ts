@@ -1,1 +1,1 @@
-/* oxlint-disable unicorn/no-empty-file -- placeholder for future language keys */
+export * as Twitch from "#i18n/languageKeys/keys/Events/All";

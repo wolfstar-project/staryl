@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "rootDir": "..",
+    "noEmit": true,
     "allowJs": true,
     "skipLibCheck": true,
     "resolvePackageJsonImports": true,

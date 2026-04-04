@@ -10,6 +10,7 @@
   "imports": {
     "#i18n": "./dist/lib/i18n/index.mjs",
     "#i18n/languageKeys": "./dist/lib/i18n/languageKeys/index.mjs",
+    "#i18n/languageKeys/*": "./dist/lib/i18n/languageKeys/*.mjs",
     "#lib/types": "./dist/lib/types/index.mjs",
     "#lib/utils/common": "./dist/lib/common/promises.mjs",
     "#lib/utils/twitch": "./dist/lib/utilities/twitch.mjs",
@@ -17,7 +18,7 @@
     "#lib/utilities": "./dist/lib/utilities/*.mjs",
     "#lib/*": "./dist/lib/*.mjs",
     "#common/*": "./dist/lib/common/*.mjs",
-    "#api/*": "./dist/api/*",
+    "#api/*": "./dist/api/*.mjs",
     "#utils/*": "./dist/lib/utilities/*.mjs",
     "#lib": "./dist/lib/index.mjs",
     "#common": "./dist/lib/common/index.mjs",

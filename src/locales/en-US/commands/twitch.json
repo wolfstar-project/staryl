@@ -20,5 +20,7 @@
     "offline": "Offline"
   },
   "twitchSubscriptionShowUnknownUser": "Unknown",
-  "twitchSubscriptionDescription": "Manage the subscriptions for your server."
+  "twitchSubscriptionDescription": "Manage the subscriptions for your server.",
+  "twitchSubscriptionAddDescription": "Add a new Twitch subscription for a streamer.",
+  "twitchSubscriptionRemoveDescription": "Remove a Twitch subscription for a streamer."
 }

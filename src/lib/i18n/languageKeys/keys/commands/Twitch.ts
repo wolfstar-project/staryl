@@ -3,6 +3,12 @@ import { FT, T } from "@skyra/http-framework-i18n";
 export const TwitchSubscriptionDescription = T(
   "commands/twitch:twitchSubscriptionDescription",
 );
+export const TwitchSubscriptionAddDescription = T(
+  "commands/twitch:twitchSubscriptionAddDescription",
+);
+export const TwitchSubscriptionRemoveDescription = T(
+  "commands/twitch:twitchSubscriptionRemoveDescription",
+);
 export const TwitchSubscriptionStreamerNotFound = T(
   "commands/twitch:twitchSubscriptionStreamerNotFound",
 );
