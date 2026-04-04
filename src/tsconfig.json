@@ -1,10 +1,10 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "resolvePackageJsonImports": true,
+    "rootDir": "..",
     "allowJs": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolvePackageJsonImports": true
   },
   "include": [".", "./**/*.json"],
   "exclude": ["./tsconfig.json"]
