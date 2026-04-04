@@ -22,13 +22,19 @@ declare module "@skyra/http-framework-i18n" {
 }
 declare module "@skyra/env-utilities" {
   interface Env {
-    CLIENT_NAME: string;
     CLIENT_VERSION: string;
+
+    DISCORD_CLIENT_ID: string;
+    DISCORD_TOKEN: string;
+    DISCORD_PUBLIC_KEY: string;
 
     HTTP_ADDRESS: string;
     HTTP_PORT: IntegerString;
 
     REGISTRY_GUILD_ID: string;
+
+    API_ADDRESS: string;
+    API_PORT: IntegerString;
 
     INTERNAL_RING_URL: string;
     INTERNAL_RING_TOKEN: string;
