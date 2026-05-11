@@ -1,9 +1,9 @@
 /* oxlint-disable import/first */
 import { setup as envRun } from "@skyra/env-utilities";
 import {
-  initializeSentry,
-  setInvite,
-  setRepository,
+	initializeSentry,
+	setInvite,
+	setRepository,
 } from "@skyra/shared-http-pieces";
 import "@skyra/shared-http-pieces/register";
 
@@ -18,6 +18,6 @@ import "#lib/setup/prisma";
 import "#lib/setup/schedules";
 
 export async function setup() {
-  // Load all routes
-  await import("#api/routes/_load");
+	// Load all routes
+	await import("#api/routes/_load");
 }

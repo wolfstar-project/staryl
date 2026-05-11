@@ -7,7 +7,7 @@ export const GenericUnknownMessage = T("errors:genericUnknownMessage");
 export const GenericUnknownRole = T("errors:genericUnknownRole");
 export const GenericMissingAccess = T("errors:genericMissingAccess");
 export const GenericDiscordInternalServerError = T(
-  "errors:genericDiscordInternalServerError",
+	"errors:genericDiscordInternalServerError",
 );
 export const GenericDiscordGateway = T("errors:genericDiscordGateway");
 export const GenericDiscordUnavailable = T("errors:genericDiscordUnavailable");

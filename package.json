@@ -1,111 +1,102 @@
 {
-  "name": "@wolfstar/staryl",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Your favourite Discord bot for notification, part of WolfStar Network",
-  "license": "Apache-2.0",
-  "author": "WolfStar Project <contact@wolfstar.rocks>",
-  "type": "module",
-  "main": "dist/main.mjs",
-  "imports": {
-    "#i18n": "./dist/lib/i18n/index.mjs",
-    "#i18n/languageKeys": "./dist/lib/i18n/languageKeys/index.mjs",
-    "#i18n/languageKeys/*": "./dist/lib/i18n/languageKeys/*.mjs",
-    "#lib/types": "./dist/lib/types/index.mjs",
-    "#lib/utils/common": "./dist/lib/common/promises.mjs",
-    "#lib/utils/twitch": "./dist/lib/utilities/twitch.mjs",
-    "#lib/utils/util": "./dist/lib/utilities/util.mjs",
-    "#lib/utilities": "./dist/lib/utilities/*.mjs",
-    "#lib/*": "./dist/lib/*.mjs",
-    "#common/*": "./dist/lib/common/*.mjs",
-    "#api/*": "./dist/api/*.mjs",
-    "#utils/*": "./dist/lib/utilities/*.mjs",
-    "#lib": "./dist/lib/index.mjs",
-    "#common": "./dist/lib/common/index.mjs",
-    "#api": "./dist/api/index.mjs",
-    "#utils": "./dist/lib/utilities/index.mjs",
-    "#generated/prisma": "./generated/prisma/client.js"
-  },
-  "scripts": {
-    "build": "tsdown",
-    "dev": "pnpm build && pnpm start",
-    "watch": "tsdown -w",
-    "prisma:generate": "prisma generate",
-    "clean": "rimraf dist/",
-    "start": "node --enable-source-maps dist/main.mjs",
-    "lint": "oxlint && oxfmt --check",
-    "lint:fix": "oxlint --fix && oxfmt",
-    "prepare": "node .husky/install.mjs",
-    "update:interactive": "taze"
-  },
-  "dependencies": {
-    "@discordjs/builders": "^1.14.1",
-    "@discordjs/collection": "^2.1.1",
-    "@discordjs/core": "^2.4.0",
-    "@prisma/adapter-pg": "^7.6.0",
-    "@prisma/client": "^7.6.0",
-    "@sapphire/bitfield": "^1.2.4",
-    "@sapphire/discord.js-utilities": "^7.3.3",
-    "@sapphire/iterator-utilities": "^2.0.1",
-    "@sapphire/ratelimits": "^2.4.11",
-    "@sapphire/result": "^2.8.0",
-    "@sapphire/time-utilities": "^1.7.14",
-    "@sapphire/utilities": "^3.18.2",
-    "@skyra/env-utilities": "^2.0.1",
-    "@skyra/http-framework": "^2.2.1",
-    "@skyra/http-framework-i18n": "^1.2.1",
-    "@skyra/logger": "^2.0.4",
-    "@skyra/safe-fetch": "^1.1.4",
-    "@skyra/shared-http-pieces": "^1.2.3",
-    "@skyra/start-banner": "^2.0.2",
-    "@skyra/twitch-helpers": "^2.0.2",
-    "discord-api-types": "^0.38.44",
-    "fastify": "^5.8.4",
-    "gradient-string": "^3.0.0",
-    "husky": "^9.1.7",
-    "ioredis": "^5.10.1",
-    "nano-staged": "^0.9.0",
-    "nanoid": "^5.1.7",
-    "tsdown": "^0.21.7",
-    "tslib": "^2.8.1"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
-    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
-    "@rollup/plugin-alias": "^6.0.0",
-    "@sapphire/ts-config": "^5.0.3",
-    "@types/node": "^24.12.2",
-    "cz-conventional-changelog": "^3.3.0",
-    "eslint": "^9.39.4",
-    "eslint-plugin-regexp": "^3.1.0",
-    "oxfmt": "^0.43.0",
-    "oxlint": "^1.58.0",
-    "prisma": "^7.5.0",
-    "taze": "^19.11.0",
-    "typescript": "~5.9.3"
-  },
-  "nano-staged": {
-    "*.{js,ts,mjs,cjs}": [
-      "pnpm oxlint --fix"
-    ],
-    "*.{js,ts,mjs,cjs,json,yml,md}": [
-      "pnpm oxfmt"
-    ]
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
-  "engines": {
-    "node": ">=24.0.0",
-    "pnpm": ">=10"
-  },
-  "packageManager": "pnpm@10.33.0"
+	"name": "@wolfstar/staryl",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Your favourite Discord bot for notification, part of WolfStar Network",
+	"license": "Apache-2.0",
+	"author": "WolfStar Project <contact@wolfstar.rocks>",
+	"type": "module",
+	"main": "dist/main.mjs",
+	"imports": {
+		"#i18n": "./dist/lib/i18n/index.mjs",
+		"#generated/prisma": "./dist/generated/prisma/client.mjs",
+		"#lib/types": "./dist/lib/types/index.mjs",
+		"#lib/*": "./dist/lib/*.mjs",
+		"#common/*": "./dist/lib/common/*.mjs",
+		"#api/*": "./dist/api/*.mjs",
+		"#utils/*": "./dist/lib/utilities/*.mjs"
+	},
+	"scripts": {
+		"build": "tsdown",
+		"dev": "pnpm build --onSuccess \"pnpm start\"",
+		"watch": "pnpm build --watch",
+		"watch:start": "pnpm build --onSuccess \"pnpm start\"",
+		"prisma:generate": "pnpm prisma generate",
+		"clean": "node scripts/build/clean.mjs",
+		"start": "node --enable-source-maps dist/main.mjs",
+		"lint": "oxlint && oxfmt --check",
+		"lint:fix": "oxlint --fix && oxfmt",
+		"prepare": "node .husky/install.mjs || true",
+		"update:interactive": "taze"
+	},
+	"dependencies": {
+		"@discordjs/builders": "^1.14.1",
+		"@discordjs/collection": "^2.1.1",
+		"@discordjs/core": "^2.4.0",
+		"@prisma/adapter-pg": "^7.8.0",
+		"@prisma/client": "^7.8.0",
+		"@sapphire/bitfield": "^1.2.4",
+		"@sapphire/discord.js-utilities": "^7.3.3",
+		"@sapphire/iterator-utilities": "^2.0.1",
+		"@sapphire/ratelimits": "^2.4.11",
+		"@sapphire/result": "^2.8.0",
+		"@sapphire/time-utilities": "^1.7.14",
+		"@sapphire/utilities": "^3.18.2",
+		"@skyra/env-utilities": "^2.0.1",
+		"@skyra/http-framework": "^2.2.1",
+		"@skyra/http-framework-i18n": "^1.2.1",
+		"@skyra/logger": "^2.0.4",
+		"@skyra/safe-fetch": "^1.1.4",
+		"@skyra/shared-http-pieces": "^1.2.3",
+		"@skyra/start-banner": "^2.0.2",
+		"@skyra/twitch-helpers": "^2.0.2",
+		"discord-api-types": "^0.38.47",
+		"fastify": "^5.8.4",
+		"gradient-string": "^3.0.0",
+		"husky": "^9.1.7",
+		"ioredis": "^5.10.1",
+		"nano-staged": "^0.9.0",
+		"nanoid": "^5.1.7",
+		"tsdown": "^0.21.7",
+		"tslib": "^2.8.1"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^19.8.1",
+		"@commitlint/config-conventional": "^19.8.1",
+		"@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
+		"@rollup/plugin-alias": "^6.0.0",
+		"@sapphire/ts-config": "^5.0.3",
+		"@types/node": "^24.12.2",
+		"cz-conventional-changelog": "^3.3.0",
+		"eslint": "^9.39.4",
+		"eslint-plugin-regexp": "^3.1.0",
+		"oxfmt": "^0.43.0",
+		"oxlint": "^1.58.0",
+		"prisma": "^7.5.0",
+		"taze": "^19.11.0",
+		"typescript": "~5.9.3"
+	},
+	"nano-staged": {
+		"*.{js,ts,mjs,cjs}": [
+			"pnpm oxlint --fix"
+		],
+		"*.{js,ts,mjs,cjs,json,yml,md}": [
+			"pnpm oxfmt"
+		]
+	},
+	"commitlint": {
+		"extends": [
+			"@commitlint/config-conventional"
+		]
+	},
+	"config": {
+		"commitizen": {
+			"path": "./node_modules/cz-conventional-changelog"
+		}
+	},
+	"engines": {
+		"node": ">=24.0.0",
+		"pnpm": ">=10"
+	},
+	"packageManager": "pnpm@10.33.3"
 }

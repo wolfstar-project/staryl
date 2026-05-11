@@ -1,15 +1,15 @@
 {
-  "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "rootDir": "..",
-    "noEmit": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "resolvePackageJsonImports": true,
-    "types": ["@types/node"]
-  },
-  "include": [".", "./**/*.json"],
-  "exclude": ["./tsconfig.json", "../dist"]
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"rootDir": "..",
+		"noEmit": true,
+		"allowJs": true,
+		"skipLibCheck": true,
+		"resolvePackageJsonImports": true,
+		"types": ["@types/node"]
+	},
+	"include": [".", "./**/*.json"],
+	"exclude": ["./tsconfig.json", "../dist"]
 }
