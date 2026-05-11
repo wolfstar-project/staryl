@@ -95,38 +95,38 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const streamerForType =
-			await this.container.prisma.twitchSubscription.findFirst({
-				where: { streamerId: streamer.id, subscriptionType },
-			});
-
-		const guildSubscriptionsForGuild =
-			await this.container.prisma.guildSubscription.findMany({
-				where: {
-					guildId: BigInt(interaction.guildId!),
-					channelId: BigInt(channel.id),
-				},
-				include: { twitchSubscription: true },
-			});
-
-		const alreadyHasEntry = guildSubscriptionsForGuild.some(
-			(guildSubscription) =>
-				guildSubscription.twitchSubscription.streamerId === streamer.id &&
-				guildSubscription.twitchSubscription.subscriptionType ===
-					subscriptionType,
-		);
-
-		if (alreadyHasEntry) {
-			return interaction.reply({
-				content: await resolveKey(
-					interaction,
-					LanguageKeys.Commands.Twitch.TwitchSubscriptionAddDuplicated,
-				),
-				flags: MessageFlags.Ephemeral,
-			});
-		}
-
 		try {
+			const streamerForType =
+				await this.container.prisma.twitchSubscription.findFirst({
+					where: { streamerId: streamer.id, subscriptionType },
+				});
+
+			const guildSubscriptionsForGuild =
+				await this.container.prisma.guildSubscription.findMany({
+					where: {
+						guildId: BigInt(interaction.guildId!),
+						channelId: BigInt(channel.id),
+					},
+					include: { twitchSubscription: true },
+				});
+
+			const alreadyHasEntry = guildSubscriptionsForGuild.some(
+				(guildSubscription) =>
+					guildSubscription.twitchSubscription.streamerId === streamer.id &&
+					guildSubscription.twitchSubscription.subscriptionType ===
+						subscriptionType,
+			);
+
+			if (alreadyHasEntry) {
+				return interaction.reply({
+					content: await resolveKey(
+						interaction,
+						LanguageKeys.Commands.Twitch.TwitchSubscriptionAddDuplicated,
+					),
+					flags: MessageFlags.Ephemeral,
+				});
+			}
+
 			if (streamerForType) {
 				await this.container.prisma.guildSubscription.create({
 					data: {
@@ -220,9 +220,17 @@ export class UserCommand extends Command {
 		const { channel } = options;
 		const subscriptionType = options.type as TwitchSubscriptionType;
 
-		const guildSubscriptions = await this.getGuildSubscriptions(
+		const guildSubscriptionsResult = await this.getGuildSubscriptions(
 			BigInt(interaction.guildId!),
 		);
+		if (guildSubscriptionsResult.isErr()) {
+			return interaction.reply({
+				content:
+					"An error occurred while trying to remove the subscription. Please try again later.",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+		const guildSubscriptions = guildSubscriptionsResult.unwrap();
 
 		const streamers = guildSubscriptions.filter(
 			({ twitchSubscription }) => twitchSubscription.streamerId === streamer.id,
@@ -284,8 +292,18 @@ export class UserCommand extends Command {
 			});
 		}
 
-		await this.#deleteSubscription(streamerWithStatusHasChannel);
-		await this.#removeSubscription(streamerWithStatusHasChannel.subscriptionId);
+		try {
+			await this.#deleteSubscription(streamerWithStatusHasChannel);
+			await this.#removeSubscription(
+				streamerWithStatusHasChannel.subscriptionId,
+			);
+		} catch {
+			return interaction.reply({
+				content:
+					"An error occurred while trying to remove the subscription. Please try again later.",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
 		const content = cast<string>(
 			await resolveKey(
@@ -299,21 +317,13 @@ export class UserCommand extends Command {
 		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
 	}
 
-	private async getGuildSubscriptions(guildId: bigint) {
-		const guildSubscriptionForGuildResult = await Result.fromAsync(() =>
+	private getGuildSubscriptions(guildId: bigint) {
+		return Result.fromAsync(() =>
 			this.container.prisma.guildSubscription.findMany({
 				where: { guildId },
 				include: { twitchSubscription: true },
 			}),
 		);
-		const guildSubscriptionForGuild =
-			guildSubscriptionForGuildResult.unwrapOrElse(() => {
-				throw new Error(
-					LanguageKeys.Commands.Twitch.TwitchSubscriptionNoSubscriptions,
-				);
-			});
-
-		return guildSubscriptionForGuild;
 	}
 
 	private getSubscriptionStatus(subscription: TwitchSubscriptionType) {
