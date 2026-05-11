@@ -14,6 +14,7 @@ import {
 } from "@skyra/http-framework";
 import {
 	applyDescriptionLocalizedBuilder,
+	applyLocalizedBuilder,
 	resolveKey,
 } from "@skyra/http-framework-i18n";
 import {
