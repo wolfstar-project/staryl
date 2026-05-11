@@ -66,3 +66,33 @@ export const TwitchSubscriptionShowStatus = T<{
 export const TwitchSubscriptionShowUnknownUser = T(
 	"commands/twitch:twitchSubscriptionShowUnknownUser",
 );
+export const TwitchSubscriptionOptionsStreamerName = T(
+	"commands/twitch:twitchSubscriptionOptionsStreamerName",
+);
+export const TwitchSubscriptionOptionsStreamerDescription = T(
+	"commands/twitch:twitchSubscriptionOptionsStreamerDescription",
+);
+export const TwitchSubscriptionOptionsChannelName = T(
+	"commands/twitch:twitchSubscriptionOptionsChannelName",
+);
+export const TwitchSubscriptionOptionsChannelDescription = T(
+	"commands/twitch:twitchSubscriptionOptionsChannelDescription",
+);
+export const TwitchSubscriptionOptionsTypeName = T(
+	"commands/twitch:twitchSubscriptionOptionsTypeName",
+);
+export const TwitchSubscriptionOptionsTypeDescription = T(
+	"commands/twitch:twitchSubscriptionOptionsTypeDescription",
+);
+export const TwitchSubscriptionOptionsMessageName = T(
+	"commands/twitch:twitchSubscriptionOptionsMessageName",
+);
+export const TwitchSubscriptionOptionsMessageDescription = T(
+	"commands/twitch:twitchSubscriptionOptionsMessageDescription",
+);
+export const TwitchSubscriptionOptionsTypeChoiceOnline = T(
+	"commands/twitch:twitchSubscriptionOptionsTypeChoiceOnline",
+);
+export const TwitchSubscriptionOptionsTypeChoiceOffline = T(
+	"commands/twitch:twitchSubscriptionOptionsTypeChoiceOffline",
+);
