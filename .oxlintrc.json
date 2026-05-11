@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
-	"plugins": ["unicorn", "typescript", "oxc", "node", "import", "vitest"],
+	"plugins": ["unicorn", "typescript", "oxc", "node", "import"],
 	"jsPlugins": [
 		"@eslint-community/eslint-plugin-eslint-comments",
 		"eslint-plugin-regexp"
@@ -198,7 +198,7 @@
 		"regexp/strict": "error",
 		"regexp/use-ignore-case": "error"
 	},
-	"ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", ".vscode/**"],
+	"ignorePatterns": ["dist/**", "node_modules/**", ".vscode/**"],
 	"overrides": [
 		{
 			"files": ["**/*.?([cm])ts", "**/*.?([cm])tsx"],
@@ -244,20 +244,6 @@
 				"@typescript-eslint/no-require-imports": "error",
 				"@typescript-eslint/prefer-as-const": "error",
 				"@typescript-eslint/triple-slash-reference": "off"
-			}
-		},
-		{
-			"files": [
-				"**/__tests__/**/*.?([cm])[jt]s?(x)",
-				"**/*.spec.?([cm])[jt]s?(x)",
-				"**/*.test.?([cm])[jt]s?(x)",
-				"**/*.bench.?([cm])[jt]s?(x)",
-				"**/*.benchmark.?([cm])[jt]s?(x)"
-			],
-			"plugins": ["vitest", "typescript"],
-			"rules": {
-				"vitest/no-import-node-test": "error",
-				"no-unused-expressions": "off"
 			}
 		},
 		{
