@@ -8,5 +8,6 @@
 	"genericDiscordInternalServerError": "Oops, Discord broke itself, please try again later.",
 	"genericDiscordGateway": "Oops, the network is struggling to communicate with Discord, please try again later.",
 	"genericDiscordUnavailable": "Oops, Discord is currently unavailable, please try again later.",
-	"unexpectedIssue": "An unexpected error popped up! Safely aborting this command..."
+	"unexpectedIssue": "An unexpected error popped up! Safely aborting this command...",
+	"discordAbortError": "The request was aborted. Please try again later."
 }

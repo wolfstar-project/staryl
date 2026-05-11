@@ -1,8 +1,9 @@
-import type { Result } from "@sapphire/framework";
+import type { Result } from "@sapphire/result";
 import type { Awaitable } from "@sapphire/utilities";
 import type { RESTJSONErrorCodes } from "discord-api-types/v10";
-import { container, err, ok } from "@sapphire/framework";
+import { err, ok } from "@sapphire/result";
 import { isThenable } from "@sapphire/utilities";
+import { container } from "@skyra/http-framework";
 import { DiscordAPIError } from "discord-api-types/v10";
 
 export async function resolveOnErrorCodes<T>(

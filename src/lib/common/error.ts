@@ -41,7 +41,7 @@ const isSuppressedError =
 
 function stringifyErrorException(t: TFunction, error: Error): string {
 	if (error.name === "AbortError")
-		return t(LanguageKeys.System.DiscordAbortError);
+		return t(LanguageKeys.Errors.DiscordAbortError);
 	if (error instanceof DiscordAPIError)
 		return stringifyDiscordAPIError(t, error);
 	if (error instanceof HTTPError) return stringifyHTTPError(t, error);

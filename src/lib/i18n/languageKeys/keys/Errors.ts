@@ -12,3 +12,4 @@ export const GenericDiscordInternalServerError = T(
 export const GenericDiscordGateway = T("errors:genericDiscordGateway");
 export const GenericDiscordUnavailable = T("errors:genericDiscordUnavailable");
 export const UnexpectedIssue = T("errors:unexpectedIssue");
+export const DiscordAbortError = T("errors:discordAbortError");
