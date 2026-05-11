@@ -1,10 +1,10 @@
 import type { Result } from "@sapphire/result";
 import type { Awaitable } from "@sapphire/utilities";
 import type { RESTJSONErrorCodes } from "discord-api-types/v10";
+import { DiscordAPIError } from "@discordjs/rest";
 import { err, ok } from "@sapphire/result";
 import { isThenable } from "@sapphire/utilities";
 import { container } from "@skyra/http-framework";
-import { DiscordAPIError } from "discord-api-types/v10";
 
 export async function resolveOnErrorCodes<T>(
 	promise: Promise<T>,
