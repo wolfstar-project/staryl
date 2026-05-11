@@ -12,7 +12,10 @@ import {
 	RegisterCommand,
 	RegisterSubcommand,
 } from "@skyra/http-framework";
-import { resolveKey } from "@skyra/http-framework-i18n";
+import {
+	applyDescriptionLocalizedBuilder,
+	resolveKey,
+} from "@skyra/http-framework-i18n";
 import {
 	addEventSubscription,
 	fetchUsers,
@@ -21,18 +24,17 @@ import {
 import { MessageFlags, PermissionFlagsBits } from "discord-api-types/v10";
 
 @RegisterCommand((builder) =>
-	builder
-		.setName("twitch-subscription")
-		.setDescription(LanguageKeys.Commands.Twitch.TwitchSubscriptionDescription)
-		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+	applyDescriptionLocalizedBuilder(
+		builder.setName("twitch-subscription"),
+		LanguageKeys.Commands.Twitch.TwitchSubscriptionDescription,
+	).setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 )
 export class UserCommand extends Command {
 	@RegisterSubcommand((builder) =>
-		builder
-			.setName("add")
-			.setDescription(
-				LanguageKeys.Commands.Twitch.TwitchSubscriptionAddDescription,
-			)
+		applyDescriptionLocalizedBuilder(
+			builder.setName("add"),
+			LanguageKeys.Commands.Twitch.TwitchSubscriptionAddDescription,
+		)
 			.addStringOption((option) =>
 				option
 					.setName("streamer")
@@ -174,11 +176,10 @@ export class UserCommand extends Command {
 	}
 
 	@RegisterSubcommand((builder) =>
-		builder
-			.setName("remove")
-			.setDescription(
-				LanguageKeys.Commands.Twitch.TwitchSubscriptionRemoveDescription,
-			)
+		applyDescriptionLocalizedBuilder(
+			builder.setName("remove"),
+			LanguageKeys.Commands.Twitch.TwitchSubscriptionRemoveDescription,
+		)
 			.addStringOption((option) =>
 				option
 					.setName("streamer")
