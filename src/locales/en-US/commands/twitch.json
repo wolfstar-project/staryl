@@ -22,5 +22,15 @@
 	"twitchSubscriptionShowUnknownUser": "Unknown",
 	"twitchSubscriptionDescription": "Manage the subscriptions for your server.",
 	"twitchSubscriptionAddDescription": "Add a new Twitch subscription for a streamer.",
-	"twitchSubscriptionRemoveDescription": "Remove a Twitch subscription for a streamer."
+	"twitchSubscriptionRemoveDescription": "Remove a Twitch subscription for a streamer.",
+	"twitchSubscriptionOptionsStreamerName": "streamer",
+	"twitchSubscriptionOptionsStreamerDescription": "The Twitch streamer to subscribe to.",
+	"twitchSubscriptionOptionsChannelName": "channel",
+	"twitchSubscriptionOptionsChannelDescription": "The Discord channel to post notifications in.",
+	"twitchSubscriptionOptionsTypeName": "type",
+	"twitchSubscriptionOptionsTypeDescription": "Whether to notify when the streamer goes live or offline.",
+	"twitchSubscriptionOptionsMessageName": "message",
+	"twitchSubscriptionOptionsMessageDescription": "Custom message to include in the notification.",
+	"twitchSubscriptionOptionsTypeChoiceOnline": "Stream Online",
+	"twitchSubscriptionOptionsTypeChoiceOffline": "Stream Offline"
 }

@@ -14,6 +14,8 @@ import {
 } from "@skyra/http-framework";
 import {
 	applyDescriptionLocalizedBuilder,
+	applyLocalizedBuilder,
+	createSelectMenuChoiceName,
 	resolveKey,
 } from "@skyra/http-framework-i18n";
 import {
@@ -36,32 +38,48 @@ export class UserCommand extends Command {
 			LanguageKeys.Commands.Twitch.TwitchSubscriptionAddDescription,
 		)
 			.addStringOption((option) =>
-				option
-					.setName("streamer")
-					.setDescription("The Twitch streamer")
-					.setRequired(true),
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsStreamerName,
+					LanguageKeys.Commands.Twitch
+						.TwitchSubscriptionOptionsStreamerDescription,
+				).setRequired(true),
 			)
 			.addChannelOption((option) =>
-				option
-					.setName("channel")
-					.setDescription("The Discord channel")
-					.setRequired(true),
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsChannelName,
+					LanguageKeys.Commands.Twitch
+						.TwitchSubscriptionOptionsChannelDescription,
+				).setRequired(true),
 			)
 			.addStringOption((option) =>
-				option
-					.setName("type")
-					.setDescription("Subscription type")
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsTypeName,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsTypeDescription,
+				)
 					.setRequired(true)
 					.addChoices(
-						{ name: "Stream Online", value: "StreamOnline" },
-						{ name: "Stream Offline", value: "StreamOffline" },
+						createSelectMenuChoiceName(
+							LanguageKeys.Commands.Twitch
+								.TwitchSubscriptionOptionsTypeChoiceOnline,
+							{ value: "StreamOnline" },
+						),
+						createSelectMenuChoiceName(
+							LanguageKeys.Commands.Twitch
+								.TwitchSubscriptionOptionsTypeChoiceOffline,
+							{ value: "StreamOffline" },
+						),
 					),
 			)
 			.addStringOption((option) =>
-				option
-					.setName("message")
-					.setDescription("Custom message")
-					.setRequired(false),
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsMessageName,
+					LanguageKeys.Commands.Twitch
+						.TwitchSubscriptionOptionsMessageDescription,
+				).setRequired(false),
 			),
 	)
 	public async add(
@@ -181,25 +199,39 @@ export class UserCommand extends Command {
 			LanguageKeys.Commands.Twitch.TwitchSubscriptionRemoveDescription,
 		)
 			.addStringOption((option) =>
-				option
-					.setName("streamer")
-					.setDescription("The Twitch streamer")
-					.setRequired(true),
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsStreamerName,
+					LanguageKeys.Commands.Twitch
+						.TwitchSubscriptionOptionsStreamerDescription,
+				).setRequired(true),
 			)
 			.addChannelOption((option) =>
-				option
-					.setName("channel")
-					.setDescription("The Discord channel")
-					.setRequired(true),
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsChannelName,
+					LanguageKeys.Commands.Twitch
+						.TwitchSubscriptionOptionsChannelDescription,
+				).setRequired(true),
 			)
 			.addStringOption((option) =>
-				option
-					.setName("type")
-					.setDescription("Subscription type")
+				applyLocalizedBuilder(
+					option,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsTypeName,
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsTypeDescription,
+				)
 					.setRequired(true)
 					.addChoices(
-						{ name: "Stream Online", value: "StreamOnline" },
-						{ name: "Stream Offline", value: "StreamOffline" },
+						createSelectMenuChoiceName(
+							LanguageKeys.Commands.Twitch
+								.TwitchSubscriptionOptionsTypeChoiceOnline,
+							{ value: "StreamOnline" },
+						),
+						createSelectMenuChoiceName(
+							LanguageKeys.Commands.Twitch
+								.TwitchSubscriptionOptionsTypeChoiceOffline,
+							{ value: "StreamOffline" },
+						),
 					),
 			),
 	)
