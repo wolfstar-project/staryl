@@ -39,25 +39,39 @@ const isTunnelEnabled =
 	process.env["TUNNEL"] === "1" ||
 	process.env["TUNNEL"] === "true";
 
+function parsePort(value: string | undefined, fallback: number): number {
+	if (value === undefined) return fallback;
+	const parsed = Number(value);
+	if (!Number.isFinite(parsed) || parsed <= 0) {
+		console.error(`[dev-tunnel] Invalid HTTP_PORT "${value}", falling back to ${String(fallback)}`);
+		return fallback;
+	}
+	return parsed;
+}
+
 function startDevTunnel(): Rolldown.RolldownPluginOption {
 	let started = false;
 	return {
 		name: "dev-tunnel",
 		async buildEnd() {
 			if (!isTunnelEnabled || started) return;
-			started = true;
-			const port = Number(process.env["HTTP_PORT"] ?? 3000);
-			const tunnel = await startTunnel({ port, acceptCloudflareNotice: true });
-			if (!tunnel) {
-				console.error("[dev-tunnel] Failed to start tunnel");
-				return;
+			const port = parsePort(process.env["HTTP_PORT"], 3000);
+			try {
+				const tunnel = await startTunnel({ port, acceptCloudflareNotice: true });
+				if (!tunnel) {
+					console.error("[dev-tunnel] Failed to start tunnel");
+					return;
+				}
+				const url = await tunnel.getURL();
+				if (!url) {
+					console.error("[dev-tunnel] Tunnel started but URL was not assigned");
+					return;
+				}
+				console.log(`✓ Tunnel ready at ${url}`);
+				started = true;
+			} catch (error) {
+				console.error("[dev-tunnel] Tunnel startup failed:", error);
 			}
-			const url = await tunnel.getURL();
-			if (!url) {
-				console.error("[dev-tunnel] Tunnel started but URL was not assigned");
-				return;
-			}
-			console.log(`✓ Tunnel ready at ${url}`);
 		},
 	};
 }
