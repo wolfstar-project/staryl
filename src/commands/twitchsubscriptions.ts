@@ -23,6 +23,7 @@ import {
 	fetchUsers,
 	TwitchEventSubTypes,
 } from "@skyra/twitch-helpers";
+import { ChannelType } from "discord-api-types/v10";
 import { MessageFlags, PermissionFlagsBits } from "discord-api-types/v10";
 
 @RegisterCommand((builder) =>
@@ -51,7 +52,9 @@ export class UserCommand extends Command {
 					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsChannelName,
 					LanguageKeys.Commands.Twitch
 						.TwitchSubscriptionOptionsChannelDescription,
-				).setRequired(true),
+				)
+					.addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+					.setRequired(true),
 			)
 			.addStringOption((option) =>
 				applyLocalizedBuilder(
@@ -212,7 +215,9 @@ export class UserCommand extends Command {
 					LanguageKeys.Commands.Twitch.TwitchSubscriptionOptionsChannelName,
 					LanguageKeys.Commands.Twitch
 						.TwitchSubscriptionOptionsChannelDescription,
-				).setRequired(true),
+				)
+					.addChannelTypes()
+					.setRequired(true),
 			)
 			.addStringOption((option) =>
 				applyLocalizedBuilder(
