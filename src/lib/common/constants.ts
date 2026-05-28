@@ -1,6 +1,7 @@
 export const PathRoot = new URL("../../..", import.meta.url);
 export const PathSrc = new URL("./src/", PathRoot);
 
+/* oxlint-disable unicorn/number-literal-case -- preserve existing lowercase hex style in this constants list */
 export enum BrandingColors {
 	Primary = 0xffffff,
 	Secondary = 0x0000,
