@@ -12,3 +12,6 @@ dedupePeers: true
 shellEmulator: true
 
 minimumReleaseAge: 2880
+
+minimumReleaseAgeExclude:
+  - "@eslint-community/eslint-plugin-eslint-comments@4.7.2"
