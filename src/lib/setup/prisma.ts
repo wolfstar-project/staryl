@@ -8,14 +8,14 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 container.prisma = prisma;
 
-declare module "@sapphire/pieces" {
-	interface Container {
-		prisma: typeof prisma;
-	}
-}
-
 export type {
 	GuildSubscription,
 	TwitchSubscription,
 	TwitchSubscriptionType,
 } from "#generated/prisma";
+
+declare module "@sapphire/pieces" {
+	interface Container {
+		prisma: PrismaClient;
+	}
+}
