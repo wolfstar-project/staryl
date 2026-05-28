@@ -1,20 +1,17 @@
 // oxlint-disable no-underscore-dangle
 import type { Rolldown } from "tsdown";
 import { existsSync, mkdirSync, cpSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import alias from "@rollup/plugin-alias";
 import { defineConfig } from "tsdown";
 import { startTunnel } from "untun";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 function resolveSource(base: string, subPath: string): string {
-	if (subPath.endsWith(".ts")) return resolve(__dirname, base, subPath);
-	const direct = resolve(__dirname, base, `${subPath}.ts`);
+	if (subPath.endsWith(".ts"))
+		return resolve(import.meta.dirname, base, subPath);
+	const direct = resolve(import.meta.dirname, base, `${subPath}.ts`);
 	if (existsSync(direct)) return direct;
-	return resolve(__dirname, base, subPath, "index.ts");
+	return resolve(import.meta.dirname, base, subPath, "index.ts");
 }
 
 // Plugin to copy locales from src to dist
@@ -22,8 +19,8 @@ function copyPlugin(): Rolldown.RolldownPluginOption {
 	return {
 		name: "copy-mjs-files",
 		buildEnd() {
-			const srcDir = resolve(__dirname, "src/locales");
-			const distLocalesDir = resolve(__dirname, "dist/locales");
+			const srcDir = resolve(import.meta.dirname, "src/locales");
+			const distLocalesDir = resolve(import.meta.dirname, "dist/locales");
 
 			if (existsSync(srcDir)) {
 				mkdirSync(distLocalesDir, { recursive: true });
@@ -97,14 +94,17 @@ export default defineConfig({
 				},
 				{
 					find: "#generated/prisma",
-					replacement: resolve(__dirname, "src/generated/prisma/client.ts"),
+					replacement: resolve(
+						import.meta.dirname,
+						"src/generated/prisma/client.ts",
+					),
 				},
 				{
 					find: "#i18n",
 					replacement: "#i18n",
 					customResolver(source) {
 						if (source === "#i18n")
-							return resolve(__dirname, "src/lib/i18n/index.ts");
+							return resolve(import.meta.dirname, "src/lib/i18n/index.ts");
 						const subPath = source.replace("#i18n/", "");
 						return resolveSource("src/lib/i18n", subPath);
 					},
@@ -138,7 +138,7 @@ export default defineConfig({
 		copyPlugin(),
 		...(isTunnelEnabled ? [startDevTunnel()] : []),
 	],
-	dts: false,
+	dts: true,
 	unbundle: true,
 	sourcemap: true,
 	minify: false,
