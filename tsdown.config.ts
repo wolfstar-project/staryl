@@ -46,7 +46,7 @@ function startDevTunnel(): Rolldown.RolldownPluginOption {
 		async buildEnd() {
 			if (!isTunnelEnabled || started) return;
 			started = true;
-			const port = Number(process.env["API_PORT"] ?? 3001);
+			const port = Number(process.env["HTTP_PORT"] ?? 3000);
 			const tunnel = await startTunnel({ port, acceptCloudflareNotice: true });
 			if (!tunnel) {
 				console.error("[dev-tunnel] Failed to start tunnel");
