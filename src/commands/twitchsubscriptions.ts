@@ -216,7 +216,7 @@ export class UserCommand extends Command {
 					LanguageKeys.Commands.Twitch
 						.TwitchSubscriptionOptionsChannelDescription,
 				)
-					.addChannelTypes()
+					.addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
 					.setRequired(true),
 			)
 			.addStringOption((option) =>
@@ -323,7 +323,7 @@ export class UserCommand extends Command {
 						interaction,
 						LanguageKeys.Commands.Twitch
 							.TwitchSubscriptionRemoveNotToProvidedChannel,
-						{ channel },
+						{ channel: channelMention(channel.id) },
 					),
 				),
 				flags: MessageFlags.Ephemeral,
