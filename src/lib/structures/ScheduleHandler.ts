@@ -3,40 +3,40 @@ import type { Awaitable } from "@sapphire/utilities";
 import { Piece } from "@skyra/http-framework";
 
 export abstract class ScheduleHandler<
-  T extends BaseScheduler.Value = BaseScheduler.Value,
+	T extends BaseScheduler.Value = BaseScheduler.Value,
 > extends Piece {
-  public abstract run(
-    data: BaseScheduler.AddId<T>,
-  ): Awaitable<ScheduleHandler.Result>;
+	public abstract run(
+		data: BaseScheduler.AddId<T>,
+	): Awaitable<ScheduleHandler.Result>;
 
-  /**
-   * #param ms The duration in milliseconds.
-   */
-  protected delay(ms: number): ScheduleHandler.Reschedule {
-    return { type: ScheduleHandler.Type.Reschedule, value: Date.now() + ms };
-  }
+	/**
+	 * #param ms The duration in milliseconds.
+	 */
+	protected delay(ms: number): ScheduleHandler.Reschedule {
+		return { type: ScheduleHandler.Type.Reschedule, value: Date.now() + ms };
+	}
 
-  protected finish(): ScheduleHandler.Finish {
-    return { type: ScheduleHandler.Type.Finish };
-  }
+	protected finish(): ScheduleHandler.Finish {
+		return { type: ScheduleHandler.Type.Finish };
+	}
 }
 
 // oxlint-disable-next-line typescript/no-namespace
 export namespace ScheduleHandler {
-  // oxlint-disable-next-line no-restricted-syntax
-  export const enum Type {
-    Reschedule,
-    Finish,
-  }
+	// oxlint-disable-next-line no-restricted-syntax
+	export const enum Type {
+		Reschedule,
+		Finish,
+	}
 
-  export type Result = Finish | Reschedule;
+	export type Result = Finish | Reschedule;
 
-  export interface Finish {
-    type: Type.Finish;
-  }
+	export interface Finish {
+		type: Type.Finish;
+	}
 
-  export interface Reschedule {
-    type: Type.Reschedule;
-    value: number;
-  }
+	export interface Reschedule {
+		type: Type.Reschedule;
+		value: number;
+	}
 }

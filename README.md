@@ -12,8 +12,6 @@ Network.<br/>
 
 <!-- SHIELD GROUP -->
 
-[![][github-release-shield]][github-release-link]
-[![][github-releasedate-shield]][github-releasedate-link]<br/>
 [![][discord-shield]][discord-link]
 [![][github-contributors-shield]][github-contributors-link]<br/>
 [![][github-forks-shield]][github-forks-link]
@@ -229,12 +227,6 @@ Copyright © 2024 [WolfStar][profile-link]. <br /> This project is
   https://github.com/wolfstar-project/staryl/blob/main/LICENSE
 [github-license-shield]:
   https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square
-[github-release-link]: https://github.com/wolfstar-project/staryl/releases
-[github-release-shield]:
-  https://img.shields.io/github/v/release/wolfstar-project/staryl?color=369eff&labelColor=black&logo=github&style=flat-square
-[github-releasedate-link]: https://github.com/wolfstar-project/staryl/releases
-[github-releasedate-shield]:
-  https://img.shields.io/github/release-date/wolfstar-project/staryl?labelColor=black&style=flat-square
 [github-stars-link]:
   https://github.com/wolfstar-project/staryl/network/stargazers
 [github-stars-shield]:

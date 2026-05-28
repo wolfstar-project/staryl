@@ -1,13 +1,12 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.23
 
 # ================ #
-#    Base Stage    #
+#   Base Stage     #
 # ================ #
 
 FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
-ARG NODE_OPTIONS
 
 ENV CI="true"
 ENV PNPM_HOME="/pnpm"
@@ -16,17 +15,20 @@ ENV LOG_LEVEL=info
 ENV FORCE_COLOR=true
 
 RUN apk add --no-cache dumb-init g++ make python3
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable
 
 COPY --chown=node:node pnpm-lock.yaml .
 COPY --chown=node:node pnpm-workspace.yaml .
 COPY --chown=node:node package.json .
 COPY --chown=node:node .npmrc .
 
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm fetch --frozen-lockfile
+
 ENTRYPOINT ["dumb-init", "--"]
 
 # ================ #
-#  Builder Stage   #
+#   Builder Stage  #
 # ================ #
 
 FROM base AS builder
@@ -39,9 +41,10 @@ COPY --chown=node:node src/ src/
 COPY --chown=node:node tsconfig.base.json tsconfig.base.json
 COPY --chown=node:node tsdown.config.ts tsdown.config.ts
 
-RUN pnpm install --frozen-lockfile \
-	&& pnpm run prisma:generate \
-	&& pnpm run build
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile \
+    && pnpm run prisma:generate \
+    && pnpm run build
 
 # ================ #
 #   Runner Stage   #
@@ -50,15 +53,15 @@ RUN pnpm install --frozen-lockfile \
 FROM base AS runner
 
 ENV NODE_ENV="production"
-ENV NODE_OPTIONS="--enable-source-maps"
+ENV NODE_OPTIONS="--enable-source-maps --max_old_space_size=4096"
+
+WORKDIR /usr/src/app
 
 COPY --chown=node:node --from=builder /usr/src/app/dist dist
-COPY --chown=node:node --from=builder /usr/src/app/generated generated
-COPY --chown=node:node --from=builder /usr/src/app/src/locales src/locales
-COPY --chown=node:node --from=builder /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /usr/src/app/src/.env src/.env
 
-RUN pnpm install --prod --frozen-lockfile --offline
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --prod --frozen-lockfile
 
 USER node
 

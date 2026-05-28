@@ -181,11 +181,11 @@ Twitch EventSub signatures and validate request bodies:
 
 ```typescript
 container.server.route({
-  url: "/twitch/endpoint",
-  method: "POST",
-  handler: async (request, reply) => {
-    // Verify signature, validate body, handle event
-  },
+	url: "/twitch/endpoint",
+	method: "POST",
+	handler: async (request, reply) => {
+		// Verify signature, validate body, handle event
+	},
 });
 ```
 

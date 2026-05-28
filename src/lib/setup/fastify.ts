@@ -6,7 +6,7 @@ const server = fastify();
 container.server = server;
 
 declare module "@sapphire/pieces" {
-  interface Container {
-    server: typeof server;
-  }
+	interface Container {
+		server: typeof server;
+	}
 }

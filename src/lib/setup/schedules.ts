@@ -4,7 +4,7 @@ import { container } from "@skyra/http-framework";
 container.stores.register(new ScheduleHandlerStore());
 
 declare module "@sapphire/pieces" {
-  interface StoreRegistryEntries {
-    "schedule-handlers": ScheduleHandlerStore;
-  }
+	interface StoreRegistryEntries {
+		"schedule-handlers": ScheduleHandlerStore;
+	}
 }

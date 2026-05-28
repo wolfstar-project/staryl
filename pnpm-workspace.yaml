@@ -1,7 +1,14 @@
 overrides:
   ansi-regex: ^6.2.2
-  discord-api-types: ^0.38.44
   minimist: ^1.2.8
-onlyBuiltDependencies:
-  - "@prisma/client"
-  - prisma
+
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+
+dedupePeers: true
+
+shellEmulator: true
+
+minimumReleaseAge: 2880
