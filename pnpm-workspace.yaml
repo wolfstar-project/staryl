@@ -4,7 +4,7 @@ overrides:
 
 allowBuilds:
   "@prisma/client": true
-  '@prisma/engines': true
+  "@prisma/engines": true
   prisma: true
 
 dedupePeers: true
