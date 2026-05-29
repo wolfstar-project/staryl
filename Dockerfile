@@ -20,7 +20,6 @@ RUN corepack enable
 COPY --chown=node:node pnpm-lock.yaml .
 COPY --chown=node:node pnpm-workspace.yaml .
 COPY --chown=node:node package.json .
-COPY --chown=node:node .npmrc .
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm fetch --frozen-lockfile
