@@ -1,7 +1,24 @@
 overrides:
   ansi-regex: ^6.2.2
-  discord-api-types: ^0.38.25
   minimist: ^1.2.8
-onlyBuiltDependencies:
-  - "@prisma/client"
-  - prisma
+
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+
+dedupePeers: true
+
+shellEmulator: true
+
+minimumReleaseAge: 2880
+
+minimumReleaseAgeExclude:
+  - "@eslint-community/eslint-plugin-eslint-comments@4.7.2"
+
+shamefullyHoist: true
+
+hoistPattern:
+  - "*prisma*"
+
+ignoreWorkspaceRootCheck: true
