@@ -89,15 +89,14 @@ export class UserCommand extends Command {
 		interaction: Command.ChatInputInteraction,
 		options: Options,
 	) {
-		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
-
 		const streamer = await this.#getStreamer(options.streamer);
 		if (!streamer) {
-			return deferred.update({
+			return interaction.reply({
 				content: await resolveKey(
 					interaction,
 					LanguageKeys.Commands.Twitch.TwitchSubscriptionStreamerNotFound,
 				),
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -109,12 +108,13 @@ export class UserCommand extends Command {
 			subscriptionType === "StreamOffline" &&
 			isNullishOrEmpty(customMessage)
 		) {
-			return deferred.update({
+			return interaction.reply({
 				content: await resolveKey(
 					interaction,
 					LanguageKeys.Commands.Twitch
 						.TwitchSubscriptionAddMessageForOfflineRequired,
 				),
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -141,11 +141,12 @@ export class UserCommand extends Command {
 			);
 
 			if (alreadyHasEntry) {
-				return deferred.update({
+				return interaction.reply({
 					content: await resolveKey(
 						interaction,
 						LanguageKeys.Commands.Twitch.TwitchSubscriptionAddDuplicated,
 					),
+					flags: MessageFlags.Ephemeral,
 				});
 			}
 
@@ -185,11 +186,12 @@ export class UserCommand extends Command {
 				),
 			);
 
-			return deferred.update({ content });
+			return interaction.reply({ content, flags: MessageFlags.Ephemeral });
 		} catch {
-			return deferred.update({
+			return interaction.reply({
 				content:
 					"An error occurred while trying to add the subscription. Please try again later.",
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 	}
@@ -242,15 +244,14 @@ export class UserCommand extends Command {
 		interaction: Command.ChatInputInteraction,
 		options: Options,
 	) {
-		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
-
 		const streamer = await this.#getStreamer(options.streamer);
 		if (!streamer) {
-			return deferred.update({
+			return interaction.reply({
 				content: await resolveKey(
 					interaction,
 					LanguageKeys.Commands.Twitch.TwitchSubscriptionStreamerNotFound,
 				),
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -261,9 +262,10 @@ export class UserCommand extends Command {
 			BigInt(interaction.guildId!),
 		);
 		if (guildSubscriptionsResult.isErr()) {
-			return deferred.update({
+			return interaction.reply({
 				content:
 					"An error occurred while trying to remove the subscription. Please try again later.",
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 		const guildSubscriptions = guildSubscriptionsResult.unwrap();
@@ -273,7 +275,7 @@ export class UserCommand extends Command {
 		);
 
 		if (!streamers.length) {
-			return deferred.update({
+			return interaction.reply({
 				content: cast<string>(
 					await resolveKey(
 						interaction,
@@ -284,6 +286,7 @@ export class UserCommand extends Command {
 						},
 					),
 				),
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -293,7 +296,7 @@ export class UserCommand extends Command {
 		);
 
 		if (!statuses.length) {
-			return deferred.update({
+			return interaction.reply({
 				content: cast<string>(
 					await resolveKey(
 						interaction,
@@ -305,6 +308,7 @@ export class UserCommand extends Command {
 						},
 					),
 				),
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -313,7 +317,7 @@ export class UserCommand extends Command {
 		);
 
 		if (!streamerWithStatusHasChannel) {
-			return deferred.update({
+			return interaction.reply({
 				content: cast<string>(
 					await resolveKey(
 						interaction,
@@ -322,6 +326,7 @@ export class UserCommand extends Command {
 						{ channel: channelMention(channel.id) },
 					),
 				),
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -331,9 +336,10 @@ export class UserCommand extends Command {
 				streamerWithStatusHasChannel.subscriptionId,
 			);
 		} catch {
-			return deferred.update({
+			return interaction.reply({
 				content:
 					"An error occurred while trying to remove the subscription. Please try again later.",
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -346,7 +352,7 @@ export class UserCommand extends Command {
 				{ name: streamer.display_name, channel: channelMention(channel.id) },
 			),
 		);
-		return deferred.update({ content });
+		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
 	}
 
 	private getGuildSubscriptions(guildId: bigint) {
