@@ -23,14 +23,21 @@ import {
 	fetchUsers,
 	TwitchEventSubTypes,
 } from "@skyra/twitch-helpers";
-import { ChannelType } from "discord-api-types/v10";
+import {
+	ApplicationIntegrationType,
+	ChannelType,
+	InteractionContextType,
+} from "discord-api-types/v10";
 import { MessageFlags, PermissionFlagsBits } from "discord-api-types/v10";
 
 @RegisterCommand((builder) =>
 	applyDescriptionLocalizedBuilder(
 		builder.setName("twitch-subscription"),
 		LanguageKeys.Commands.Twitch.TwitchSubscriptionDescription,
-	).setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+	)
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+		.setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
+		.setContexts(InteractionContextType.Guild),
 )
 export class UserCommand extends Command {
 	@RegisterSubcommand((builder) =>
