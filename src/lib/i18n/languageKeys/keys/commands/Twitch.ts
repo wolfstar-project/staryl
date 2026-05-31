@@ -8,6 +8,10 @@ export const AddDescription = T("commands/twitch:addDescription");
 
 export const RemoveName = T("commands/twitch:removeName");
 export const RemoveDescription = T("commands/twitch:removeDescription");
+export const ResetName = T("commands/twitch:resetName");
+export const ResetDescription = T("commands/twitch:resetDescription");
+export const ShowName = T("commands/twitch:showName");
+export const ShowDescription = T("commands/twitch:showDescription");
 export const OptionsStreamerName = T("commands/twitch:optionsStreamerName");
 export const OptionsStreamerDescription = T(
 	"commands/twitch:optionsStreamerDescription",
@@ -70,3 +74,4 @@ export const ShowStatus = T<{ live: string; offline: string }>(
 	"commands/twitch:showStatus",
 );
 export const ShowUnknownUser = T("commands/twitch:showUnknownUser");
+export const ShowEmbedTitle = T("commands/twitch:showEmbedTitle");

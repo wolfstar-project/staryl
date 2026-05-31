@@ -5,6 +5,10 @@
 	"addDescription": "Add a new Twitch subscription for a streamer.",
 	"removeName": "remove",
 	"removeDescription": "Remove a Twitch subscription for a streamer.",
+	"resetName": "reset",
+	"resetDescription": "Remove all Twitch subscriptions from this server.",
+	"showName": "show",
+	"showDescription": "Show all Twitch subscriptions for this server.",
 	"optionsStreamerName": "streamer",
 	"optionsStreamerDescription": "The Twitch streamer to subscribe to.",
 	"optionsChannelName": "channel",
@@ -35,5 +39,6 @@
 		"live": "Live",
 		"offline": "Offline"
 	},
-	"showUnknownUser": "Unknown"
+	"showUnknownUser": "Unknown",
+	"showEmbedTitle": "Twitch Subscriptions"
 }

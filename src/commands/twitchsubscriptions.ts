@@ -1,14 +1,16 @@
 import type { GuildSubscription } from "#lib/setup/prisma";
+import type { TwitchHelixResponse } from "@skyra/twitch-helpers";
 import type { APIChannel } from "discord-api-types/v10";
+import { TwitchSubscriptionType } from "#generated/prisma";
 import { LanguageKeys } from "#i18n";
-import { TwitchSubscriptionType } from "#lib/setup/prisma";
 import {
+	EmbedBuilder,
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
 } from "@discordjs/builders";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
-import { cast, isNullishOrEmpty } from "@sapphire/utilities";
+import { cast, isNullish, isNullishOrEmpty } from "@sapphire/utilities";
 import {
 	Command,
 	RegisterCommand,
@@ -22,14 +24,17 @@ import {
 import {
 	addEventSubscription,
 	fetchUsers,
+	getRequest,
+	removeEventSubscription,
 	TwitchEventSubTypes,
 } from "@skyra/twitch-helpers";
 import {
 	ApplicationIntegrationType,
 	ChannelType,
 	InteractionContextType,
+	MessageFlags,
+	PermissionFlagsBits,
 } from "discord-api-types/v10";
-import { MessageFlags, PermissionFlagsBits } from "discord-api-types/v10";
 
 const Root = LanguageKeys.Commands.Twitch;
 
@@ -42,13 +47,7 @@ const Root = LanguageKeys.Commands.Twitch;
 export class UserCommand extends Command {
 	@RegisterSubcommand((builder) =>
 		applyLocalizedBuilder(builder, Root.AddName, Root.AddDescription)
-			.addStringOption((option) =>
-				applyLocalizedBuilder(
-					option,
-					Root.OptionsStreamerName,
-					Root.OptionsStreamerDescription,
-				).setRequired(true),
-			)
+			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption(createTypeChoiceOption().setRequired(true))
 			.addStringOption((option) =>
@@ -99,13 +98,13 @@ export class UserCommand extends Command {
 					guildId: BigInt(interaction.guildId!),
 					channelId: BigInt(channel.id),
 				},
-				include: { twitchSubscription: true },
+				include: { subscription: true },
 			});
 
 		const alreadyHasEntry = guildSubscriptionsForGuild.some(
 			(guildSubscription) =>
-				guildSubscription.twitchSubscription.streamerId === streamer.id &&
-				guildSubscription.twitchSubscription.subscriptionType === type,
+				guildSubscription.subscription.streamerId === streamer.id &&
+				guildSubscription.subscription.subscriptionType === type,
 		);
 
 		if (alreadyHasEntry) {
@@ -121,10 +120,15 @@ export class UserCommand extends Command {
 		if (streamerForType) {
 			await this.container.prisma.guildSubscription.create({
 				data: {
-					guildId: BigInt(interaction.guildId!),
 					channelId: BigInt(channel.id),
-					message,
-					subscriptionId: streamerForType.id,
+					message: message ?? undefined,
+					guild: {
+						connectOrCreate: {
+							where: { id: BigInt(interaction.guildId!) },
+							create: { id: BigInt(interaction.guildId!) },
+						},
+					},
+					subscription: { connect: { id: streamerForType.id } },
 				},
 				select: null,
 			});
@@ -135,17 +139,22 @@ export class UserCommand extends Command {
 			);
 			await this.container.prisma.guildSubscription.create({
 				data: {
-					guildId: BigInt(interaction.guildId!),
 					channelId: BigInt(channel.id),
-					message,
-					subscriptionId: Number(subscription.id),
+					message: message ?? undefined,
+					guild: {
+						connectOrCreate: {
+							where: { id: BigInt(interaction.guildId!) },
+							create: { id: BigInt(interaction.guildId!) },
+						},
+					},
+					subscription: { connect: { id: Number(subscription.id) } },
 				},
 				select: null,
 			});
 		}
 
 		const content = cast<string>(
-			resolveKey(
+			await resolveKey(
 				interaction,
 				type === TwitchSubscriptionType.StreamOnline
 					? Root.AddSuccessLive
@@ -159,13 +168,7 @@ export class UserCommand extends Command {
 
 	@RegisterSubcommand((builder) =>
 		applyLocalizedBuilder(builder, Root.RemoveName, Root.RemoveDescription)
-			.addStringOption((option) =>
-				applyLocalizedBuilder(
-					option,
-					Root.OptionsStreamerName,
-					Root.OptionsStreamerDescription,
-				).setRequired(true),
-			)
+			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption(createTypeChoiceOption().setRequired(true)),
 	)
@@ -184,8 +187,7 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const { channel } = options;
-		const subscriptionType = options.type as TwitchSubscriptionType;
+		const { channel, type: subscriptionType } = options;
 
 		const guildSubscriptionsResult = await this.getGuildSubscriptions(
 			BigInt(interaction.guildId!),
@@ -200,7 +202,7 @@ export class UserCommand extends Command {
 		const guildSubscriptions = guildSubscriptionsResult.unwrap();
 
 		const streamers = guildSubscriptions.filter(
-			({ twitchSubscription }) => twitchSubscription.streamerId === streamer.id,
+			({ subscription }) => subscription.streamerId === streamer.id,
 		);
 
 		if (!streamers.length) {
@@ -219,11 +221,11 @@ export class UserCommand extends Command {
 		}
 
 		const statuses = streamers.filter(
-			({ twitchSubscription }) =>
-				twitchSubscription.subscriptionType === subscriptionType,
+			({ subscription }) => subscription.subscriptionType === subscriptionType,
 		);
 
 		if (!statuses.length) {
+			const showStatuses = await resolveKey(interaction, Root.ShowStatus);
 			return interaction.reply({
 				content: cast<string>(
 					await resolveKey(
@@ -231,7 +233,10 @@ export class UserCommand extends Command {
 						LanguageKeys.Commands.Twitch.RemoveStreamerStatusNotMatch,
 						{
 							streamer: streamer.display_name,
-							status: this.getSubscriptionStatus(subscriptionType),
+							status: this.getSubscriptionStatus(
+								subscriptionType,
+								showStatuses,
+							),
 						},
 					),
 				),
@@ -272,7 +277,7 @@ export class UserCommand extends Command {
 		const content = cast<string>(
 			await resolveKey(
 				interaction,
-				subscriptionType === "StreamOnline"
+				subscriptionType === TwitchSubscriptionType.StreamOnline
 					? LanguageKeys.Commands.Twitch.RemoveSuccessLive
 					: LanguageKeys.Commands.Twitch.RemoveSuccessOffline,
 				{ name: streamer.display_name, channel: channelMention(channel.id) },
@@ -281,17 +286,212 @@ export class UserCommand extends Command {
 		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
 	}
 
-	private getGuildSubscriptions(guildId: bigint) {
-		return Result.fromAsync(() =>
-			this.container.prisma.guildSubscription.findMany({
-				where: { guildId },
-				include: { twitchSubscription: true },
-			}),
+	@RegisterSubcommand((builder) =>
+		applyLocalizedBuilder(
+			builder,
+			Root.ResetName,
+			Root.ResetDescription,
+		).addStringOption(createStreamerOption(false)),
+	)
+	public async reset(
+		interaction: Command.ChatInputInteraction,
+		options: ResetShowOptions,
+	) {
+		const guildId = BigInt(interaction.guildId!);
+
+		const guildSubscriptionsResult = await this.getGuildSubscriptions(guildId);
+		if (guildSubscriptionsResult.isErr()) {
+			return interaction.reply({
+				content: await resolveKey(interaction, Root.NoSubscriptions),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		let guildSubscriptions = guildSubscriptionsResult.unwrap();
+
+		if (!guildSubscriptions.length) {
+			return interaction.reply({
+				content: await resolveKey(interaction, Root.NoSubscriptions),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		if (!isNullish(options.streamer)) {
+			const streamer = await this.#getStreamer(options.streamer);
+			if (!streamer) {
+				return interaction.reply({
+					content: await resolveKey(interaction, Root.StreamerNotFound),
+					flags: MessageFlags.Ephemeral,
+				});
+			}
+			guildSubscriptions = guildSubscriptions.filter(
+				(gs) => gs.subscription.streamerId === streamer.id,
+			);
+		}
+
+		if (!guildSubscriptions.length) {
+			return interaction.reply({
+				content: await resolveKey(interaction, Root.NoSubscriptions),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		const count = guildSubscriptions.length;
+		const uniqueSubscriptionIds = [
+			...new Set(guildSubscriptions.map((gs) => gs.subscriptionId)),
+		];
+
+		await Promise.all(
+			guildSubscriptions.map((gs) => this.#deleteSubscription(gs)),
 		);
+		await Promise.all(
+			uniqueSubscriptionIds.map((subscriptionId) =>
+				this.#removeSubscription(subscriptionId),
+			),
+		);
+
+		const content = cast<string>(
+			await resolveKey(interaction, Root.ResetSuccess, { count }),
+		);
+		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
 	}
 
-	private getSubscriptionStatus(subscription: TwitchSubscriptionType) {
-		return subscription === "StreamOnline" ? "Live" : "Offline";
+	@RegisterSubcommand((builder) =>
+		applyLocalizedBuilder(
+			builder,
+			Root.ShowName,
+			Root.ShowDescription,
+		).addStringOption(createStreamerOption(false)),
+	)
+	public async show(
+		interaction: Command.ChatInputInteraction,
+		options: ResetShowOptions,
+	) {
+		const guildId = BigInt(interaction.guildId!);
+
+		const guildSubscriptionsResult = await this.getGuildSubscriptions(guildId);
+		if (guildSubscriptionsResult.isErr()) {
+			return interaction.reply({
+				content: await resolveKey(interaction, Root.NoSubscriptions),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		const allSubscriptions = guildSubscriptionsResult.unwrap();
+
+		if (!allSubscriptions.length) {
+			return interaction.reply({
+				content: await resolveKey(interaction, Root.NoSubscriptions),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		let streamerFilter: { id: string; display_name: string } | null = null;
+		if (!isNullish(options.streamer)) {
+			streamerFilter = await this.#getStreamer(options.streamer);
+			if (!streamerFilter) {
+				return interaction.reply({
+					content: await resolveKey(interaction, Root.StreamerNotFound),
+					flags: MessageFlags.Ephemeral,
+				});
+			}
+		}
+
+		const subscriptions = streamerFilter
+			? allSubscriptions.filter(
+					(gs) => gs.subscription.streamerId === streamerFilter!.id,
+				)
+			: allSubscriptions;
+
+		if (!subscriptions.length) {
+			return interaction.reply({
+				content: await resolveKey(interaction, Root.ShowStreamerNotSubscribed),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		const [statuses, unknownUser] = await Promise.all([
+			resolveKey(interaction, Root.ShowStatus),
+			resolveKey(interaction, Root.ShowUnknownUser),
+		]);
+
+		let names: Map<string, string>;
+		if (streamerFilter) {
+			names = new Map([[streamerFilter.id, streamerFilter.display_name]]);
+		} else {
+			const streamerIds = [
+				...new Set(subscriptions.map((gs) => gs.subscription.streamerId)),
+			];
+			const profiles = (await fetchUsers({ ids: streamerIds })).unwrapRaw();
+			names = new Map(profiles.data.map((p) => [p.id, p.display_name]));
+		}
+
+		const lines = subscriptions.map((gs) => {
+			const name = names.get(gs.subscription.streamerId) ?? unknownUser;
+			const status = this.getSubscriptionStatus(
+				gs.subscription.subscriptionType,
+				statuses,
+			);
+			return `${name} — ${channelMention(String(gs.channelId))} → ${status}`;
+		});
+
+		const embed = new EmbedBuilder()
+			.setTitle(await resolveKey(interaction, Root.ShowEmbedTitle))
+			.setDescription(lines.join("\n"));
+		return interaction.reply({
+			embeds: [embed.toJSON()],
+			flags: MessageFlags.Ephemeral,
+		});
+	}
+
+	public override async autocompleteRun(
+		interaction: Command.AutocompleteInteraction,
+		args: Command.AutocompleteArguments<{ streamer: string }>,
+	) {
+		if (args.focused !== "streamer") return interaction.replyEmpty();
+
+		const query = args.streamer ?? "";
+		if (!query.length) return interaction.replyEmpty();
+
+		const result = await getRequest<
+			TwitchHelixResponse<TwitchChannelSearchResult>
+		>(`search/channels?query=${encodeURIComponent(query)}&first=25`);
+		if (result.isErr()) return interaction.replyEmpty();
+
+		const { data } = result.unwrap();
+		return interaction.reply({
+			choices: data.map((channel) => ({
+				name: channel.display_name,
+				value: channel.broadcaster_login,
+			})),
+		});
+	}
+
+	private getGuildSubscriptions(guildId: bigint) {
+		return Result.fromAsync(async () => {
+			const guildSubscriptionForGuild =
+				await this.container.prisma.guildSubscription.findMany({
+					where: { guildId: guildId },
+					include: { subscription: true },
+				});
+
+			if (guildSubscriptionForGuild.length === 0) {
+				this.error(
+					LanguageKeys.Commands.Twitch.TwitchSubscriptionNoSubscriptions,
+				);
+			}
+
+			return guildSubscriptionForGuild;
+		});
+	}
+
+	private getSubscriptionStatus(
+		subscription: TwitchSubscriptionType,
+		statuses: { live: string; offline: string },
+	) {
+		return subscription === TwitchSubscriptionType.StreamOnline
+			? statuses.live
+			: statuses.offline;
 	}
 
 	async #getStreamer(streamerName: string) {
@@ -313,11 +513,22 @@ export class UserCommand extends Command {
 		});
 	}
 
-	async #removeSubscription(subscription: bigint) {
-		await this.container.prisma.twitchSubscription.delete({
-			where: { id: subscription },
-			select: null,
-		});
+	async #removeSubscription(subscriptionId: bigint): Promise<void> {
+		const twitchSubscription =
+			await this.container.prisma.twitchSubscription.findFirst({
+				where: { id: subscriptionId },
+				include: { guildSubscription: true },
+			});
+		if (!twitchSubscription) return;
+		if (twitchSubscription.guildSubscription.length === 0) {
+			await Promise.all([
+				removeEventSubscription(twitchSubscription.subscriptionId),
+				this.container.prisma.twitchSubscription.delete({
+					where: { id: subscriptionId },
+					select: null,
+				}),
+			]);
+		}
 	}
 }
 
@@ -325,7 +536,11 @@ interface Options {
 	streamer: string;
 	channel: APIChannel;
 	type: TwitchSubscriptionType;
-	message: string;
+	message: string | null;
+}
+
+interface ResetShowOptions {
+	streamer?: string;
 }
 
 function createTypeChoiceOption() {
@@ -349,4 +564,21 @@ function createChannelOption() {
 		Root.OptionsChannelName,
 		Root.OptionsChannelDescription,
 	).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
+}
+
+function createStreamerOption(required: boolean) {
+	return applyLocalizedBuilder(
+		new SlashCommandStringOption(),
+		Root.OptionsStreamerName,
+		Root.OptionsStreamerDescription,
+	)
+		.setRequired(required)
+		.setAutocomplete(true);
+}
+
+interface TwitchChannelSearchResult {
+	broadcaster_login: string;
+	display_name: string;
+	id: string;
+	is_live: boolean;
 }
