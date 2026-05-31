@@ -513,13 +513,11 @@ export class UserCommand extends Command {
 			});
 		if (!twitchSubscription) return;
 		if (twitchSubscription.guildSubscription.length === 0) {
-			await Promise.all([
-				removeEventSubscription(twitchSubscription.subscriptionId),
-				this.container.prisma.twitchSubscription.delete({
-					where: { id: subscriptionId },
-					select: null,
-				}),
-			]);
+			await removeEventSubscription(twitchSubscription.subscriptionId);
+			await this.container.prisma.twitchSubscription.delete({
+				where: { id: subscriptionId },
+				select: null,
+			});
 		}
 	}
 }
