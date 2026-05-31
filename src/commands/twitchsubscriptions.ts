@@ -423,8 +423,12 @@ export class UserCommand extends Command {
 			const streamerIds = [
 				...new Set(subscriptions.map((gs) => gs.twitchSubscription.streamerId)),
 			];
-			const profiles = (await fetchUsers({ ids: streamerIds })).unwrapRaw();
-			names = new Map(profiles.data.map((p) => [p.id, p.display_name]));
+			const profilesResult = await fetchUsers({ ids: streamerIds });
+			names = profilesResult.isOk()
+				? new Map(
+						profilesResult.unwrap().data.map((p) => [p.id, p.display_name]),
+					)
+				: new Map();
 		}
 
 		const lines = subscriptions.map((gs) => {
