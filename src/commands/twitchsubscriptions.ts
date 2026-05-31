@@ -103,8 +103,8 @@ export class UserCommand extends Command {
 
 		const alreadyHasEntry = guildSubscriptionsForGuild.some(
 			(guildSubscription) =>
-				guildSubscription.subscription.streamerId === streamer.id &&
-				guildSubscription.subscription.subscriptionType === type,
+				guildSubscription.twitchSubscription.streamerId === streamer.id &&
+				guildSubscription.twitchSubscription.subscriptionType === type,
 		);
 
 		if (alreadyHasEntry) {
@@ -202,7 +202,7 @@ export class UserCommand extends Command {
 		const guildSubscriptions = guildSubscriptionsResult.unwrap();
 
 		const streamers = guildSubscriptions.filter(
-			({ subscription }) => subscription.streamerId === streamer.id,
+			({ twitchSubscription }) => twitchSubscription.streamerId === streamer.id,
 		);
 
 		if (!streamers.length) {
@@ -221,7 +221,8 @@ export class UserCommand extends Command {
 		}
 
 		const statuses = streamers.filter(
-			({ subscription }) => subscription.subscriptionType === subscriptionType,
+			({ twitchSubscription }) =>
+				twitchSubscription.subscriptionType === subscriptionType,
 		);
 
 		if (!statuses.length) {
@@ -325,7 +326,7 @@ export class UserCommand extends Command {
 				});
 			}
 			guildSubscriptions = guildSubscriptions.filter(
-				(gs) => gs.subscription.streamerId === streamer.id,
+				(gs) => gs.twitchSubscription.streamerId === streamer.id,
 			);
 		}
 
@@ -399,7 +400,7 @@ export class UserCommand extends Command {
 
 		const subscriptions = streamerFilter
 			? allSubscriptions.filter(
-					(gs) => gs.subscription.streamerId === streamerFilter!.id,
+					(gs) => gs.twitchSubscription.streamerId === streamerFilter!.id,
 				)
 			: allSubscriptions;
 
@@ -420,16 +421,16 @@ export class UserCommand extends Command {
 			names = new Map([[streamerFilter.id, streamerFilter.display_name]]);
 		} else {
 			const streamerIds = [
-				...new Set(subscriptions.map((gs) => gs.subscription.streamerId)),
+				...new Set(subscriptions.map((gs) => gs.twitchSubscription.streamerId)),
 			];
 			const profiles = (await fetchUsers({ ids: streamerIds })).unwrapRaw();
 			names = new Map(profiles.data.map((p) => [p.id, p.display_name]));
 		}
 
 		const lines = subscriptions.map((gs) => {
-			const name = names.get(gs.subscription.streamerId) ?? unknownUser;
+			const name = names.get(gs.twitchSubscription.streamerId) ?? unknownUser;
 			const status = this.getSubscriptionStatus(
-				gs.subscription.subscriptionType,
+				gs.twitchSubscription.subscriptionType,
 				statuses,
 			);
 			return `${name} — ${channelMention(String(gs.channelId))} → ${status}`;
@@ -472,7 +473,7 @@ export class UserCommand extends Command {
 			const guildSubscriptionForGuild =
 				await this.container.prisma.guildSubscription.findMany({
 					where: { guildId: guildId },
-					include: { subscription: true },
+					include: { twitchSubscription: true },
 				});
 
 			if (guildSubscriptionForGuild.length === 0) {
