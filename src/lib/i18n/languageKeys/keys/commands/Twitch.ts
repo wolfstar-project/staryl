@@ -1,98 +1,72 @@
 import { FT, T } from "@skyra/http-framework-i18n";
 
-export const TwitchSubscriptionDescription = T(
-	"commands/twitch:twitchSubscriptionDescription",
+export const RootName = T("commands/twitch:name");
+export const RootDescription = T("commands/twitch:description");
+
+export const AddName = T("commands/twitch:addName");
+export const AddDescription = T("commands/twitch:addDescription");
+
+export const RemoveName = T("commands/twitch:removeName");
+export const RemoveDescription = T("commands/twitch:removeDescription");
+export const OptionsStreamerName = T("commands/twitch:optionsStreamerName");
+export const OptionsStreamerDescription = T(
+	"commands/twitch:optionsStreamerDescription",
 );
-export const TwitchSubscriptionAddDescription = T(
-	"commands/twitch:twitchSubscriptionAddDescription",
+export const OptionsChannelName = T("commands/twitch:optionsChannelName");
+export const OptionsChannelDescription = T(
+	"commands/twitch:optionsChannelDescription",
 );
-export const TwitchSubscriptionRemoveDescription = T(
-	"commands/twitch:twitchSubscriptionRemoveDescription",
+export const OptionsTypeName = T("commands/twitch:optionsTypeName");
+export const OptionsTypeDescription = T(
+	"commands/twitch:optionsTypeDescription",
 );
-export const TwitchSubscriptionStreamerNotFound = T(
-	"commands/twitch:twitchSubscriptionStreamerNotFound",
+export const OptionsMessageName = T("commands/twitch:optionsMessageName");
+export const OptionsMessageDescription = T(
+	"commands/twitch:optionsMessageDescription",
 );
-export const TwitchSubscriptionStatusValues = T<[string, string]>(
-	"commands/twitch:twitchSubscriptionStatusValues",
+export const OptionsTypeChoiceOnline = T(
+	"commands/twitch:optionsTypeChoiceOnline",
 );
-export const TwitchSubscriptionInvalidStatus = T(
-	"commands/twitch:twitchSubscriptionInvalidStatus",
+export const OptionsTypeChoiceOffline = T(
+	"commands/twitch:optionsTypeChoiceOffline",
 );
-export const TwitchSubscriptionAddDuplicated = T(
-	"commands/twitch:twitchSubscriptionAddDuplicated",
+export const StreamerNotFound = T("commands/twitch:streamerNotFound");
+export const StatusValues = T<[string, string]>("commands/twitch:statusValues");
+export const InvalidStatus = T("commands/twitch:invalidStatus");
+export const AddDuplicated = T("commands/twitch:addDuplicated");
+export const AddSuccessOffline = FT<{ name: string; channel: string }>(
+	"commands/twitch:addSuccessOffline",
 );
-export const TwitchSubscriptionAddSuccessOffline = FT<{
-	name: string;
-	channel: string;
-}>("commands/twitch:twitchSubscriptionAddSuccessOffline");
-export const TwitchSubscriptionAddSuccessLive = FT<{
-	name: string;
-	channel: string;
-}>("commands/twitch:twitchSubscriptionAddSuccessLive");
-export const TwitchSubscriptionAddMessageForOfflineRequired = T(
-	"commands/twitch:twitchSubscriptionAddMessageForOfflineRequired",
+export const AddSuccessLive = FT<{ name: string; channel: string }>(
+	"commands/twitch:addSuccessLive",
 );
-export const TwitchSubscriptionRemoveStreamerNotSubscribed = FT<{
-	streamer: string;
-}>("commands/twitch:twitchSubscriptionRemoveStreamerNotSubscribed");
-export const TwitchSubscriptionRemoveNotToProvidedChannel = FT<{
-	channel: string;
-}>("commands/twitch:twitchSubscriptionRemoveNotToProvidedChannel");
-export const TwitchSubscriptionRemoveStreamerStatusNotMatch = FT<{
+export const AddMessageForOfflineRequired = T(
+	"commands/twitch:addMessageForOfflineRequired",
+);
+export const NoSubscriptions = T("commands/twitch:noSubscriptions");
+export const RemoveStreamerNotSubscribed = FT<{ streamer: string }>(
+	"commands/twitch:removeStreamerNotSubscribed",
+);
+export const RemoveNotToProvidedChannel = FT<{ channel: string }>(
+	"commands/twitch:removeNotToProvidedChannel",
+);
+export const RemoveStreamerStatusNotMatch = FT<{
 	streamer: string;
 	status: string;
-}>("commands/twitch:twitchSubscriptionRemoveStreamerStatusNotMatch");
-export const TwitchSubscriptionRemoveSuccessOffline = FT<{
-	name: string;
-	channel: string;
-}>("commands/twitch:twitchSubscriptionRemoveSuccessOffline");
-export const TwitchSubscriptionRemoveSuccessLive = FT<{
-	name: string;
-	channel: string;
-}>("commands/twitch:twitchSubscriptionRemoveSuccessLive");
-export const TwitchSubscriptionNoSubscriptions = T(
-	"commands/twitch:twitchSubscriptionNoSubscriptions",
+}>("commands/twitch:removeStreamerStatusNotMatch");
+export const RemoveSuccessOffline = FT<{ name: string; channel: string }>(
+	"commands/twitch:removeSuccessOffline",
 );
-export const TwitchSubscriptionResetSuccess = FT<{ count: number }>(
-	"commands/twitch:twitchSubscriptionResetSuccess",
+export const RemoveSuccessLive = FT<{ name: string; channel: string }>(
+	"commands/twitch:removeSuccessLive",
 );
-export const TwitchSubscriptionShowStreamerNotSubscribed = T(
-	"commands/twitch:twitchSubscriptionShowStreamerNotSubscribed",
+export const ResetSuccess = FT<{ count: number }>(
+	"commands/twitch:resetSuccess",
 );
-export const TwitchSubscriptionShowStatus = T<{
-	live: string;
-	offline: string;
-}>("commands/twitch:twitchSubscriptionShowStatus");
-export const TwitchSubscriptionShowUnknownUser = T(
-	"commands/twitch:twitchSubscriptionShowUnknownUser",
+export const ShowStreamerNotSubscribed = T(
+	"commands/twitch:showStreamerNotSubscribed",
 );
-export const TwitchSubscriptionOptionsStreamerName = T(
-	"commands/twitch:twitchSubscriptionOptionsStreamerName",
+export const ShowStatus = T<{ live: string; offline: string }>(
+	"commands/twitch:showStatus",
 );
-export const TwitchSubscriptionOptionsStreamerDescription = T(
-	"commands/twitch:twitchSubscriptionOptionsStreamerDescription",
-);
-export const TwitchSubscriptionOptionsChannelName = T(
-	"commands/twitch:twitchSubscriptionOptionsChannelName",
-);
-export const TwitchSubscriptionOptionsChannelDescription = T(
-	"commands/twitch:twitchSubscriptionOptionsChannelDescription",
-);
-export const TwitchSubscriptionOptionsTypeName = T(
-	"commands/twitch:twitchSubscriptionOptionsTypeName",
-);
-export const TwitchSubscriptionOptionsTypeDescription = T(
-	"commands/twitch:twitchSubscriptionOptionsTypeDescription",
-);
-export const TwitchSubscriptionOptionsMessageName = T(
-	"commands/twitch:twitchSubscriptionOptionsMessageName",
-);
-export const TwitchSubscriptionOptionsMessageDescription = T(
-	"commands/twitch:twitchSubscriptionOptionsMessageDescription",
-);
-export const TwitchSubscriptionOptionsTypeChoiceOnline = T(
-	"commands/twitch:twitchSubscriptionOptionsTypeChoiceOnline",
-);
-export const TwitchSubscriptionOptionsTypeChoiceOffline = T(
-	"commands/twitch:twitchSubscriptionOptionsTypeChoiceOffline",
-);
+export const ShowUnknownUser = T("commands/twitch:showUnknownUser");
