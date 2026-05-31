@@ -8,28 +8,26 @@ datasource db {
 }
 
 model Guild {
-  id BigInt  @id
+  id            BigInt              @id
+  subscriptions GuildSubscription[]
 
   @@map("guild")
 }
 
-
-
 model GuildSubscription {
-  guildId             BigInt              @map("guild_id")
-  channelId           BigInt              @map("channel_id")
-  message             String?             @db.VarChar(200)
-  subscriptionId      BigInt                @map("subscription_id")
+  guildId            BigInt             @map("guild_id")
+  channelId          BigInt             @map("channel_id")
+  message            String?            @db.VarChar(200)
+  subscriptionId     BigInt             @map("subscription_id")
+  guild              Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
   twitchSubscription TwitchSubscription @relation(fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([guildId, channelId, subscriptionId])
   @@map("guild_subscription")
 }
 
-
-
 model TwitchSubscription {
-  id                BigInt                   @id() @default(autoincrement())
+  id                BigInt                 @id @default(autoincrement())
   streamerId        String                 @map("streamer_id") @db.VarChar(10)
   subscriptionId    String                 @map("subscription_id") @db.VarChar(36)
   subscriptionType  TwitchSubscriptionType
@@ -38,8 +36,6 @@ model TwitchSubscription {
   @@unique([streamerId, subscriptionType])
   @@map("twitch_subscriptions")
 }
-
-
 
 enum TwitchSubscriptionType {
   StreamOnline  @map("stream.online")
