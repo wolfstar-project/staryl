@@ -1,7 +1,7 @@
+import type { GuildSubscription } from "#lib/setup/prisma";
 import type { APIChannel } from "discord-api-types/v10";
 import { LanguageKeys } from "#i18n";
-import { TwitchSubscriptionType } from '#lib/setup/prisma';
-import type { GuildSubscription } from '#lib/setup/prisma';
+import { TwitchSubscriptionType } from "#lib/setup/prisma";
 import {
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
