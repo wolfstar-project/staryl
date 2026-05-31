@@ -98,7 +98,7 @@ export class UserCommand extends Command {
 					guildId: BigInt(interaction.guildId!),
 					channelId: BigInt(channel.id),
 				},
-				include: { subscription: true },
+				include: { twitchSubscription: true },
 			});
 
 		const alreadyHasEntry = guildSubscriptionsForGuild.some(
@@ -128,7 +128,7 @@ export class UserCommand extends Command {
 							create: { id: BigInt(interaction.guildId!) },
 						},
 					},
-					subscription: { connect: { id: streamerForType.id } },
+					twitchSubscription: { connect: { id: streamerForType.id } },
 				},
 				select: null,
 			});
@@ -147,7 +147,7 @@ export class UserCommand extends Command {
 							create: { id: BigInt(interaction.guildId!) },
 						},
 					},
-					subscription: { connect: { id: Number(subscription.id) } },
+					twitchSubscription: { connect: { id: Number(subscription.id) } },
 				},
 				select: null,
 			});
@@ -469,21 +469,12 @@ export class UserCommand extends Command {
 	}
 
 	private getGuildSubscriptions(guildId: bigint) {
-		return Result.fromAsync(async () => {
-			const guildSubscriptionForGuild =
-				await this.container.prisma.guildSubscription.findMany({
-					where: { guildId: guildId },
-					include: { twitchSubscription: true },
-				});
-
-			if (guildSubscriptionForGuild.length === 0) {
-				this.error(
-					LanguageKeys.Commands.Twitch.TwitchSubscriptionNoSubscriptions,
-				);
-			}
-
-			return guildSubscriptionForGuild;
-		});
+		return Result.fromAsync(() =>
+			this.container.prisma.guildSubscription.findMany({
+				where: { guildId },
+				include: { twitchSubscription: true },
+			}),
+		);
 	}
 
 	private getSubscriptionStatus(
