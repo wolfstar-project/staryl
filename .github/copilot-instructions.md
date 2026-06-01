@@ -110,9 +110,9 @@ Listeners extend `Listener` from `@skyra/http-framework`:
 
 ```typescript
 export default class extends Listener {
-  public async run(data: EventData) {
-    // Handle event
-  }
+	public async run(data: EventData) {
+		// Handle event
+	}
 }
 ```
 
@@ -122,11 +122,11 @@ Routes are registered directly on `container.server` (Fastify):
 
 ```typescript
 container.server.route({
-  url: "/path",
-  method: "POST",
-  handler: async (request, reply) => {
-    // Handle request
-  },
+	url: "/path",
+	method: "POST",
+	handler: async (request, reply) => {
+		// Handle request
+	},
 });
 ```
 

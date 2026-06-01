@@ -10,45 +10,45 @@ export const hereOrEveryoneMentionRegExp = /#(?:here|everyone)/;
  * #param input The input to extract mentions from.
  */
 export function extractDetailedMentions(
-  input: string | Nullish,
+	input: string | Nullish,
 ): DetailedMentionExtractionResult {
-  const users = new Set<string>();
-  const roles = new Set<string>();
-  const channels = new Set<string>();
-  const parse = [] as MessageMentionTypes[];
+	const users = new Set<string>();
+	const roles = new Set<string>();
+	const channels = new Set<string>();
+	const parse = [] as MessageMentionTypes[];
 
-  if (isNullishOrEmpty(input)) {
-    return { users, roles, channels, parse };
-  }
+	if (isNullishOrEmpty(input)) {
+		return { users, roles, channels, parse };
+	}
 
-  let result: RegExpExecArray | null;
-  // oxlint-disable-next-line no-cond-assign
-  while ((result = anyMentionRegExp.exec(input)) !== null) {
-    switch (result[1]) {
-      case "#":
-        channels.add(result[2]);
-        continue;
-      case "#!": {
-        users.add(result[2]);
-        continue;
-      }
-      case "#&": {
-        roles.add(result[2]);
-        continue;
-      }
-    }
-  }
+	let result: RegExpExecArray | null;
+	// oxlint-disable-next-line no-cond-assign
+	while ((result = anyMentionRegExp.exec(input)) !== null) {
+		switch (result[1]) {
+			case "#":
+				channels.add(result[2]);
+				continue;
+			case "#!": {
+				users.add(result[2]);
+				continue;
+			}
+			case "#&": {
+				roles.add(result[2]);
+				continue;
+			}
+		}
+	}
 
-  if (hereOrEveryoneMentionRegExp.test(input)) parse.push("everyone");
+	if (hereOrEveryoneMentionRegExp.test(input)) parse.push("everyone");
 
-  return { users, roles, channels, parse };
+	return { users, roles, channels, parse };
 }
 
 export interface DetailedMentionExtractionResult {
-  users: ReadonlySet<string>;
-  roles: ReadonlySet<string>;
-  channels: ReadonlySet<string>;
-  parse: MessageMentionTypes[];
+	users: ReadonlySet<string>;
+	roles: ReadonlySet<string>;
+	channels: ReadonlySet<string>;
+	parse: MessageMentionTypes[];
 }
 
 type MessageMentionTypes = "users" | "roles" | "everyone";

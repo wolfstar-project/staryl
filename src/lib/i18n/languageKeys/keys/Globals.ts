@@ -7,11 +7,11 @@ export const Unknown = T("globals:unknown");
 export const DurationValue = FT<{ value: number }>("globals:durationValue");
 export const NumberValue = FT<{ value: number }>("globals:numberValue");
 export const NumberCompactValue = FT<{ value: number }>(
-  "globals:numberCompactValue",
+	"globals:numberCompactValue",
 );
 export const DateTimeValue = FT<{ value: number }>("globals:dateTimeValue");
 export const HumanDateTimeValue = FT<{ value: number }>(
-  "globals:humanDateTimeValue",
+	"globals:humanDateTimeValue",
 );
 export const AndListValue = FT<{ value: string[] }>("globals:andListValue");
 export const OrListValue = FT<{ value: string[] }>("globals:orListValue");

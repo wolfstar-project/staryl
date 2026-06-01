@@ -13,7 +13,7 @@ dist/
 dist-tsc/
 
 # Prisma generated client
-generated/
+src/generated/
 
 # Ignore heapsnapshot and log files
 *.heapsnapshot
@@ -27,3 +27,5 @@ package-lock.json
 .env.development.local
 .env.test.local
 .env.production.local
+
+plans/
