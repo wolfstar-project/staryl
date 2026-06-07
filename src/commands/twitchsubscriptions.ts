@@ -62,15 +62,15 @@ export class UserCommand extends Command {
 		interaction: Command.ChatInputInteraction,
 		options: Options,
 	) {
+		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const { channel, type, message, streamer: streamerRaw } = options;
 		const streamer = await this.#getStreamer(streamerRaw);
 		if (!streamer) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(
 					interaction,
 					LanguageKeys.Commands.Twitch.StreamerNotFound,
 				),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -78,12 +78,11 @@ export class UserCommand extends Command {
 			type === TwitchSubscriptionType.StreamOffline &&
 			isNullishOrEmpty(message)
 		) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(
 					interaction,
 					LanguageKeys.Commands.Twitch.AddMessageForOfflineRequired,
 				),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -108,48 +107,63 @@ export class UserCommand extends Command {
 		);
 
 		if (alreadyHasEntry) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(
 					interaction,
 					LanguageKeys.Commands.Twitch.AddDuplicated,
 				),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		if (streamerForType) {
-			await this.container.prisma.guildSubscription.create({
-				data: {
-					channelId: BigInt(channel.id),
-					message: message ?? undefined,
-					guild: {
-						connectOrCreate: {
-							where: { id: BigInt(interaction.guildId!) },
-							create: { id: BigInt(interaction.guildId!) },
+		try {
+			if (streamerForType) {
+				await this.container.prisma.guildSubscription.create({
+					data: {
+						channelId: BigInt(channel.id),
+						message: message ?? undefined,
+						guild: {
+							connectOrCreate: {
+								where: { id: BigInt(interaction.guildId!) },
+								create: { id: BigInt(interaction.guildId!) },
+							},
 						},
+						twitchSubscription: { connect: { id: streamerForType.id } },
 					},
-					twitchSubscription: { connect: { id: streamerForType.id } },
-				},
-				select: null,
-			});
-		} else {
-			const subscription = await addEventSubscription(
-				streamer.id,
-				TwitchEventSubTypes[type],
-			);
-			await this.container.prisma.guildSubscription.create({
-				data: {
-					channelId: BigInt(channel.id),
-					message: message ?? undefined,
-					guild: {
-						connectOrCreate: {
-							where: { id: BigInt(interaction.guildId!) },
-							create: { id: BigInt(interaction.guildId!) },
+					select: null,
+				});
+			} else {
+				const subscription = await addEventSubscription(
+					streamer.id,
+					TwitchEventSubTypes[type],
+				);
+				const twitchSubscription =
+					await this.container.prisma.twitchSubscription.create({
+						data: {
+							streamerId: streamer.id,
+							subscriptionId: subscription.id,
+							subscriptionType: type,
 						},
+						select: { id: true },
+					});
+				await this.container.prisma.guildSubscription.create({
+					data: {
+						channelId: BigInt(channel.id),
+						message: message ?? undefined,
+						guild: {
+							connectOrCreate: {
+								where: { id: BigInt(interaction.guildId!) },
+								create: { id: BigInt(interaction.guildId!) },
+							},
+						},
+						twitchSubscription: { connect: { id: twitchSubscription.id } },
 					},
-					twitchSubscription: { connect: { id: Number(subscription.id) } },
-				},
-				select: null,
+					select: null,
+				});
+			}
+		} catch {
+			return deferred.update({
+				content:
+					"An error occurred while trying to add the subscription. Please try again later.",
 			});
 		}
 
@@ -163,7 +177,7 @@ export class UserCommand extends Command {
 			),
 		);
 
-		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
+		return deferred.update({ content });
 	}
 
 	@RegisterSubcommand((builder) =>
@@ -491,7 +505,9 @@ export class UserCommand extends Command {
 	}
 
 	async #getStreamer(streamerName: string) {
-		const { data } = (await fetchUsers({ logins: [streamerName] })).unwrapRaw();
+		const result = await fetchUsers({ logins: [streamerName] });
+		if (result.isErr()) return null;
+		const { data } = result.unwrap();
 		if (data.length > 0) return data[0];
 		return null;
 	}
