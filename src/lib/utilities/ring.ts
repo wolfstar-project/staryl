@@ -1,5 +1,5 @@
-import { envParseString } from "@skyra/env-utilities";
-import { Json, safeTimedFetch } from "@skyra/safe-fetch";
+import { envParseString } from "@wolfstar/env-utilities";
+import { Json, safeTimedFetch } from "@wolfstar/safe-fetch";
 
 const InternalRingUrl = envParseString("INTERNAL_RING_URL");
 const InternalRingHeaders = {

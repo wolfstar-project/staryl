@@ -1,4 +1,4 @@
-import { T } from "@skyra/http-framework-i18n";
+import { T } from "@wolfstar/http-framework-i18n";
 
 export const GenericUnknownChannel = T("errors:genericUnknownChannel");
 export const GenericUnknownGuild = T("errors:genericUnknownGuild");

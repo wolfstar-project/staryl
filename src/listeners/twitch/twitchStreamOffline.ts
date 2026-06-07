@@ -1,6 +1,6 @@
 // oxlint-disable no-await-in-loop -- sequential per-guild processing is intentional
-import type { TFunction } from "@skyra/http-framework-i18n";
-import type { TwitchEventSubEvent } from "@skyra/twitch-helpers";
+import type { TFunction } from "@wolfstar/http-framework-i18n";
+import type { TwitchEventSubEvent } from "@wolfstar/twitch-helpers";
 import type {
 	APIChannel,
 	APIDMChannel,
@@ -15,9 +15,9 @@ import { streamNotificationDrip } from "#utils/twitch";
 import { extractDetailedMentions } from "#utils/util";
 import { time, TimestampStyles } from "@discordjs/builders";
 import { isNullish, isNullishOrEmpty } from "@sapphire/utilities";
-import { Listener } from "@skyra/http-framework";
-import { getT } from "@skyra/http-framework-i18n";
-import { TwitchEventSubTypes } from "@skyra/twitch-helpers";
+import { Listener } from "@wolfstar/http-framework";
+import { getT } from "@wolfstar/http-framework-i18n";
+import { TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
 export default class extends Listener {
 	public async run(data: TwitchEventSubEvent) {

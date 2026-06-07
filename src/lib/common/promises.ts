@@ -4,7 +4,7 @@ import type { RESTJSONErrorCodes } from "discord-api-types/v10";
 import { DiscordAPIError } from "@discordjs/rest";
 import { err, ok } from "@sapphire/result";
 import { isThenable } from "@sapphire/utilities";
-import { container } from "@skyra/http-framework";
+import { container } from "@wolfstar/http-framework";
 
 export async function resolveOnErrorCodes<T>(
 	promise: Promise<T>,

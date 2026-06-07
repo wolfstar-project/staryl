@@ -1,6 +1,6 @@
 import { PrismaClient } from "#generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { container } from "@skyra/http-framework";
+import { container } from "@wolfstar/http-framework";
 
 const adapter = new PrismaPg({
 	connectionString: `${process.env.DATABASE_URL}`,

@@ -1,4 +1,4 @@
-import { container } from "@skyra/http-framework";
+import { container } from "@wolfstar/http-framework";
 import fastify from "fastify";
 
 const server = fastify();

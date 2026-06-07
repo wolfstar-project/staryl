@@ -1,5 +1,5 @@
 import { API } from "@discordjs/core/http-only";
-import { container } from "@skyra/http-framework";
+import { container } from "@wolfstar/http-framework";
 
 export function api() {
 	return (container.api ??= new API(container.rest));
