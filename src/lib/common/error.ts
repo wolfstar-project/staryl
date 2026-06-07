@@ -1,4 +1,4 @@
-import type { TFunction } from "@skyra/http-framework-i18n";
+import type { TFunction } from "@wolfstar/http-framework-i18n";
 import { LanguageKeys } from "#i18n";
 import { DiscordAPIError, HTTPError } from "@discordjs/rest";
 import { RESTJSONErrorCodes } from "discord-api-types/v10";

@@ -4,14 +4,14 @@
 - Starly is a Discord notification bot built with TypeScript that integrates
   with Twitch EventSub to provide stream status notifications. It uses HTTP
   interactions via Discord's HTTP-based bot architecture
-  (`@skyra/http-framework`) rather than a persistent WebSocket connection.
+  (`@wolfstar/http-framework`) rather than a persistent WebSocket connection.
 - Always reference these instructions first and fall back to search or
   documentation queries only when you encounter unexpected information.
 
 ## Code Quality Requirements
 
 - Follow standard TypeScript conventions and best practices with strict mode
-- Use the `@skyra/http-framework` decorator pattern (`@RegisterCommand`,
+- Use the `@wolfstar/http-framework` decorator pattern (`@RegisterCommand`,
   `@RegisterSubcommand`) for Discord slash commands
 - Use clear, descriptive variable and function names
 - Add comments only to explain complex logic or non-obvious implementations
@@ -55,19 +55,19 @@
 
 ### Key Patterns
 
-- **HTTP Framework**: Built on `@skyra/http-framework` (Fastify-based), handling
-  Discord interactions via HTTP endpoints instead of WebSocket gateway
+- **HTTP Framework**: Built on `@wolfstar/http-framework` (Fastify-based),
+  handling Discord interactions via HTTP endpoints instead of WebSocket gateway
 - **Database**: PostgreSQL with Prisma ORM. Models use `@@map()` for snake_case
   table names, `@map()` for snake_case column names
 - **Event System**: Twitch EventSub webhooks trigger internal events
   (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
   handle
-- **i18n**: Multi-language support via `@skyra/http-framework-i18n` with
+- **i18n**: Multi-language support via `@wolfstar/http-framework-i18n` with
   language keys defined as nested objects in `src/lib/i18n/languageKeys/`
 - **Rate Limiting**: Use `@sapphire/ratelimits` `RateLimitManager` for
   notification drip control
 - **Scheduling**: Custom `ScheduleHandler` piece extending
-  `@skyra/http-framework`'s `Piece` class
+  `@wolfstar/http-framework`'s `Piece` class
 
 ### Directory Structure
 
@@ -87,7 +87,7 @@
 
 ### Command Structure
 
-Commands use the decorator pattern from `@skyra/http-framework`:
+Commands use the decorator pattern from `@wolfstar/http-framework`:
 
 ```typescript
 @RegisterCommand((builder) =>
@@ -106,7 +106,7 @@ export class UserCommand extends Command {
 
 ### Listener Structure
 
-Listeners extend `Listener` from `@skyra/http-framework`:
+Listeners extend `Listener` from `@wolfstar/http-framework`:
 
 ```typescript
 export default class extends Listener {
@@ -160,11 +160,12 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 
 ## Key Dependencies
 
-- `@skyra/http-framework` - Discord HTTP interaction framework (Fastify-based)
-- `@skyra/http-framework-i18n` - Internationalization for the HTTP framework
-- `@skyra/twitch-helpers` - Twitch EventSub types, helpers, and signature
+- `@wolfstar/http-framework` - Discord HTTP interaction framework
+  (Fastify-based)
+- `@wolfstar/http-framework-i18n` - Internationalization for the HTTP framework
+- `@wolfstar/twitch-helpers` - Twitch EventSub types, helpers, and signature
   verification
-- `@skyra/shared-http-pieces` - Shared command registration and Sentry
+- `@wolfstar/shared-http-pieces` - Shared command registration and Sentry
   integration
 - `@sapphire/result` - Rust-like Result type for error handling
 - `@sapphire/utilities` - General utilities (`cast`, `isNullish`,
@@ -174,7 +175,7 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@discordjs/builders` - Discord embed and component builders
 - `@prisma/client` - Database ORM
 - `ioredis` - Redis client
-- `fastify` - HTTP server (underlying `@skyra/http-framework`)
+- `fastify` - HTTP server (underlying `@wolfstar/http-framework`)
 
 ## Troubleshooting
 
@@ -183,7 +184,7 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - **Twitch webhooks not working:** Verify webhook URL is accessible from the
   internet and HMAC signature verification is passing
 - **Command not appearing:** Commands auto-register on startup via
-  `@skyra/shared-http-pieces`; check Discord developer portal
+  `@wolfstar/shared-http-pieces`; check Discord developer portal
 
 **When in doubt:** Copy existing patterns from similar files (e.g.,
 `src/listeners/twitch/`, `src/commands/`) before inventing new ones.

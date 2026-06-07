@@ -49,30 +49,30 @@ importers:
       '@sapphire/utilities':
         specifier: ^3.18.2
         version: 3.18.2
-      '@skyra/env-utilities':
-        specifier: ^2.0.1
-        version: 2.0.1
-      '@skyra/http-framework':
-        specifier: ^2.2.1
-        version: 2.2.1
-      '@skyra/http-framework-i18n':
-        specifier: ^1.2.1
-        version: 1.2.1
-      '@skyra/logger':
-        specifier: ^2.0.4
-        version: 2.0.4
-      '@skyra/safe-fetch':
-        specifier: ^1.1.4
-        version: 1.1.4
-      '@skyra/shared-http-pieces':
-        specifier: ^1.2.3
-        version: 1.2.3
-      '@skyra/start-banner':
-        specifier: ^2.0.2
-        version: 2.0.2
-      '@skyra/twitch-helpers':
-        specifier: ^2.0.2
-        version: 2.0.2
+      '@wolfstar/env-utilities':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/http-framework':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/http-framework-i18n':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/logger':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/safe-fetch':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/shared-http-pieces':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/start-banner':
+        specifier: ^3.0.1
+        version: 3.0.1
+      '@wolfstar/twitch-helpers':
+        specifier: ^3.0.1
+        version: 3.0.1
       discord-api-types:
         specifier: ^0.38.48
         version: 0.38.48
@@ -1260,42 +1260,6 @@ packages:
     resolution: {integrity: sha512-KxXvfapcixpz6rVEB6HPjOUZT22yN6v0vI0urQSk1L8MlEWPDFCZkhw2xmkyoTGYeFw7tWTZd7e3lVzRZRN/EA==}
     engines: {node: '>=18'}
 
-  '@skyra/env-utilities@2.0.1':
-    resolution: {integrity: sha512-WEWKE0Acud4nll6pcOxDxmLBG6Zjusd9V2xCfOJsYF2NlmaWjiaiKL3ofS+9ZjMinR+QXRxaJAZ1LXh/1des3w==}
-    engines: {node: '>=18'}
-
-  '@skyra/http-framework-i18n@1.2.1':
-    resolution: {integrity: sha512-8t3sMbbPHw8VNO/d6bitnCipSp2XqZ+ngAl3T9VZnJ1yOkrjQRz1AWXZy45LPzIlxn+F2D3nZegUtObFgFYsMA==}
-    engines: {node: '>=18'}
-
-  '@skyra/http-framework@2.2.1':
-    resolution: {integrity: sha512-k4KH6l215A9tyXKBd6VRY6pkPbDiQkTr16Y+mtW1tcmFWLQ1CCj8lVtwdAiQxk/6+TQMET4OETwVuQGMVqfulw==}
-    engines: {node: '>=18'}
-
-  '@skyra/i18next-backend@2.0.6':
-    resolution: {integrity: sha512-emMWpgHVsycYUobAcylJhBrVAOg/C8huAflam3xGtFSzeVGtjQ1jcEbBzmzDj5c0E+AUcz/QDI1JCnKsXHL1HQ==}
-    engines: {node: '>=18'}
-
-  '@skyra/logger@2.0.4':
-    resolution: {integrity: sha512-0Xjo/B+LSHuDBjgWrloc7hDRfdu7tQP8lFLhG0jiezOHZnLTCzzZhH6Wty7Ab5YsV5Bdqpgwri5lf0u3oncwbw==}
-    engines: {node: '>=18'}
-
-  '@skyra/safe-fetch@1.1.4':
-    resolution: {integrity: sha512-hGPRRu3nbxOd5loR/iskFJ8gWIIEQ/cFTDMqT2QzetwCKNx3CiwxzZZrL2veuEH1l+803P+7PCbmff48SkQ8yA==}
-    engines: {node: '>=18'}
-
-  '@skyra/shared-http-pieces@1.2.3':
-    resolution: {integrity: sha512-/4DVnmPBxESzMc9Ro0QmKnISCA8NOYCGcoKitYz2186ccd0rsnWI6EKzssRW9UTojzQbjAxaSKhSz7h6EF9VoQ==}
-    engines: {node: '>=16.9.0', npm: '>=8.0.0'}
-
-  '@skyra/start-banner@2.0.2':
-    resolution: {integrity: sha512-OKgw86yKbccrQjndhkpajaz86lsNgTBHhfXgpHxRf83tmbsyaEtlA7Snhs6kmXoakyCLIf8sONwTLqR4gGrhPg==}
-    engines: {node: '>=18'}
-
-  '@skyra/twitch-helpers@2.0.2':
-    resolution: {integrity: sha512-vJTryUaEVDHNSO5clkCfHu+vMT50RT4mcB7CO1wSEbrMMVe5sIleOq5Pn7AnlgqW8v0o4tENcQA+SSQj50LMKQ==}
-    engines: {node: '>=18'}
-
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -1353,6 +1317,42 @@ packages:
   '@vladfrangu/async_event_emitter@2.4.7':
     resolution: {integrity: sha512-Xfe6rpCTxSxfbswi/W/Pz7zp1WWSNn4A0eW4mLkQUewCrXXtMj31lCg+iQyTkh/CkusZSq9eDflu7tjEDXUY6g==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+
+  '@wolfstar/env-utilities@3.0.1':
+    resolution: {integrity: sha512-kUI0oNN62Snp1WvaIyeXGXZ2kQcjmurmKr6xYiu2E71ocJly73GacLdikoDRqn44bOJtUOyJnwtg3dBVkifQwQ==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/http-framework-i18n@3.0.1':
+    resolution: {integrity: sha512-wSxWgFvgKviKfnalSUduG6cSQ0F0i9GCHemxyp1AZepQsvtu5nHQfHj8F9y+SblQ/0K+xp8I/xVYczRmYWjSKA==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/http-framework@3.0.1':
+    resolution: {integrity: sha512-0kumXat6pWt8bsZK/RB5srRK+YuZAZBxRDs9wOQYexq1gmQWmIKY6izsR1bmidY7TvTVS732USNGlynsR4sXpw==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/i18next-backend@3.0.1':
+    resolution: {integrity: sha512-z5AHBJj7p6lLYth/bMRqzfuQEY9BXVKW/HMC8mcnrvRKmDmbXgXIrg9u+WiZyQEjXn7OoYTMA5HYiJRe68zgnQ==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/logger@3.0.1':
+    resolution: {integrity: sha512-IWS/Tb6tyFvrl0dv+T86Jjw6RdNdNPBloWhOQmXV4tasHqPpxfPVaUWYgZka1kTmLxPGEb6GlqY/JAWa/XMHYg==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/safe-fetch@3.0.1':
+    resolution: {integrity: sha512-R9u/6GfVcn1+FMUz8s9vyxjT6F2lW4RBpR7h3kNYrPTK4jpi0MVcrMMPIoLi1KSaGKDXQ6PM4bMPIFO+rzBC2w==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/shared-http-pieces@3.0.1':
+    resolution: {integrity: sha512-shwMvnmBt1WnfLAPC2ZbOr5zeITap4SPWOsN8KbxFOu1w1QIsgPIOd/0gYVLi5IoafFovUwZuB59CQxE+t5OsQ==}
+    engines: {node: '>=16.9.0', npm: '>=8.0.0'}
+
+  '@wolfstar/start-banner@3.0.1':
+    resolution: {integrity: sha512-Q1mRxbRMrHoVn6EOuxT4AzoR9fmknt7XkgqeF7yGVvcBxwaQmm5J6e63f+++JMbjsttfXcrRLqRVWHQ+WhvDLQ==}
+    engines: {node: '>=18'}
+
+  '@wolfstar/twitch-helpers@3.0.1':
+    resolution: {integrity: sha512-lZUgD2i3QBbUyJtURTtn1rdbF37aLHk0+6u3e2h4pj+xCY/hiD9mUPTgWOewxOTVkphzKpN8w1rcyx1978G2tg==}
+    engines: {node: '>=18'}
 
   JSONStream@1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
@@ -4143,65 +4143,6 @@ snapshots:
   '@simple-libs/stream-utils@1.2.0':
     optional: true
 
-  '@skyra/env-utilities@2.0.1':
-    dependencies:
-      dotenv: 16.6.1
-      dotenv-expand: 12.0.3
-
-  '@skyra/http-framework-i18n@1.2.1':
-    dependencies:
-      '@discordjs/collection': 2.1.1
-      '@sapphire/utilities': 3.18.2
-      '@skyra/i18next-backend': 2.0.6
-      discord-api-types: 0.38.47
-      i18next: 22.5.1
-      tslib: 2.8.1
-
-  '@skyra/http-framework@2.2.1':
-    dependencies:
-      '@discordjs/builders': 1.14.1
-      '@discordjs/collection': 2.1.1
-      '@discordjs/rest': 2.6.1
-      '@discordjs/util': 1.2.0
-      '@sapphire/pieces': 4.4.1
-      '@sapphire/result': 2.8.0
-      '@sapphire/utilities': 3.18.2
-      '@vladfrangu/async_event_emitter': 2.4.7
-      discord-api-types: 0.38.47
-
-  '@skyra/i18next-backend@2.0.6':
-    dependencies:
-      tslib: 2.8.1
-
-  '@skyra/logger@2.0.4':
-    dependencies:
-      colorette: 2.0.20
-
-  '@skyra/safe-fetch@1.1.4':
-    dependencies:
-      '@sapphire/result': 2.8.0
-
-  '@skyra/shared-http-pieces@1.2.3':
-    dependencies:
-      '@discordjs/builders': 1.14.1
-      '@discordjs/collection': 2.1.1
-      '@sentry/node': 8.55.1
-      '@skyra/env-utilities': 2.0.1
-      '@skyra/http-framework': 2.2.1
-      '@skyra/http-framework-i18n': 1.2.1
-      discord-api-types: 0.38.47
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - supports-color
-
-  '@skyra/start-banner@2.0.2': {}
-
-  '@skyra/twitch-helpers@2.0.2':
-    dependencies:
-      '@sapphire/result': 2.8.0
-      '@skyra/env-utilities': 2.0.1
-      '@skyra/safe-fetch': 1.1.4
-
   '@standard-schema/spec@1.1.0': {}
 
   '@tybys/wasm-util@0.10.1':
@@ -4211,7 +4152,7 @@ snapshots:
 
   '@types/connect@3.4.36':
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 24.12.4
 
   '@types/conventional-commits-parser@5.0.2':
     dependencies:
@@ -4225,7 +4166,7 @@ snapshots:
 
   '@types/mysql@2.15.26':
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 24.12.4
 
   '@types/node@24.12.2':
     dependencies:
@@ -4247,7 +4188,7 @@ snapshots:
 
   '@types/pg@8.6.1':
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 24.12.4
       pg-protocol: 1.13.0
       pg-types: 2.2.0
 
@@ -4259,7 +4200,7 @@ snapshots:
 
   '@types/tedious@4.0.14':
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 24.12.4
 
   '@types/tinycolor2@1.4.6': {}
 
@@ -4268,6 +4209,65 @@ snapshots:
       '@types/node': 24.12.2
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
+
+  '@wolfstar/env-utilities@3.0.1':
+    dependencies:
+      dotenv: 17.4.2
+      dotenv-expand: 12.0.3
+
+  '@wolfstar/http-framework-i18n@3.0.1':
+    dependencies:
+      '@discordjs/collection': 2.1.1
+      '@sapphire/utilities': 3.18.2
+      '@wolfstar/i18next-backend': 3.0.1
+      discord-api-types: 0.38.48
+      i18next: 22.5.1
+      tslib: 2.8.1
+
+  '@wolfstar/http-framework@3.0.1':
+    dependencies:
+      '@discordjs/builders': 1.14.1
+      '@discordjs/collection': 2.1.1
+      '@discordjs/rest': 2.6.1
+      '@discordjs/util': 1.2.0
+      '@sapphire/pieces': 4.4.1
+      '@sapphire/result': 2.8.0
+      '@sapphire/utilities': 3.18.2
+      '@vladfrangu/async_event_emitter': 2.4.7
+      discord-api-types: 0.38.48
+
+  '@wolfstar/i18next-backend@3.0.1':
+    dependencies:
+      tslib: 2.8.1
+
+  '@wolfstar/logger@3.0.1':
+    dependencies:
+      colorette: 2.0.20
+
+  '@wolfstar/safe-fetch@3.0.1':
+    dependencies:
+      '@sapphire/result': 2.8.0
+
+  '@wolfstar/shared-http-pieces@3.0.1':
+    dependencies:
+      '@discordjs/builders': 1.14.1
+      '@discordjs/collection': 2.1.1
+      '@sentry/node': 8.55.1
+      '@wolfstar/env-utilities': 3.0.1
+      '@wolfstar/http-framework': 3.0.1
+      '@wolfstar/http-framework-i18n': 3.0.1
+      discord-api-types: 0.38.48
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - supports-color
+
+  '@wolfstar/start-banner@3.0.1': {}
+
+  '@wolfstar/twitch-helpers@3.0.1':
+    dependencies:
+      '@sapphire/result': 2.8.0
+      '@wolfstar/env-utilities': 3.0.1
+      '@wolfstar/safe-fetch': 3.0.1
 
   JSONStream@1.3.5:
     dependencies:

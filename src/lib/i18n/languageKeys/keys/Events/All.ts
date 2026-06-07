@@ -1,4 +1,4 @@
-import { FT, T } from "@skyra/http-framework-i18n";
+import { FT, T } from "@wolfstar/http-framework-i18n";
 
 export const EmbedDescription = FT<{ userName: string }, string>(
 	"events/twitch:embedDescription",

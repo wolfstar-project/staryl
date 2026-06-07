@@ -1,4 +1,4 @@
-import { FT, T } from "@skyra/http-framework-i18n";
+import { FT, T } from "@wolfstar/http-framework-i18n";
 
 export const Yes = T("globals:yes");
 export const No = T("globals:no");

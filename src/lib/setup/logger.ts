@@ -1,5 +1,5 @@
-import { container } from "@skyra/http-framework";
-import { Logger } from "@skyra/logger";
+import { container } from "@wolfstar/http-framework";
+import { Logger } from "@wolfstar/logger";
 
 container.logger = new Logger();
 

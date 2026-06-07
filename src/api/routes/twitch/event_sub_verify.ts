@@ -1,9 +1,9 @@
-import type { TwitchEventSubVerificationMessage } from "@skyra/twitch-helpers";
+import type { TwitchEventSubVerificationMessage } from "@wolfstar/twitch-helpers";
 import { Events } from "#lib/types";
 import { TwitchStreamStatus } from "#utils/twitch";
 import { container } from "@sapphire/pieces";
 import { cast, isObject } from "@sapphire/utilities";
-import { checkSignature, TwitchEventSubTypes } from "@skyra/twitch-helpers";
+import { checkSignature, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
 container.server.route({
 	url: "/twitch/event_sub_verify",

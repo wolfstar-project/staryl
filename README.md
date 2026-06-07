@@ -71,13 +71,13 @@ WebSocket connection.
   Discord channels when Twitch streamers go online or offline.
 - **EventSub Integration**: Uses Twitch EventSub webhooks for reliable,
   low-latency stream event delivery.
-- **HTTP-Based Architecture**: Built on `@skyra/http-framework` (Fastify-based),
-  handling Discord interactions via HTTP endpoints instead of a WebSocket
-  gateway.
+- **HTTP-Based Architecture**: Built on `@wolfstar/http-framework`
+  (Fastify-based), handling Discord interactions via HTTP endpoints instead of a
+  WebSocket gateway.
 - **Custom Messages**: Configure custom notification messages per guild
   subscription.
 - **Multi-Language Support**: Internationalization via
-  `@skyra/http-framework-i18n` with support for multiple locales.
+  `@wolfstar/http-framework-i18n` with support for multiple locales.
 - **Rate Limiting**: Built-in notification drip control to prevent spam using
   `@sapphire/ratelimits`.
 

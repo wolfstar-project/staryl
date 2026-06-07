@@ -1,9 +1,9 @@
 import { setup } from "#lib/setup/all";
-import { envParseInteger, envParseString } from "@skyra/env-utilities";
-import { Client, container } from "@skyra/http-framework";
-import { init, load } from "@skyra/http-framework-i18n";
-import { registerCommands } from "@skyra/shared-http-pieces";
-import { createBanner } from "@skyra/start-banner";
+import { envParseInteger, envParseString } from "@wolfstar/env-utilities";
+import { Client, container } from "@wolfstar/http-framework";
+import { init, load } from "@wolfstar/http-framework-i18n";
+import { registerCommands } from "@wolfstar/shared-http-pieces";
+import { createBanner } from "@wolfstar/start-banner";
 import { vice } from "gradient-string";
 
 await setup();

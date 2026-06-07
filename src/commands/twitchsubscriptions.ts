@@ -1,5 +1,5 @@
 import type { GuildSubscription } from "#lib/setup/prisma";
-import type { TwitchHelixResponse } from "@skyra/twitch-helpers";
+import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
 import type { APIChannel } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import { LanguageKeys } from "#i18n";
@@ -15,19 +15,19 @@ import {
 	Command,
 	RegisterCommand,
 	RegisterSubcommand,
-} from "@skyra/http-framework";
+} from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
 	createSelectMenuChoiceName,
 	resolveKey,
-} from "@skyra/http-framework-i18n";
+} from "@wolfstar/http-framework-i18n";
 import {
 	addEventSubscription,
 	fetchUsers,
 	getRequest,
 	removeEventSubscription,
 	TwitchEventSubTypes,
-} from "@skyra/twitch-helpers";
+} from "@wolfstar/twitch-helpers";
 import {
 	ApplicationIntegrationType,
 	ChannelType,

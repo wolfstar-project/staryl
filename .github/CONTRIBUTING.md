@@ -251,7 +251,7 @@ Examples:
 - `feat(twitch): add stream offline notification embeds`
 - `fix(commands): resolve subscription duplicate check`
 - `docs: update installation instructions`
-- `chore(deps): update @skyra/http-framework`
+- `chore(deps): update @wolfstar/http-framework`
 
 > **Note** Use lowercase letters in your pull request title. Individual commit
 > messages within your PR don't need to follow this format since they'll be

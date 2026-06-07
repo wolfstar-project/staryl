@@ -1,4 +1,4 @@
-import { FT, T } from "@skyra/http-framework-i18n";
+import { FT, T } from "@wolfstar/http-framework-i18n";
 
 export const RootName = T("commands/twitch:name");
 export const RootDescription = T("commands/twitch:description");
