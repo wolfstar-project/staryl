@@ -28,4 +28,4 @@ package-lock.json
 .env.test.local
 .env.production.local
 
-plans/
+.claude/state
