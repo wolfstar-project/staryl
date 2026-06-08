@@ -70,16 +70,16 @@ start with:
 NODE_OPTIONS='--unhandled-rejections=warn' pnpm start
 ```
 
-`registerCommands()` will log a 401 from Discord but the process stays up in warn
-mode. Real Discord/Twitch keys are needed for slash-command registration and
-EventSub webhooks.
+`registerCommands()` will log a 401 from Discord but the process stays up in
+warn mode. Real Discord/Twitch keys are needed for slash-command registration
+and EventSub webhooks.
 
 ### Running the app
 
-| Service | Port | Purpose |
-| --- | --- | --- |
-| Discord HTTP interactions | 3000 | Slash commands (`HTTP_PORT`) |
-| Fastify API | 3001 | Twitch EventSub + health route (`API_PORT`) |
+| Service                   | Port | Purpose                                     |
+| ------------------------- | ---- | ------------------------------------------- |
+| Discord HTTP interactions | 3000 | Slash commands (`HTTP_PORT`)                |
+| Fastify API               | 3001 | Twitch EventSub + health route (`API_PORT`) |
 
 ```bash
 pnpm dev          # build + start (watch: pnpm watch with pnpm start)
