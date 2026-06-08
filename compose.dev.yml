@@ -3,8 +3,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     container_name: staryl
     build:
       context: ./
@@ -37,19 +35,6 @@ services:
       timeout: 60s
       retries: 5
       start_period: 80s
-
-  redis:
-    command: redis-server --port 8287 --requirepass redis
-    container_name: staryl-redis
-    image: "redis:alpine"
-    ports:
-      - "8287:8287"
-    restart: no
-    healthcheck:
-      test: [CMD-SHELL, "redis-cli ping | grep PONG"]
-      interval: 1s
-      timeout: 3s
-      retries: 5
 
 volumes:
   staryl-postgres-data:
