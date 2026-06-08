@@ -1,6 +1,5 @@
 import type { TwitchEventSubVerificationMessage } from "@wolfstar/twitch-helpers";
-import { Events } from "#lib/types";
-import { TwitchStreamStatus } from "#utils/twitch";
+import { Events, TwitchStreamStatus } from "#types";
 import { container } from "@sapphire/pieces";
 import { cast, isObject } from "@sapphire/utilities";
 import { checkSignature, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";

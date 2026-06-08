@@ -126,6 +126,16 @@ export default defineConfig({
 					},
 				},
 				{
+					find: "#types",
+					replacement: "#types",
+					customResolver(source) {
+						if (source === "#types")
+							return resolve(import.meta.dirname, "src/lib/types/index.ts");
+						const subPath = source.replace("#types/", "");
+						return resolveSource("src/lib/types", subPath);
+					},
+				},
+				{
 					find: "#utils",
 					replacement: "#utils",
 					customResolver(source) {

@@ -1,5 +1,4 @@
-import type { Events } from "#lib/types";
-import type { TwitchStreamStatus } from "#lib/types/AnalyticsSchema";
+import type { Events, TwitchStreamStatus } from "#types";
 import type { IntegerString } from "@wolfstar/env-utilities";
 import type {
 	TwitchEventSubEvent,
