@@ -10,7 +10,8 @@
 	"imports": {
 		"#i18n": "./dist/lib/i18n/index.mjs",
 		"#generated/prisma": "./dist/generated/prisma/client.mjs",
-		"#lib/types": "./dist/lib/types/index.mjs",
+		"#types": "./dist/lib/types/index.mjs",
+		"#types/*": "./dist/lib/types/*.mjs",
 		"#lib/*": "./dist/lib/*.mjs",
 		"#common/*": "./dist/lib/common/*.mjs",
 		"#api/*": "./dist/api/*.mjs",
