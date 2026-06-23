@@ -1,4 +1,4 @@
-import { setup as envRun } from "@wolfstar/env-utilities";
+import { envParseString, setup as envRun } from "@wolfstar/env-utilities";
 import {
 	initializeSentry,
 	setInvite,
@@ -14,7 +14,7 @@ export async function setup() {
 	envRun(new URL("../../../src/.env", import.meta.url));
 
 	setRepository("staryl");
-	setInvite("12345678906342567", "0");
+	setInvite(envParseString("DISCORD_CLIENT_ID"), "0");
 	initializeSentry();
 
 	// Load all routes
