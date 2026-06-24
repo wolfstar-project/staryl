@@ -50,29 +50,29 @@ importers:
         specifier: ^3.18.2
         version: 3.18.2
       '@wolfstar/env-utilities':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^2.0.2
+        version: 2.0.2
       '@wolfstar/http-framework':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^2.2.2
+        version: 2.2.2
       '@wolfstar/http-framework-i18n':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^1.2.2
+        version: 1.2.2
       '@wolfstar/logger':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^2.0.5
+        version: 2.0.5
       '@wolfstar/safe-fetch':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^1.1.5
+        version: 1.1.5
       '@wolfstar/shared-http-pieces':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^1.2.4
+        version: 1.2.4
       '@wolfstar/start-banner':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^2.0.3
+        version: 2.0.3
       '@wolfstar/twitch-helpers':
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^2.0.3
+        version: 2.0.3
       discord-api-types:
         specifier: ^0.38.48
         version: 0.38.48
@@ -451,12 +451,6 @@ packages:
 
   '@kurkle/color@0.3.4':
     resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
-
-  '@napi-rs/wasm-runtime@1.1.4':
-    resolution: {integrity: sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow==}
-    peerDependencies:
-      '@emnapi/core': ^1.7.1
-      '@emnapi/runtime': ^1.7.1
 
   '@napi-rs/wasm-runtime@1.1.5':
     resolution: {integrity: sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q==}
@@ -1357,16 +1351,16 @@ packages:
     resolution: {integrity: sha512-QGLdC9+pT74Zd7aaObqn0EUfq40c4dyTL65pFnkM6WO1QYN7Yg/s4CdH+CXmx0Zcu6wcfCWILSftXPMosJHP5A==}
     engines: {node: '>=v14.0.0'}
 
-  '@sentry/core@8.55.1':
-    resolution: {integrity: sha512-0ea+yDOgaijR3ba2al1QZxY0bZ9MBZq2a0G+2A0uCBpBkiXnpLFGVAo9UAlEikN1C4M8ROZYiuFU7yZCqacgLQ==}
+  '@sentry/core@8.55.2':
+    resolution: {integrity: sha512-YlEBwybUcOQ/KjMHDmof1vwweVnBtBxYlQp7DE3fOdtW4pqqdHWTnTntQs4VgYfxzjJYgtkd9LHlGtg8qy+JVQ==}
     engines: {node: '>=14.18'}
 
-  '@sentry/node@8.55.1':
-    resolution: {integrity: sha512-s8ydn/OxZFIxc9Fvt23gJkrXkCvPnUu2bDKwjQBCx0M1b4DdNdp4FaimT6B9reya7buj+tsNkZAoT11KqFhG/g==}
+  '@sentry/node@8.55.2':
+    resolution: {integrity: sha512-x3Whryb4TytiIhH9ABLVuASfBvwA50v6PpJYvq0Y9dUMi9Eb0cfuqvRCB3e+oVntZHQpnXor2U/gRBIdG2jp4w==}
     engines: {node: '>=14.18'}
 
-  '@sentry/opentelemetry@8.55.1':
-    resolution: {integrity: sha512-ipiM/k3Hzt8visoBfkDb4AQBWHkJeou3SjoPec7NlDabH/Jj8x6VlK5Hex4z+WOv99rRy+5MUtga/CZnOjvh0A==}
+  '@sentry/opentelemetry@8.55.2':
+    resolution: {integrity: sha512-pbhXi4cS1W4l392yEfIx3UD28OYAl9JkYOmh/Cpm6cPTtRMPxi3hWeujGbcXV9T/RkWYjqd+JdUDJjqsWSww9A==}
     engines: {node: '>=14.18'}
     peerDependencies:
       '@opentelemetry/api': ^1.9.0
@@ -1386,9 +1380,6 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
-
-  '@tybys/wasm-util@0.10.1':
-    resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
   '@tybys/wasm-util@0.10.2':
     resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
@@ -1442,41 +1433,41 @@ packages:
     resolution: {integrity: sha512-Xfe6rpCTxSxfbswi/W/Pz7zp1WWSNn4A0eW4mLkQUewCrXXtMj31lCg+iQyTkh/CkusZSq9eDflu7tjEDXUY6g==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@wolfstar/env-utilities@3.0.1':
-    resolution: {integrity: sha512-kUI0oNN62Snp1WvaIyeXGXZ2kQcjmurmKr6xYiu2E71ocJly73GacLdikoDRqn44bOJtUOyJnwtg3dBVkifQwQ==}
-    engines: {node: '>=18'}
+  '@wolfstar/env-utilities@2.0.2':
+    resolution: {integrity: sha512-4BzmJSKKDNv2r5SvVetU3sRcoODLPdOd/cF3H0/r5Hil1FVmzP6J3PufXAeWFaNE7cMcomy3kZ0LfDbzS2ld3g==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/http-framework-i18n@3.0.1':
-    resolution: {integrity: sha512-wSxWgFvgKviKfnalSUduG6cSQ0F0i9GCHemxyp1AZepQsvtu5nHQfHj8F9y+SblQ/0K+xp8I/xVYczRmYWjSKA==}
-    engines: {node: '>=18'}
+  '@wolfstar/http-framework-i18n@1.2.2':
+    resolution: {integrity: sha512-KJL4Dp4ckYzGVmPPaomvFIGdFg+SoecXY6xUQURKpxiTDy+y2m+xx0Y/DtgMe5D49eSyC3e+IFSFEmzhNZ4o4Q==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/http-framework@3.0.1':
-    resolution: {integrity: sha512-0kumXat6pWt8bsZK/RB5srRK+YuZAZBxRDs9wOQYexq1gmQWmIKY6izsR1bmidY7TvTVS732USNGlynsR4sXpw==}
-    engines: {node: '>=18'}
+  '@wolfstar/http-framework@2.2.2':
+    resolution: {integrity: sha512-lbFD5Xh5bqSmHBK/CgIZPur3OuZ98ahF/Y+K7zvBJc3P0lH1FE7aC7IjTJLZMe9bi3fVvcmj2IVIPgMZdOBn8g==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/i18next-backend@3.0.1':
-    resolution: {integrity: sha512-z5AHBJj7p6lLYth/bMRqzfuQEY9BXVKW/HMC8mcnrvRKmDmbXgXIrg9u+WiZyQEjXn7OoYTMA5HYiJRe68zgnQ==}
-    engines: {node: '>=18'}
+  '@wolfstar/i18next-backend@2.0.7':
+    resolution: {integrity: sha512-92eVD0X/GHm2PQrkLHVwc/K+gbRl2IKpPR3Sp6UHgauCnRxTKWs+AHBq2mLwu20Tyf7asixu/gUQpdimpZI1/Q==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/logger@3.0.1':
-    resolution: {integrity: sha512-IWS/Tb6tyFvrl0dv+T86Jjw6RdNdNPBloWhOQmXV4tasHqPpxfPVaUWYgZka1kTmLxPGEb6GlqY/JAWa/XMHYg==}
-    engines: {node: '>=18'}
+  '@wolfstar/logger@2.0.5':
+    resolution: {integrity: sha512-+888D7cUwhzLtxsJCbZEhpuluu7wVYLf2b06g+lBlwBXOTPlWZy5YZ/gO/lfjCaq1J6vlMCKZLh4/YMxyZfPZQ==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/safe-fetch@3.0.1':
-    resolution: {integrity: sha512-R9u/6GfVcn1+FMUz8s9vyxjT6F2lW4RBpR7h3kNYrPTK4jpi0MVcrMMPIoLi1KSaGKDXQ6PM4bMPIFO+rzBC2w==}
-    engines: {node: '>=18'}
+  '@wolfstar/safe-fetch@1.1.5':
+    resolution: {integrity: sha512-6lUxBHy9FKqML2RFbgiJ7IeUgb3kcqLFsh2zVnKw5rhU8uhcum4QX9GSdgBY0sUJydA1LK2eBCroWdKLD7F57g==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/shared-http-pieces@3.0.1':
-    resolution: {integrity: sha512-shwMvnmBt1WnfLAPC2ZbOr5zeITap4SPWOsN8KbxFOu1w1QIsgPIOd/0gYVLi5IoafFovUwZuB59CQxE+t5OsQ==}
-    engines: {node: '>=16.9.0', npm: '>=8.0.0'}
+  '@wolfstar/shared-http-pieces@1.2.4':
+    resolution: {integrity: sha512-SqckUaKeZ+xYijgDKG5u/kruF49apWAkcWS2lGxBxKYRtEj8ooY7qD2REdyfrw7g0AVaQ8wgCn06oCLeRLcTzg==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/start-banner@3.0.1':
-    resolution: {integrity: sha512-Q1mRxbRMrHoVn6EOuxT4AzoR9fmknt7XkgqeF7yGVvcBxwaQmm5J6e63f+++JMbjsttfXcrRLqRVWHQ+WhvDLQ==}
-    engines: {node: '>=18'}
+  '@wolfstar/start-banner@2.0.3':
+    resolution: {integrity: sha512-nKicXLuY/YWKoCWtTDZKN5VSpOeuQOqDSRfSb+YxRowoQGxy2pBrRTDESbiocSoRnm/vr0q2Dp11Q1ccC378Xw==}
+    engines: {node: '>=20'}
 
-  '@wolfstar/twitch-helpers@3.0.1':
-    resolution: {integrity: sha512-lZUgD2i3QBbUyJtURTtn1rdbF37aLHk0+6u3e2h4pj+xCY/hiD9mUPTgWOewxOTVkphzKpN8w1rcyx1978G2tg==}
-    engines: {node: '>=18'}
+  '@wolfstar/twitch-helpers@2.0.3':
+    resolution: {integrity: sha512-FTIbNRlbsnYqbYVMIriG0g5vcR75o1GouIoCpPD65X4aK5li98sOnS9Kh3qjtnmD/B3OxRq02kW5BMXCfjOecA==}
+    engines: {node: '>=20'}
 
   abstract-logging@2.0.1:
     resolution: {integrity: sha512-2BjRTZxTPvheOvGbBslFSYOUkr+SjPtOnrLP33f+VIWLzezQpZcqVg7ja3L4dBXmzzgwT+a029jRx5PCi3JuiA==}
@@ -1806,12 +1797,8 @@ packages:
     resolution: {integrity: sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==}
     engines: {node: '>=8'}
 
-  dotenv-expand@12.0.3:
-    resolution: {integrity: sha512-uc47g4b+4k/M/SeaW1y4OApx+mtLWl92l5LMPP0GNXctZqELk+YGgOPIIC5elYmUH4OuoK3JLhuRUYegeySiFA==}
-    engines: {node: '>=12'}
-
-  dotenv@16.6.1:
-    resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+  dotenv-expand@13.0.0:
+    resolution: {integrity: sha512-aBfBS8eYIeXmpHI9ThIlA7/WLq+SLt18iXUZhb52rW89QLKQFoIpPG1bPeewoPZsTyjSSO3T7234FBVUM1V2rA==}
     engines: {node: '>=12'}
 
   dotenv@17.4.2:
@@ -3308,7 +3295,7 @@ snapshots:
     dependencies:
       '@simple-libs/child-process-utils': 1.0.2
       '@simple-libs/stream-utils': 1.2.0
-      semver: 7.7.4
+      semver: 7.8.4
     optionalDependencies:
       conventional-commits-parser: 6.4.0
 
@@ -3338,7 +3325,7 @@ snapshots:
 
   '@discordjs/formatters@0.6.2':
     dependencies:
-      discord-api-types: 0.38.47
+      discord-api-types: 0.38.48
 
   '@discordjs/rest@2.6.1':
     dependencies:
@@ -3347,14 +3334,14 @@ snapshots:
       '@sapphire/async-queue': 1.5.5
       '@sapphire/snowflake': 3.5.5
       '@vladfrangu/async_event_emitter': 2.4.7
-      discord-api-types: 0.38.47
+      discord-api-types: 0.38.48
       magic-bytes.js: 1.13.0
       tslib: 2.8.1
       undici: 6.24.1
 
   '@discordjs/util@1.2.0':
     dependencies:
-      discord-api-types: 0.38.47
+      discord-api-types: 0.38.48
 
   '@discordjs/ws@2.0.4':
     dependencies:
@@ -3364,7 +3351,7 @@ snapshots:
       '@sapphire/async-queue': 1.5.5
       '@types/ws': 8.18.1
       '@vladfrangu/async_event_emitter': 2.4.7
-      discord-api-types: 0.38.47
+      discord-api-types: 0.38.48
       tslib: 2.8.1
       ws: 8.20.0
     transitivePeerDependencies:
@@ -3507,11 +3494,11 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
-  '@napi-rs/wasm-runtime@1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
+  '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
-      '@tybys/wasm-util': 0.10.1
+      '@tybys/wasm-util': 0.10.2
     optional: true
 
   '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.11.0)(@emnapi/runtime@1.11.0)':
@@ -3626,7 +3613,7 @@ snapshots:
       '@opentelemetry/instrumentation': 0.57.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.28.0
       forwarded-parse: 2.1.2
-      semver: 7.7.4
+      semver: 7.8.4
     transitivePeerDependencies:
       - supports-color
 
@@ -3759,7 +3746,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.15.0
       require-in-the-middle: 7.5.2
-      semver: 7.7.4
+      semver: 7.8.4
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -3771,7 +3758,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.15.0
       require-in-the-middle: 7.5.2
-      semver: 7.7.4
+      semver: 7.8.4
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -3783,7 +3770,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.15.0
       require-in-the-middle: 7.5.2
-      semver: 7.7.4
+      semver: 7.8.4
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -4176,7 +4163,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
-      '@napi-rs/wasm-runtime': 1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
+      '@napi-rs/wasm-runtime': 1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
     optional: true
 
   '@rolldown/binding-wasm32-wasi@1.1.1':
@@ -4215,7 +4202,7 @@ snapshots:
 
   '@sapphire/discord-utilities@3.5.0':
     dependencies:
-      discord-api-types: 0.38.47
+      discord-api-types: 0.38.48
 
   '@sapphire/discord.js-utilities@7.3.3':
     dependencies:
@@ -4263,9 +4250,9 @@ snapshots:
 
   '@sapphire/utilities@3.18.2': {}
 
-  '@sentry/core@8.55.1': {}
+  '@sentry/core@8.55.2': {}
 
-  '@sentry/node@8.55.1':
+  '@sentry/node@8.55.2':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/context-async-hooks': 1.30.1(@opentelemetry/api@1.9.1)
@@ -4299,13 +4286,13 @@ snapshots:
       '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.40.0
       '@prisma/instrumentation': 5.22.0
-      '@sentry/core': 8.55.1
-      '@sentry/opentelemetry': 8.55.1(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1)(@opentelemetry/core@1.30.1)(@opentelemetry/instrumentation@0.57.2)(@opentelemetry/sdk-trace-base@1.30.1)(@opentelemetry/semantic-conventions@1.40.0)
+      '@sentry/core': 8.55.2
+      '@sentry/opentelemetry': 8.55.2(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1)(@opentelemetry/core@1.30.1)(@opentelemetry/instrumentation@0.57.2)(@opentelemetry/sdk-trace-base@1.30.1)(@opentelemetry/semantic-conventions@1.40.0)
       import-in-the-middle: 1.15.0
     transitivePeerDependencies:
       - supports-color
 
-  '@sentry/opentelemetry@8.55.1(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1)(@opentelemetry/core@1.30.1)(@opentelemetry/instrumentation@0.57.2)(@opentelemetry/sdk-trace-base@1.30.1)(@opentelemetry/semantic-conventions@1.40.0)':
+  '@sentry/opentelemetry@8.55.2(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1)(@opentelemetry/core@1.30.1)(@opentelemetry/instrumentation@0.57.2)(@opentelemetry/sdk-trace-base@1.30.1)(@opentelemetry/semantic-conventions@1.40.0)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/context-async-hooks': 1.30.1(@opentelemetry/api@1.9.1)
@@ -4313,7 +4300,7 @@ snapshots:
       '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.40.0
-      '@sentry/core': 8.55.1
+      '@sentry/core': 8.55.2
 
   '@simple-libs/child-process-utils@1.0.2':
     dependencies:
@@ -4322,11 +4309,6 @@ snapshots:
   '@simple-libs/stream-utils@1.2.0': {}
 
   '@standard-schema/spec@1.1.0': {}
-
-  '@tybys/wasm-util@0.10.1':
-    dependencies:
-      tslib: 2.8.1
-    optional: true
 
   '@tybys/wasm-util@0.10.2':
     dependencies:
@@ -4387,21 +4369,21 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
-  '@wolfstar/env-utilities@3.0.1':
+  '@wolfstar/env-utilities@2.0.2':
     dependencies:
       dotenv: 17.4.2
-      dotenv-expand: 12.0.3
+      dotenv-expand: 13.0.0
 
-  '@wolfstar/http-framework-i18n@3.0.1':
+  '@wolfstar/http-framework-i18n@1.2.2':
     dependencies:
       '@discordjs/collection': 2.1.1
       '@sapphire/utilities': 3.18.2
-      '@wolfstar/i18next-backend': 3.0.1
+      '@wolfstar/i18next-backend': 2.0.7
       discord-api-types: 0.38.48
       i18next: 22.5.1
       tslib: 2.8.1
 
-  '@wolfstar/http-framework@3.0.1':
+  '@wolfstar/http-framework@2.2.2':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1
@@ -4413,38 +4395,38 @@ snapshots:
       '@vladfrangu/async_event_emitter': 2.4.7
       discord-api-types: 0.38.48
 
-  '@wolfstar/i18next-backend@3.0.1':
+  '@wolfstar/i18next-backend@2.0.7':
     dependencies:
       tslib: 2.8.1
 
-  '@wolfstar/logger@3.0.1':
+  '@wolfstar/logger@2.0.5':
     dependencies:
       colorette: 2.0.20
 
-  '@wolfstar/safe-fetch@3.0.1':
+  '@wolfstar/safe-fetch@1.1.5':
     dependencies:
       '@sapphire/result': 2.8.0
 
-  '@wolfstar/shared-http-pieces@3.0.1':
+  '@wolfstar/shared-http-pieces@1.2.4':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1
-      '@sentry/node': 8.55.1
-      '@wolfstar/env-utilities': 3.0.1
-      '@wolfstar/http-framework': 3.0.1
-      '@wolfstar/http-framework-i18n': 3.0.1
+      '@sentry/node': 8.55.2
+      '@wolfstar/env-utilities': 2.0.2
+      '@wolfstar/http-framework': 2.2.2
+      '@wolfstar/http-framework-i18n': 1.2.2
       discord-api-types: 0.38.48
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@wolfstar/start-banner@3.0.1': {}
+  '@wolfstar/start-banner@2.0.3': {}
 
-  '@wolfstar/twitch-helpers@3.0.1':
+  '@wolfstar/twitch-helpers@2.0.3':
     dependencies:
       '@sapphire/result': 2.8.0
-      '@wolfstar/env-utilities': 3.0.1
-      '@wolfstar/safe-fetch': 3.0.1
+      '@wolfstar/env-utilities': 2.0.2
+      '@wolfstar/safe-fetch': 1.1.5
 
   abstract-logging@2.0.1: {}
 
@@ -4755,11 +4737,9 @@ snapshots:
     dependencies:
       is-obj: 2.0.0
 
-  dotenv-expand@12.0.3:
+  dotenv-expand@13.0.0:
     dependencies:
-      dotenv: 16.6.1
-
-  dotenv@16.6.1: {}
+      dotenv: 17.4.2
 
   dotenv@17.4.2: {}
 
