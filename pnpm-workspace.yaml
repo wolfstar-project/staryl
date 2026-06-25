@@ -15,6 +15,15 @@ minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
   - "@eslint-community/eslint-plugin-eslint-comments@4.7.2"
+  - "@wolfstar/env-utilities@2.0.2"
+  - "@wolfstar/http-framework@2.2.2"
+  - "@wolfstar/http-framework-i18n@1.2.2"
+  - "@wolfstar/logger@2.0.5"
+  - "@wolfstar/safe-fetch@1.1.5"
+  - "@wolfstar/shared-http-pieces@1.2.4"
+  - "@wolfstar/start-banner@2.0.3"
+  - "@wolfstar/twitch-helpers@2.0.3"
+  - "@wolfstar/i18next-backend@2.0.7"
 
 shamefullyHoist: true
 
