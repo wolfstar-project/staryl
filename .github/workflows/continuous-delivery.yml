@@ -24,6 +24,22 @@ jobs:
     secrets: inherit
     with:
       enablePlatforms: true
-      platforms: >-
-        [{"platform": "linux/amd64", "runner": "ubuntu-latest"}, {"platform":
-        "linux/arm64", "runner": "ubuntu-latest"}]
+      # Native runners per arch — arm64 on ubuntu-latest uses QEMU and can produce
+      # images that never merge correctly with amd64 for Railway (linux/amd64).
+      platforms:
+        '[{"platform": "linux/amd64", "runner": "ubuntu-latest"}, {"platform":
+        "linux/arm64", "runner": "ubuntu-24.04-arm"}]'
+
+  verify:
+    name: Verify multi-arch manifest on GHCR
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Assert linux/amd64 is published
+        run: |
+          docker buildx imagetools inspect ghcr.io/wolfstar-project/staryl:latest \
+            | tee /tmp/imagetools.txt
+          grep -q 'linux/amd64' /tmp/imagetools.txt
