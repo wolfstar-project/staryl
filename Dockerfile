@@ -4,7 +4,7 @@
 #   Base Stage     #
 # ================ #
 
-FROM node:24-alpine AS base
+FROM --platform=$BUILDPLATFORM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
