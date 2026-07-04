@@ -11,9 +11,12 @@ import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
 	getSupportedUserLanguageT,
-	LanguageKeys,
 } from "@wolfstar/http-framework-i18n";
-import { getInvite, getRepository } from "@wolfstar/shared-http-pieces";
+import {
+	getInvite,
+	getRepository,
+	LanguageKeys,
+} from "@wolfstar/shared-http-pieces";
 import {
 	ButtonStyle,
 	ComponentType,
