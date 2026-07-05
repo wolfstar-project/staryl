@@ -4,7 +4,13 @@
 #   Base Stage     #
 # ================ #
 
-FROM --platform=$BUILDPLATFORM node:24-alpine AS base
+# Do NOT pin to $BUILDPLATFORM: the `runner` stage inherits from `base`, so pinning
+# the base image to the builder's architecture bakes build-host binaries (dumb-init,
+# node, …) into the runtime image. Under a QEMU-emulated multi-arch build the arm64
+# manifest entry then contains amd64 binaries (and vice versa), so the container
+# crashes on start with `/usr/bin/dumb-init: Exec format error`. Omitting --platform
+# lets Docker build natively for $TARGETPLATFORM so every binary matches the run arch.
+FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
