@@ -53,8 +53,8 @@ importers:
         specifier: ^2.0.2
         version: 2.0.2
       '@wolfstar/http-framework':
-        specifier: ^2.2.2
-        version: 2.2.2
+        specifier: ^3.0.0
+        version: 3.0.0
       '@wolfstar/http-framework-i18n':
         specifier: ^1.2.2
         version: 1.2.2
@@ -1445,6 +1445,10 @@ packages:
     resolution: {integrity: sha512-lbFD5Xh5bqSmHBK/CgIZPur3OuZ98ahF/Y+K7zvBJc3P0lH1FE7aC7IjTJLZMe9bi3fVvcmj2IVIPgMZdOBn8g==}
     engines: {node: '>=20'}
 
+  '@wolfstar/http-framework@3.0.0':
+    resolution: {integrity: sha512-N7/qMr69FTkkDUHoOTfb5Sl+HKB5KcFPd4GUi4cW13RTxJPof3uRBkGoOhnzrDLjeboSYFFvlGNCBFB1pSqfyg==}
+    engines: {node: '>=20'}
+
   '@wolfstar/i18next-backend@2.0.7':
     resolution: {integrity: sha512-92eVD0X/GHm2PQrkLHVwc/K+gbRl2IKpPR3Sp6UHgauCnRxTKWs+AHBq2mLwu20Tyf7asixu/gUQpdimpZI1/Q==}
     engines: {node: '>=20'}
@@ -2041,6 +2045,7 @@ packages:
   git-raw-commits@5.0.1:
     resolution: {integrity: sha512-Y+csSm2GD/PCSh6Isd/WiMjNAydu0VBiG9J7EdQsNA5P9uXvLayqjmTsNlK5Gs9IhblFZqOU0yid5Il5JPoLiQ==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   glob-parent@6.0.2:
@@ -4384,6 +4389,18 @@ snapshots:
       tslib: 2.8.1
 
   '@wolfstar/http-framework@2.2.2':
+    dependencies:
+      '@discordjs/builders': 1.14.1
+      '@discordjs/collection': 2.1.1
+      '@discordjs/rest': 2.6.1
+      '@discordjs/util': 1.2.0
+      '@sapphire/pieces': 4.4.1
+      '@sapphire/result': 2.8.0
+      '@sapphire/utilities': 3.18.2
+      '@vladfrangu/async_event_emitter': 2.4.7
+      discord-api-types: 0.38.48
+
+  '@wolfstar/http-framework@3.0.0':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1

@@ -44,7 +44,7 @@
 		"@sapphire/time-utilities": "^1.7.14",
 		"@sapphire/utilities": "^3.18.2",
 		"@wolfstar/env-utilities": "^2.0.2",
-		"@wolfstar/http-framework": "^2.2.2",
+		"@wolfstar/http-framework": "^3.0.0",
 		"@wolfstar/http-framework-i18n": "^1.2.2",
 		"@wolfstar/logger": "^2.0.5",
 		"@wolfstar/safe-fetch": "^1.1.5",
