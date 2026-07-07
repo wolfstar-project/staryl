@@ -27,6 +27,8 @@
 		"start": "node --enable-source-maps dist/main.mjs",
 		"lint": "oxlint && oxfmt --check",
 		"lint:fix": "oxlint --fix && oxfmt",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"prepare": "node .husky/install.mjs || true",
 		"update:interactive": "taze"
 	},
@@ -44,11 +46,11 @@
 		"@sapphire/time-utilities": "^1.7.14",
 		"@sapphire/utilities": "^3.18.2",
 		"@wolfstar/env-utilities": "^2.0.2",
-		"@wolfstar/http-framework": "^2.2.2",
+		"@wolfstar/http-framework": "^3.0.0",
 		"@wolfstar/http-framework-i18n": "^1.2.2",
 		"@wolfstar/logger": "^2.0.5",
 		"@wolfstar/safe-fetch": "^1.1.5",
-		"@wolfstar/shared-http-pieces": "^1.2.4",
+		"@wolfstar/shared-http-pieces": "^1.2.6",
 		"@wolfstar/start-banner": "^2.0.3",
 		"@wolfstar/twitch-helpers": "^2.0.3",
 		"discord-api-types": "^0.38.48",
@@ -68,6 +70,7 @@
 		"@rollup/plugin-alias": "^6.0.0",
 		"@sapphire/ts-config": "^5.0.3",
 		"@types/node": "^24.13.2",
+		"@wolfstar/http-framework-test-utils": "^3.0.0",
 		"cz-conventional-changelog": "^3.3.0",
 		"eslint": "^10.5.0",
 		"eslint-plugin-regexp": "^3.1.0",
@@ -76,7 +79,8 @@
 		"prisma": "^7.8.0",
 		"taze": "^19.14.1",
 		"tsdown": "^0.22.3",
-		"typescript": "~5.9.3"
+		"typescript": "~5.9.3",
+		"vitest": "^4.1.9"
 	},
 	"nano-staged": {
 		"*.{js,ts,mjs,cjs}": [

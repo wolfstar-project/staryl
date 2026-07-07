@@ -19,6 +19,8 @@ when the schema changes).
   `prisma db push` during development.
 - Plans produced by **prometheus** are stored under `.atlas/plans/`.
 - Conventional Commits are required.
+- Unit tests use **Vitest**; run with `pnpm test` (or `pnpm test:watch`). CI
+  runs `pnpm lint`, `pnpm build`, and `pnpm test`.
 
 ## Cursor Cloud specific instructions
 
@@ -85,6 +87,7 @@ and EventSub webhooks.
 pnpm dev          # build + start (watch: pnpm watch with pnpm start)
 pnpm lint         # oxlint + oxfmt
 pnpm build        # tsdown build (CI also runs prisma:generate first)
+pnpm test         # vitest run (CI also runs prisma:generate first)
 ```
 
 Quick smoke test once running:
@@ -94,4 +97,7 @@ curl http://localhost:3001/          # {"data":"Hello world"}
 curl -X POST http://localhost:3001/twitch/event_sub_verify  # 400 without Twitch headers
 ```
 
-There is **no automated test suite**; CI runs `pnpm lint` and `pnpm build` only.
+Automated tests live under `tests/` (Vitest) and use
+`@wolfstar/http-framework-test-utils` to dispatch fake Discord interactions
+through real commands; `container.prisma` and `@wolfstar/twitch-helpers` are
+stubbed per test. CI runs `pnpm lint`, `pnpm build`, and `pnpm test`.
