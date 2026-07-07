@@ -1,6 +1,6 @@
 import alias from "@rollup/plugin-alias";
 import { defineConfig } from "vitest/config";
-import { aliasEntries } from "./build/aliases.ts";
+import { aliasEntries } from "./scripts/aliases.ts";
 
 export default defineConfig({
 	// `enforce: "pre"` ensures this runs before Vite's native package.json

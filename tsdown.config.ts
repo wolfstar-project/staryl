@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import alias from "@rollup/plugin-alias";
 import { defineConfig } from "tsdown";
 import { startTunnel } from "untun";
-import { aliasEntries } from "./build/aliases.ts";
+import { aliasEntries } from "./scripts/aliases.ts";
 
 // Plugin to copy locales from src to dist
 function copyPlugin(): Rolldown.RolldownPluginOption {
