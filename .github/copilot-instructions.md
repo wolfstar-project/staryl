@@ -84,6 +84,10 @@
 - `src/lib/i18n/` - Internationalization keys and definitions
 - `src/locales/` - Translation JSON files organized by locale
 - `prisma/schema.prisma` - Database schema
+- `tests/` - Vitest test suite, organized by area
+  (`tests/commands/twitchsubscriptions.test.ts` tests
+  `src/commands/twitchsubscriptions.ts`); `tests/setup.ts` registers the
+  `@wolfstar/http-framework-test-utils` matchers and boots i18n
 
 ### Command Structure
 
@@ -141,6 +145,8 @@ pnpm watch                # Watch mode for development
 pnpm lint                 # Run oxlint + oxfmt check
 pnpm lint:fix             # Auto-fix lint issues (oxlint --fix + oxfmt)
 pnpm prisma:generate      # Regenerate Prisma client after schema changes
+pnpm test                 # Run the Vitest suite once (CI mode)
+pnpm test:watch           # Run Vitest in watch mode
 pnpm clean                # Remove build artifacts
 pnpm update:interactive   # Update dependencies interactively via taze
 ```
@@ -151,7 +157,8 @@ Before committing changes, always run:
 
 1. `pnpm build` - Must build successfully
 2. `pnpm lint` - Fix any errors, warnings are acceptable
-3. Prisma client must be regenerated if schema changed
+3. `pnpm test` - All tests must pass
+4. Prisma client must be regenerated if schema changed
 
 Commit messages must follow Conventional Commits: `<type>(<scope>): <subject>`
 
@@ -176,6 +183,10 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@prisma/client` - Database ORM
 - `ioredis` - Redis client
 - `fastify` - HTTP server (underlying `@wolfstar/http-framework`)
+- `vitest` - Test runner for unit/integration tests (`tests/`)
+- `@wolfstar/http-framework-test-utils` - Test harness for dispatching fake
+  Discord interactions through commands (`createTestHarness`,
+  `httpFrameworkMatchers`)
 
 ## Troubleshooting
 
@@ -185,6 +196,7 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
   internet and HMAC signature verification is passing
 - **Command not appearing:** Commands auto-register on startup via
   `@wolfstar/shared-http-pieces`; check Discord developer portal
+- **New or changed command:** Add or update its test under `tests/commands/`
 
 **When in doubt:** Copy existing patterns from similar files (e.g.,
 `src/listeners/twitch/`, `src/commands/`) before inventing new ones.
