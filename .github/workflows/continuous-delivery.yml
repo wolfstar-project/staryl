@@ -22,3 +22,5 @@ jobs:
     name: Publish Staryl Latest image to GHCR
     uses: wolfstar-project/.github/.github/workflows/reusable-publish-image.yml@main
     secrets: inherit
+    with:
+      depotProject: dww1fk3m5s
