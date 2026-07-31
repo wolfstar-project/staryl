@@ -65,12 +65,17 @@ export class TwitchEventSubVerifyRoute extends Route {
 			return;
 		}
 
+		// If the EventSub envelope is missing the subscription type then tell
+		// Twitch they are sending malformed data
+		const { subscription } = body as Partial<TwitchEventSubVerificationMessage>;
+		if (!isObject(subscription) || typeof subscription.type !== "string") {
+			response.badRequest("Malformed data received");
+			return;
+		}
+
 		// Destructure the properties that we need from the body
-		const {
-			challenge,
-			subscription: { type },
-			event,
-		} = body as TwitchEventSubVerificationMessage;
+		const { challenge, event } = body as TwitchEventSubVerificationMessage;
+		const { type } = subscription;
 
 		// Tell the Twitch API this response was OK
 		response.text(challenge);
