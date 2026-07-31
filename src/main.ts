@@ -5,6 +5,7 @@ import { init, load } from "@wolfstar/http-framework-i18n";
 import { registerCommands } from "@wolfstar/shared-http-pieces";
 import { createBanner } from "@wolfstar/start-banner";
 import { vice } from "gradient-string";
+import "@wolfstar/plugin-api/register";
 
 await setup();
 
@@ -16,13 +17,15 @@ await init({
 	returnEmptyString: false,
 });
 
-const client = new Client();
-await client.load();
-
-await container.server.listen({
-	host: envParseString("API_ADDRESS"),
-	port: envParseInteger("API_PORT"),
+const client = new Client({
+	api: {
+		listenOptions: {
+			port: envParseInteger("API_PORT"),
+			host: envParseString("API_ADDRESS"),
+		},
+	},
 });
+await client.load();
 
 void registerCommands();
 

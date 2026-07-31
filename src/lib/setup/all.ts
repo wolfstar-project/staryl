@@ -7,7 +7,6 @@ import {
 /* oxlint-disable import/first */
 import "#lib/setup/logger";
 import "#lib/setup/prisma";
-import "#lib/setup/fastify";
 import "@wolfstar/shared-http-pieces/register";
 
 export async function setup() {
@@ -16,7 +15,4 @@ export async function setup() {
 	setRepository("staryl");
 	setInvite(envParseString("DISCORD_CLIENT_ID"), "0");
 	initializeSentry();
-
-	// Load all routes
-	await import("#api/routes/_load");
 }

@@ -78,10 +78,10 @@ and EventSub webhooks.
 
 ### Running the app
 
-| Service                   | Port | Purpose                                     |
-| ------------------------- | ---- | ------------------------------------------- |
-| Discord HTTP interactions | 3000 | Slash commands (`HTTP_PORT`)                |
-| Fastify API               | 3001 | Twitch EventSub + health route (`API_PORT`) |
+| Service                             | Port | Purpose                                     |
+| ----------------------------------- | ---- | ------------------------------------------- |
+| Discord HTTP interactions           | 3000 | Slash commands (`HTTP_PORT`)                |
+| Plugin API (`@wolfstar/plugin-api`) | 3001 | Twitch EventSub + health route (`API_PORT`) |
 
 ```bash
 pnpm dev          # build + start (watch: pnpm watch with pnpm start)

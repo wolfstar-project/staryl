@@ -43,7 +43,7 @@
 
 ## Import Conventions
 
-- Use TypeScript path mapping aliases for internal imports: `#lib/*`, `#api/*`,
+- Use TypeScript path mapping aliases for internal imports: `#lib/*`,
   `#utils/*`, `#common/*`, `#i18n`
 - Use `type` imports for type-only values: `import type { ... } from "..."`
 - Group imports: type imports first, then internal aliases, then external
@@ -55,8 +55,8 @@
 
 ### Key Patterns
 
-- **HTTP Framework**: Built on `@wolfstar/http-framework` (Fastify-based),
-  handling Discord interactions via HTTP endpoints instead of WebSocket gateway
+- **HTTP Framework**: Built on `@wolfstar/http-framework`, handling Discord
+  interactions via HTTP endpoints instead of WebSocket gateway
 - **Database**: PostgreSQL with Prisma ORM. Models use `@@map()` for snake_case
   table names, `@map()` for snake_case column names
 - **Event System**: Twitch EventSub webhooks trigger internal events
@@ -72,11 +72,13 @@
 ### Directory Structure
 
 - `src/main.ts` - Application entry point
-- `src/api/routes/` - HTTP API endpoints (Twitch EventSub webhooks)
+- `src/routes/` - HTTP API endpoints (`@wolfstar/plugin-api` `Route` pieces,
+  e.g. Twitch EventSub webhooks)
+- `src/middlewares/` - HTTP API middlewares (`@wolfstar/plugin-api` `Middleware`
+  pieces)
 - `src/commands/` - Discord slash commands using decorator pattern
 - `src/listeners/` - Event listeners for Twitch stream events
-- `src/lib/setup/` - Application initialization (env, Fastify, Prisma, logger,
-  schedules)
+- `src/lib/setup/` - Application initialization (env, Prisma, logger, schedules)
 - `src/lib/structures/` - Core classes (`ScheduleHandler`, stores)
 - `src/lib/utilities/` - Helper functions (Discord API, Twitch, mention parsing)
 - `src/lib/common/` - Shared constants, error handling, promise utilities
@@ -122,16 +124,42 @@ export default class extends Listener {
 
 ### API Route Structure
 
-Routes are registered directly on `container.server` (Fastify):
+The auxiliary REST API (health checks, webhooks) is built on
+`@wolfstar/plugin-api`, a standalone `node:http` server independent from the
+Discord interactions webhook. Routes are `Route` pieces loaded from
+`src/routes/`, with path and HTTP method inferred from the file's location
+(`src/routes/twitch/event_sub_verify.post.ts` →
+`POST /twitch/event_sub_verify`):
 
 ```typescript
-container.server.route({
-	url: "/path",
-	method: "POST",
-	handler: async (request, reply) => {
-		// Handle request
-	},
-});
+import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
+import { Route } from "@wolfstar/plugin-api";
+
+export class ExampleRoute extends Route {
+	public run(request: ApiRequest, response: ApiResponse) {
+		response.json({ ok: true });
+	}
+}
+```
+
+Cross-cutting concerns run as `Middleware` pieces loaded from
+`src/middlewares/`, in ascending `position` order, configured declaratively with
+the local `@ApplyOptions` decorator (`#utils/applyOptions` — a minimal
+equivalent of `@sapphire/decorators`'s `ApplyOptions`; that package can't be
+used here since its bundled entrypoint requires `discord.js`, which this
+http-interactions-only project doesn't depend on):
+
+```typescript
+import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
+import { ApplyOptions } from "#utils/applyOptions";
+import { Middleware } from "@wolfstar/plugin-api";
+
+@ApplyOptions<Middleware.Options>({ position: 30 })
+export class ExampleMiddleware extends Middleware {
+	public run(request: ApiRequest, response: ApiResponse) {
+		// Runs before route dispatch; end the response to short-circuit.
+	}
+}
 ```
 
 ## Development Commands
@@ -168,7 +196,6 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 ## Key Dependencies
 
 - `@wolfstar/http-framework` - Discord HTTP interaction framework
-  (Fastify-based)
 - `@wolfstar/http-framework-i18n` - Internationalization for the HTTP framework
 - `@wolfstar/twitch-helpers` - Twitch EventSub types, helpers, and signature
   verification
@@ -182,7 +209,8 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@discordjs/builders` - Discord embed and component builders
 - `@prisma/client` - Database ORM
 - `ioredis` - Redis client
-- `fastify` - HTTP server (underlying `@wolfstar/http-framework`)
+- `@wolfstar/plugin-api` - Standalone REST API server (`Route`/`Middleware`
+  pieces) for health checks and Twitch EventSub webhooks
 - `vitest` - Test runner for unit/integration tests (`tests/`)
 - `@wolfstar/http-framework-test-utils` - Test harness for dispatching fake
   Discord interactions through commands (`createTestHarness`,

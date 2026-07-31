@@ -14,7 +14,6 @@
 		"#types/*": "./dist/lib/types/*.mjs",
 		"#lib/*": "./dist/lib/*.mjs",
 		"#common/*": "./dist/lib/common/*.mjs",
-		"#api/*": "./dist/api/*.mjs",
 		"#utils/*": "./dist/lib/utilities/*.mjs"
 	},
 	"scripts": {
@@ -49,12 +48,12 @@
 		"@wolfstar/http-framework": "^3.0.0",
 		"@wolfstar/http-framework-i18n": "^1.2.2",
 		"@wolfstar/logger": "^2.0.5",
+		"@wolfstar/plugin-api": "^1.0.0",
 		"@wolfstar/safe-fetch": "^1.1.5",
 		"@wolfstar/shared-http-pieces": "^1.2.6",
 		"@wolfstar/start-banner": "^2.0.3",
 		"@wolfstar/twitch-helpers": "^2.0.3",
 		"discord-api-types": "^0.38.48",
-		"fastify": "^5.8.5",
 		"gradient-string": "^3.0.0",
 		"husky": "^9.1.7",
 		"ioredis": "^5.11.0",
