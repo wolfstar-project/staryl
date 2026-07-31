@@ -127,9 +127,9 @@ pnpm update:interactive   # Update dependencies interactively via taze
 ```text
 src/
 ├── main.ts                     # Application entry point
-├── api/
-│   └── routes/                 # HTTP API endpoints
-│       └── twitch/             # Twitch EventSub webhook handlers
+├── routes/                     # HTTP API endpoints (@wolfstar/plugin-api Route pieces)
+│   └── twitch/                 # Twitch EventSub webhook handlers
+├── middlewares/                 # HTTP API middlewares (@wolfstar/plugin-api Middleware pieces)
 ├── commands/                   # Discord slash commands (decorator pattern)
 ├── listeners/                  # Event listeners
 │   └── twitch/                 # Twitch stream event listeners
@@ -138,7 +138,7 @@ src/
 │   ├── i18n/                   # Internationalization keys
 │   │   └── languageKeys/       # Language key definitions (nested objects)
 │   ├── schedules/              # Schedule base classes
-│   ├── setup/                  # Application initialization (env, Fastify, Prisma, logger)
+│   ├── setup/                  # Application initialization (env, Prisma, logger)
 │   ├── structures/             # Core classes (ScheduleHandler, stores)
 │   ├── types/                  # TypeScript type definitions and enums
 │   └── utilities/              # Helper functions (Discord API, Twitch, mentions)
@@ -169,24 +169,48 @@ formatting issues, run `pnpm lint:fix` before committing.
 - Use standard `enum` for values that cross module boundaries or are used in
   Prisma
 - Use `type` imports for type-only values: `import type { ... } from "..."`
-- Use path mapping aliases for internal imports: `#lib/*`, `#api/*`, `#utils/*`,
+- Use path mapping aliases for internal imports: `#lib/*`, `#utils/*`,
   `#common/*`, `#i18n`
 - Group imports: type imports first, then internal aliases, then external
   packages
 
 ### API route patterns
 
-Routes are registered directly on `container.server` (Fastify). Always verify
-Twitch EventSub signatures and validate request bodies:
+The auxiliary REST API is built on `@wolfstar/plugin-api`. Routes are `Route`
+pieces under `src/routes/`, with path and HTTP method inferred from the file's
+location (a `.<method>` filename suffix, e.g. `hello.post.ts`). Following the
+same convention as Skyra's `src/routes/` (the upstream `@sapphire/plugin-api`
+consumer this was ported from), route classes are always named `UserRoute`, and
+per-request state that must persist across calls is a private instance field
+rather than a module-level variable. Always verify Twitch EventSub signatures
+and validate request bodies:
 
 ```typescript
-container.server.route({
-	url: "/twitch/endpoint",
-	method: "POST",
-	handler: async (request, reply) => {
+import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
+import { Route } from "@wolfstar/plugin-api";
+
+export class UserRoute extends Route {
+	public async run(request: ApiRequest, response: ApiResponse) {
 		// Verify signature, validate body, handle event
-	},
-});
+	}
+}
+```
+
+Cross-cutting concerns (logging, auth, etc.) run as `Middleware` pieces under
+`src/middlewares/`, configured declaratively with the local `@ApplyOptions`
+decorator (`#utils/applyOptions`):
+
+```typescript
+import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
+import { ApplyOptions } from "#utils/applyOptions";
+import { Middleware } from "@wolfstar/plugin-api";
+
+@ApplyOptions<Middleware.Options>({ position: 30 })
+export class ExampleMiddleware extends Middleware {
+	public run(request: ApiRequest, response: ApiResponse) {
+		// Runs before route dispatch; end the response to short-circuit.
+	}
+}
 ```
 
 ### Naming conventions
