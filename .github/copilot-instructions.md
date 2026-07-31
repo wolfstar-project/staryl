@@ -125,17 +125,23 @@ export default class extends Listener {
 ### API Route Structure
 
 The auxiliary REST API (health checks, webhooks) is built on
-`@wolfstar/plugin-api`, a standalone `node:http` server independent from the
-Discord interactions webhook. Routes are `Route` pieces loaded from
-`src/routes/`, with path and HTTP method inferred from the file's location
+`@wolfstar/plugin-api`, ported from `@sapphire/plugin-api` (used by sibling
+project [Skyra](https://github.com/skyra-project/skyra/tree/main/src/routes)) —
+a standalone `node:http` server independent from the Discord interactions
+webhook. Routes are `Route` pieces loaded from `src/routes/`, with path and HTTP
+method inferred from the file's location
 (`src/routes/twitch/event_sub_verify.post.ts` →
-`POST /twitch/event_sub_verify`):
+`POST /twitch/event_sub_verify`). Matching Skyra's convention, the exported
+class is always named `UserRoute` regardless of what the route does (the file
+path is what identifies it), and any per-request state that must persist across
+calls (e.g. a dedup cache) is a private instance field, not a module-level
+variable — one `Route` instance is a long-lived singleton:
 
 ```typescript
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import { Route } from "@wolfstar/plugin-api";
 
-export class ExampleRoute extends Route {
+export class UserRoute extends Route {
 	public run(request: ApiRequest, response: ApiResponse) {
 		response.json({ ok: true });
 	}

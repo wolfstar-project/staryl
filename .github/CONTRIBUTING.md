@@ -178,14 +178,18 @@ formatting issues, run `pnpm lint:fix` before committing.
 
 The auxiliary REST API is built on `@wolfstar/plugin-api`. Routes are `Route`
 pieces under `src/routes/`, with path and HTTP method inferred from the file's
-location (a `.<method>` filename suffix, e.g. `hello.post.ts`). Always verify
-Twitch EventSub signatures and validate request bodies:
+location (a `.<method>` filename suffix, e.g. `hello.post.ts`). Following the
+same convention as Skyra's `src/routes/` (the upstream `@sapphire/plugin-api`
+consumer this was ported from), route classes are always named `UserRoute`, and
+per-request state that must persist across calls is a private instance field
+rather than a module-level variable. Always verify Twitch EventSub signatures
+and validate request bodies:
 
 ```typescript
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import { Route } from "@wolfstar/plugin-api";
 
-export class ExampleRoute extends Route {
+export class UserRoute extends Route {
 	public async run(request: ApiRequest, response: ApiResponse) {
 		// Verify signature, validate body, handle event
 	}

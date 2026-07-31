@@ -1,14 +1,13 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import type { TwitchEventSubVerificationMessage } from "@wolfstar/twitch-helpers";
 import { Events, TwitchStreamStatus } from "#types";
-import { container } from "@sapphire/pieces";
 import { cast, isObject } from "@sapphire/utilities";
 import { Route } from "@wolfstar/plugin-api";
 import { checkSignature, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
-let lastNotificationId: string | null = null;
+export class UserRoute extends Route {
+	private lastNotificationId: string | null = null;
 
-export class TwitchEventSubVerifyRoute extends Route {
 	public async run(request: ApiRequest, response: ApiResponse) {
 		// Grab the headers that we need to use for verification
 		const twitchEventSubMessageSignature = cast<string>(
@@ -22,7 +21,10 @@ export class TwitchEventSubVerifyRoute extends Route {
 		);
 
 		// If this notification is the same as before, then send ok back
-		if (lastNotificationId && lastNotificationId === twitchEventSubMessageId) {
+		if (
+			this.lastNotificationId &&
+			this.lastNotificationId === twitchEventSubMessageId
+		) {
 			response.text("OK");
 			return;
 		}
@@ -83,7 +85,7 @@ export class TwitchEventSubVerifyRoute extends Route {
 		// If there is an event then this is an online or offline notification
 		// If there is no event this is an endpoint verification request
 		if (event) {
-			const { client } = container;
+			const { client } = this.container;
 			if (type === TwitchEventSubTypes.StreamOnline) {
 				client.emit(
 					Events.TwitchStreamHookedAnalytics,
@@ -100,6 +102,6 @@ export class TwitchEventSubVerifyRoute extends Route {
 		}
 
 		// Store the last notification id
-		lastNotificationId = twitchEventSubMessageId;
+		this.lastNotificationId = twitchEventSubMessageId;
 	}
 }
