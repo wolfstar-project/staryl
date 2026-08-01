@@ -33,14 +33,6 @@ export const aliasEntries = [
 		},
 	},
 	{
-		find: "#api",
-		replacement: "#api",
-		customResolver(source: string) {
-			const subPath = source.replace("#api/", "");
-			return resolveSource("src/api", subPath);
-		},
-	},
-	{
 		find: "#common",
 		replacement: "#common",
 		customResolver(source: string) {
