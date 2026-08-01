@@ -13,8 +13,8 @@ import type {
 } from "discord-api-types/v10";
 import { floatPromise } from "#common/promises";
 import { LanguageKeys } from "#i18n";
-import { canSendEmbeds } from "#lib/utilities/discord-utilities";
-import { api } from "#utils/discord-api";
+import { api } from "#utils/discordApi";
+import { canSendEmbeds } from "#utils/discordUtilities";
 import { streamNotificationDrip } from "#utils/twitch";
 import { extractDetailedMentions } from "#utils/util";
 import { EmbedBuilder, escapeMarkdown } from "@discordjs/builders";

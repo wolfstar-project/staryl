@@ -16,7 +16,7 @@ import {
 	ComponentType,
 	PermissionFlagsBits,
 } from "discord-api-types/v10";
-import { api } from "./discord-api.js";
+import { api } from "./discordApi.js";
 
 export function makeActionRow<Component extends APIComponentInActionRow>(
 	components: Component[],

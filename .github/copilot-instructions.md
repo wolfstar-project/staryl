@@ -37,7 +37,7 @@
 | Constants        | PascalCase enum | `Colors.Amber`, `Events.TwitchStreamOnline`            |
 | Path constants   | PascalCase      | `PathRoot`, `PathSrc`                                  |
 | Types/Interfaces | PascalCase      | `GuildSubscription`, `DetailedMentionExtractionResult` |
-| Classes          | PascalCase      | `ScheduleHandler`, `UserCommand`                       |
+| Classes          | PascalCase      | `UserCommand`, `UserRoute`                             |
 | Enum members     | PascalCase      | `TwitchStreamStatus.Online`                            |
 | Private methods  | `#`-prefixed    | `this.#getStreamer()`                                  |
 
@@ -66,8 +66,6 @@
   language keys defined as nested objects in `src/lib/i18n/languageKeys/`
 - **Rate Limiting**: Use `@sapphire/ratelimits` `RateLimitManager` for
   notification drip control
-- **Scheduling**: Custom `ScheduleHandler` piece extending
-  `@wolfstar/http-framework`'s `Piece` class
 
 ### Directory Structure
 
@@ -78,8 +76,7 @@
   pieces)
 - `src/commands/` - Discord slash commands using decorator pattern
 - `src/listeners/` - Event listeners for Twitch stream events
-- `src/lib/setup/` - Application initialization (env, Prisma, logger, schedules)
-- `src/lib/structures/` - Core classes (`ScheduleHandler`, stores)
+- `src/lib/setup/` - Application initialization (env, Prisma, logger)
 - `src/lib/utilities/` - Helper functions (Discord API, Twitch, mention parsing)
 - `src/lib/common/` - Shared constants, error handling, promise utilities
 - `src/lib/types/` - TypeScript type definitions and enums
