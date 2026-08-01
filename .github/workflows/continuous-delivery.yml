@@ -22,7 +22,7 @@ env:
 jobs:
   publish:
     name: Publish Staryl Latest image to GHCR
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - name: Checkout repository
