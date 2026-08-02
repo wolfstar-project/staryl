@@ -36,7 +36,6 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 		areTwitchEventSubCredentialsSet: vi.fn(),
 		fetchUsers: vi.fn(),
 		addEventSubscription: vi.fn(),
-		getCurrentTwitchSubscriptions: vi.fn(),
 		removeEventSubscription: vi.fn(),
 		getRequest: vi.fn(),
 	};
@@ -46,7 +45,6 @@ const {
 	areTwitchEventSubCredentialsSet,
 	fetchUsers,
 	addEventSubscription,
-	getCurrentTwitchSubscriptions,
 	removeEventSubscription,
 	getRequest,
 } = await import("@wolfstar/twitch-helpers");
@@ -418,9 +416,7 @@ describe("twitchsubscriptions add", () => {
 		} as never);
 		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
 		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
-		vi.mocked(getCurrentTwitchSubscriptions).mockResolvedValue(
-			ok({ data: [] }) as never,
-		);
+		vi.mocked(getRequest).mockResolvedValue(ok({ data: [] }) as never);
 		prismaMock.twitchSubscription.create.mockResolvedValue({});
 
 		const interaction = buildInteraction(
@@ -462,9 +458,7 @@ describe("twitchsubscriptions add", () => {
 		} as never);
 		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
 		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
-		vi.mocked(getCurrentTwitchSubscriptions).mockRejectedValue(
-			new Error("offline"),
-		);
+		vi.mocked(getRequest).mockRejectedValue(new Error("offline"));
 		prismaMock.twitchSubscription.create.mockResolvedValue({});
 
 		const interaction = buildInteraction(
@@ -498,7 +492,7 @@ describe("twitchsubscriptions add", () => {
 		} as never);
 		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
 		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
-		vi.mocked(getCurrentTwitchSubscriptions).mockResolvedValue(
+		vi.mocked(getRequest).mockResolvedValue(
 			ok({ data: [{ id: String(SubscriptionId) }] }) as never,
 		);
 		prismaMock.twitchSubscription.create.mockResolvedValue({});
@@ -517,6 +511,10 @@ describe("twitchsubscriptions add", () => {
 
 		expect(removeEventSubscription).toHaveBeenCalledWith(
 			String(SubscriptionId),
+		);
+		// Scoped to the broadcaster and event type so the single page Twitch returns is complete.
+		expect(getRequest).toHaveBeenCalledWith(
+			`eventsub/subscriptions?user_id=${StreamerId}&type=stream.online`,
 		);
 		expect(prismaMock.twitchSubscription.create).toHaveBeenCalledWith({
 			data: {
@@ -545,7 +543,7 @@ describe("twitchsubscriptions add", () => {
 		} as never);
 		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
 		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
-		vi.mocked(getCurrentTwitchSubscriptions).mockResolvedValue(
+		vi.mocked(getRequest).mockResolvedValue(
 			ok({ data: [{ id: String(SubscriptionId) }] }) as never,
 		);
 		prismaMock.twitchSubscription.create.mockRejectedValue(

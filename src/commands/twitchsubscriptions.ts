@@ -1,5 +1,8 @@
 import type { GuildSubscription, Prisma } from "#lib/setup/prisma";
-import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
+import type {
+	TwitchEventSubResult,
+	TwitchHelixResponse,
+} from "@wolfstar/twitch-helpers";
 import type { APIChannel } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import { LanguageKeys } from "#i18n";
@@ -25,7 +28,6 @@ import {
 	addEventSubscription,
 	areTwitchEventSubCredentialsSet,
 	fetchUsers,
-	getCurrentTwitchSubscriptions,
 	getRequest,
 	removeEventSubscription,
 	TwitchEventSubTypes,
@@ -217,6 +219,8 @@ export class UserCommand extends Command {
 					// than persisting none: a later add would take the `connect` branch, report success, and then
 					// never deliver a notification. Only keep the row once Twitch still lists the subscription.
 					const confirmed = await this.#isEventSubSubscriptionListed(
+						streamer.id,
+						TwitchEventSubTypes[type],
 						subscription.id,
 					);
 					if (!confirmed) {
@@ -608,17 +612,28 @@ export class UserCommand extends Command {
 	/**
 	 * Checks whether Twitch still lists an EventSub subscription.
 	 *
-	 * `getCurrentTwitchSubscriptions` returns only the first page, so a miss is inconclusive rather
-	 * than proof of deletion. The result is therefore a confirmation, not an existence check: `false`
-	 * means "not confirmed" and callers must treat it as "do not rely on this subscription".
+	 * The listing is filtered by broadcaster and event type, which narrows it to the handful of
+	 * subscriptions that can exist for that pair. That fits well inside the page Twitch returns, so no
+	 * cursor has to be followed and a miss is a real miss — unlike listing every subscription the
+	 * application owns, where the wanted entry could sit on a later page.
+	 *
+	 * A failed lookup still answers `false`: callers must read it as "not confirmed" and never rely on
+	 * the subscription.
 	 */
-	async #isEventSubSubscriptionListed(subscriptionId: string) {
+	async #isEventSubSubscriptionListed(
+		streamerId: string,
+		subscriptionType: TwitchEventSubTypes,
+		subscriptionId: string,
+	) {
+		const query = `user_id=${encodeURIComponent(streamerId)}&type=${encodeURIComponent(subscriptionType)}`;
 		const result = await Result.fromAsync(() =>
-			getCurrentTwitchSubscriptions(),
+			getRequest<TwitchHelixResponse<TwitchEventSubResult>>(
+				`eventsub/subscriptions?${query}`,
+			),
 		);
 		if (result.isErr()) {
 			this.container.logger.error(
-				`[twitch-subscriptions] Failed to list the EventSub subscriptions while confirming "${subscriptionId}"`,
+				`[twitch-subscriptions] Failed to list the ${subscriptionType} EventSub subscriptions of ${streamerId} while confirming "${subscriptionId}"`,
 				result.unwrapErr(),
 			);
 			return false;
