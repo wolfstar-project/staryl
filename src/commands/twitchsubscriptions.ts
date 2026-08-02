@@ -613,9 +613,8 @@ export class UserCommand extends Command {
 	 * Checks whether Twitch still lists an EventSub subscription.
 	 *
 	 * The listing is filtered by broadcaster and event type, which narrows it to the handful of
-	 * subscriptions that can exist for that pair. That fits well inside the page Twitch returns, so no
-	 * cursor has to be followed and a miss is a real miss — unlike listing every subscription the
-	 * application owns, where the wanted entry could sit on a later page.
+	 * subscriptions that can exist for that pair, and every pagination cursor Twitch returns is
+	 * still followed so the subscription is only reported absent once the listing is exhausted.
 	 *
 	 * A failed lookup still answers `false`: callers must read it as "not confirmed" and never rely on
 	 * the subscription.
@@ -626,20 +625,31 @@ export class UserCommand extends Command {
 		subscriptionId: string,
 	) {
 		const query = `user_id=${encodeURIComponent(streamerId)}&type=${encodeURIComponent(subscriptionType)}`;
-		const result = await Result.fromAsync(() =>
-			getRequest<TwitchHelixResponse<TwitchEventSubResult>>(
-				`eventsub/subscriptions?${query}`,
-			),
-		);
-		if (result.isErr()) {
-			this.container.logger.error(
-				`[twitch-subscriptions] Failed to list the ${subscriptionType} EventSub subscriptions of ${streamerId} while confirming "${subscriptionId}"`,
-				result.unwrapErr(),
+		let cursor: string | undefined;
+		do {
+			const path = `eventsub/subscriptions?${query}${cursor ? `&after=${encodeURIComponent(cursor)}` : ""}`;
+			// oxlint-disable-next-line no-await-in-loop -- each cursor comes from the previous response
+			const result = await Result.fromAsync(() =>
+				getRequest<
+					TwitchHelixResponse<TwitchEventSubResult> & {
+						pagination?: { cursor?: string };
+					}
+				>(path),
 			);
-			return false;
-		}
+			if (result.isErr()) {
+				this.container.logger.error(
+					`[twitch-subscriptions] Failed to list the ${subscriptionType} EventSub subscriptions of ${streamerId} while confirming "${subscriptionId}"`,
+					result.unwrapErr(),
+				);
+				return false;
+			}
 
-		return result.unwrap().data.some((entry) => entry.id === subscriptionId);
+			const { data, pagination } = result.unwrap();
+			if (data.some((entry) => entry.id === subscriptionId)) return true;
+			cursor = pagination?.cursor;
+		} while (cursor);
+
+		return false;
 	}
 
 	async #getStreamer(streamerName: string) {

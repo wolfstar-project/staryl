@@ -527,6 +527,62 @@ describe("twitchsubscriptions add", () => {
 		expect(patchedContent()).toContain("I could not save the subscription");
 	});
 
+	it("persists the shared subscription when Twitch lists it on a later page", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+		vi.mocked(addEventSubscription).mockResolvedValue({
+			id: String(SubscriptionId),
+		} as never);
+		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
+		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
+		vi.mocked(getRequest)
+			.mockResolvedValueOnce(
+				ok({
+					data: [{ id: "another-subscription" }],
+					pagination: { cursor: "next-page" },
+				}) as never,
+			)
+			.mockResolvedValueOnce(
+				ok({ data: [{ id: String(SubscriptionId) }] }) as never,
+			);
+		prismaMock.twitchSubscription.create.mockResolvedValue({});
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(getRequest).toHaveBeenNthCalledWith(
+			1,
+			`eventsub/subscriptions?user_id=${StreamerId}&type=stream.online`,
+		);
+		expect(getRequest).toHaveBeenNthCalledWith(
+			2,
+			`eventsub/subscriptions?user_id=${StreamerId}&type=stream.online&after=next-page`,
+		);
+		expect(prismaMock.twitchSubscription.create).toHaveBeenCalledWith({
+			data: {
+				streamerId: StreamerId,
+				subscriptionId: String(SubscriptionId),
+				subscriptionType: TwitchSubscriptionType.StreamOnline,
+			},
+			select: null,
+		});
+		expect(patchedContent()).toContain("I could not save the subscription");
+	});
+
 	it("logs the orphaned EventSub subscription when the revert and recovery both fail", async () => {
 		const fatal = vi.spyOn(container.logger, "fatal").mockImplementation(() => {
 			// noop
