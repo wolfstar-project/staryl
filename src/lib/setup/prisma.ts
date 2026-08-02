@@ -10,6 +10,7 @@ container.prisma = prisma;
 
 export type {
 	GuildSubscription,
+	Prisma,
 	TwitchSubscription,
 	TwitchSubscriptionType,
 } from "#generated/prisma";

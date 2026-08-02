@@ -47,6 +47,10 @@ export const AddSuccessLive = FT<{ name: string; channel: string }>(
 export const AddMessageForOfflineRequired = T(
 	"commands/twitch:addMessageForOfflineRequired",
 );
+export const AddFailedTwitch = T("commands/twitch:addFailedTwitch");
+export const AddFailedDatabase = T("commands/twitch:addFailedDatabase");
+export const RemoveFailed = T("commands/twitch:removeFailed");
+export const ResetFailed = T("commands/twitch:resetFailed");
 export const NoSubscriptions = T("commands/twitch:noSubscriptions");
 export const RemoveStreamerNotSubscribed = FT<{ streamer: string }>(
 	"commands/twitch:removeStreamerNotSubscribed",

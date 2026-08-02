@@ -1,5 +1,8 @@
-import type { GuildSubscription } from "#lib/setup/prisma";
-import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
+import type { GuildSubscription, Prisma } from "#lib/setup/prisma";
+import type {
+	TwitchEventSubResult,
+	TwitchHelixResponse,
+} from "@wolfstar/twitch-helpers";
 import type { APIChannel } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import { LanguageKeys } from "#i18n";
@@ -23,6 +26,7 @@ import {
 } from "@wolfstar/http-framework-i18n";
 import {
 	addEventSubscription,
+	areTwitchEventSubCredentialsSet,
 	fetchUsers,
 	getRequest,
 	removeEventSubscription,
@@ -37,6 +41,17 @@ import {
 } from "discord-api-types/v10";
 
 const Root = LanguageKeys.Commands.Twitch;
+
+/**
+ * Matches the `@db.VarChar(200)` column backing {@link GuildSubscription.message}; without it Discord accepts
+ * messages the database rejects, and the insert fails after the Twitch subscription has already been created.
+ */
+const MaximumMessageLength = 200;
+
+/**
+ * The `users` Twitch Helix endpoint accepts at most 100 ids per request.
+ */
+const MaximumUsersPerRequest = 100;
 
 @RegisterCommand((builder) =>
 	applyLocalizedBuilder(builder, Root.RootName, Root.RootDescription)
@@ -55,7 +70,9 @@ export class UserCommand extends Command {
 					option,
 					Root.OptionsMessageName,
 					Root.OptionsMessageDescription,
-				).setRequired(false),
+				)
+					.setMaxLength(MaximumMessageLength)
+					.setRequired(false),
 			),
 	)
 	public async add(
@@ -63,16 +80,7 @@ export class UserCommand extends Command {
 		options: Options,
 	) {
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
-		const { channel, type, message, streamer: streamerRaw } = options;
-		const streamer = await this.#getStreamer(streamerRaw);
-		if (!streamer) {
-			return deferred.update({
-				content: await resolveKey(
-					interaction,
-					LanguageKeys.Commands.Twitch.StreamerNotFound,
-				),
-			});
-		}
+		const { channel, type, message } = options;
 
 		if (
 			type === TwitchSubscriptionType.StreamOffline &&
@@ -81,26 +89,46 @@ export class UserCommand extends Command {
 			return deferred.update({
 				content: await resolveKey(
 					interaction,
-					LanguageKeys.Commands.Twitch.AddMessageForOfflineRequired,
+					Root.AddMessageForOfflineRequired,
 				),
 			});
 		}
 
-		const streamerForType =
-			await this.container.prisma.twitchSubscription.findFirst({
-				where: { streamerId: streamer.id, subscriptionType: type },
+		const streamer = await this.#getStreamer(options.streamer);
+		if (isNullish(streamer)) {
+			return deferred.update({
+				content: await resolveKey(interaction, Root.StreamerNotFound),
 			});
+		}
 
-		const guildSubscriptionsForGuild =
-			await this.container.prisma.guildSubscription.findMany({
-				where: {
-					guildId: BigInt(interaction.guildId!),
-					channelId: BigInt(channel.id),
-				},
-				include: { twitchSubscription: true },
+		const guildId = BigInt(interaction.guildId!);
+		const channelId = BigInt(channel.id);
+
+		const existingResult = await Result.fromAsync(() =>
+			Promise.all([
+				this.container.prisma.twitchSubscription.findFirst({
+					where: { streamerId: streamer.id, subscriptionType: type },
+				}),
+				this.container.prisma.guildSubscription.findMany({
+					where: { guildId, channelId },
+					include: { twitchSubscription: true },
+				}),
+			]),
+		);
+		if (existingResult.isErr()) {
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to read the existing subscriptions",
+				existingResult.unwrapErr(),
+			);
+			return deferred.update({
+				content: await resolveKey(interaction, Root.AddFailedDatabase),
 			});
+		}
 
-		const alreadyHasEntry = guildSubscriptionsForGuild.some(
+		const [streamerForType, guildSubscriptionsForChannel] =
+			existingResult.unwrap();
+
+		const alreadyHasEntry = guildSubscriptionsForChannel.some(
 			(guildSubscription) =>
 				guildSubscription.twitchSubscription.streamerId === streamer.id &&
 				guildSubscription.twitchSubscription.subscriptionType === type,
@@ -108,63 +136,131 @@ export class UserCommand extends Command {
 
 		if (alreadyHasEntry) {
 			return deferred.update({
-				content: await resolveKey(
-					interaction,
-					LanguageKeys.Commands.Twitch.AddDuplicated,
-				),
+				content: await resolveKey(interaction, Root.AddDuplicated),
 			});
 		}
 
-		try {
-			if (streamerForType) {
-				await this.container.prisma.guildSubscription.create({
-					data: {
-						channelId: BigInt(channel.id),
-						message: message ?? undefined,
-						guild: {
-							connectOrCreate: {
-								where: { id: BigInt(interaction.guildId!) },
-								create: { id: BigInt(interaction.guildId!) },
-							},
-						},
-						twitchSubscription: { connect: { id: streamerForType.id } },
-					},
-					select: null,
-				});
-			} else {
-				const subscription = await addEventSubscription(
-					streamer.id,
-					TwitchEventSubTypes[type],
+		if (streamerForType) {
+			const createdResult = await Result.fromAsync(() =>
+				this.#createGuildSubscription(guildId, channelId, message, {
+					connect: { id: streamerForType.id },
+				}),
+			);
+			if (createdResult.isErr()) {
+				this.container.logger.error(
+					"[twitch-subscriptions] Failed to store the guild subscription",
+					createdResult.unwrapErr(),
 				);
-				const twitchSubscription =
-					await this.container.prisma.twitchSubscription.create({
-						data: {
-							streamerId: streamer.id,
-							subscriptionId: subscription.id,
-							subscriptionType: type,
-						},
-						select: { id: true },
-					});
-				await this.container.prisma.guildSubscription.create({
-					data: {
-						channelId: BigInt(channel.id),
-						message: message ?? undefined,
-						guild: {
-							connectOrCreate: {
-								where: { id: BigInt(interaction.guildId!) },
-								create: { id: BigInt(interaction.guildId!) },
-							},
-						},
-						twitchSubscription: { connect: { id: twitchSubscription.id } },
-					},
-					select: null,
+				return deferred.update({
+					content: await resolveKey(interaction, Root.AddFailedDatabase),
 				});
 			}
-		} catch {
-			return deferred.update({
-				content:
-					"An error occurred while trying to add the subscription. Please try again later.",
-			});
+		} else {
+			// Only this branch talks to Twitch; the branch above merely connects an already existing
+			// subscription, so it must stay reachable when the EventSub variables are unset.
+			// `addEventSubscription` throws a `ReferenceError` in that case, which would otherwise
+			// surface as an opaque failure.
+			if (!areTwitchEventSubCredentialsSet()) {
+				this.container.logger.error(
+					"[twitch-subscriptions] TWITCH_EVENT_SUB_CALLBACK and/or TWITCH_EVENT_SUB_SECRET are not set, EventSub subscriptions cannot be created.",
+				);
+				return deferred.update({
+					content: await resolveKey(interaction, Root.AddFailedTwitch),
+				});
+			}
+
+			const eventSubResult = await Result.fromAsync(() =>
+				addEventSubscription(streamer.id, TwitchEventSubTypes[type]),
+			);
+			if (eventSubResult.isErr()) {
+				this.container.logger.error(
+					`[twitch-subscriptions] Failed to create the ${TwitchEventSubTypes[type]} EventSub subscription for ${streamer.id}`,
+					eventSubResult.unwrapErr(),
+				);
+				return deferred.update({
+					content: await resolveKey(interaction, Root.AddFailedTwitch),
+				});
+			}
+
+			const subscription = eventSubResult.unwrap();
+			if (isNullish(subscription?.id)) {
+				this.container.logger.error(
+					`[twitch-subscriptions] Twitch returned an empty EventSub payload for ${streamer.id}`,
+				);
+				return deferred.update({
+					content: await resolveKey(interaction, Root.AddFailedTwitch),
+				});
+			}
+
+			// A single nested write so the `TwitchSubscription` row cannot be created without the
+			// `GuildSubscription` row that owns it.
+			const createdResult = await Result.fromAsync(() =>
+				this.#createGuildSubscription(guildId, channelId, message, {
+					create: {
+						streamerId: streamer.id,
+						subscriptionId: subscription.id,
+						subscriptionType: type,
+					},
+				}),
+			);
+			if (createdResult.isErr()) {
+				this.container.logger.error(
+					"[twitch-subscriptions] Failed to store the subscription, reverting the EventSub subscription",
+					createdResult.unwrapErr(),
+				);
+				// Twitch answers 409 for duplicated subscriptions, so leaving this behind would make the
+				// streamer impossible to add ever again.
+				const revertedResult = await Result.fromAsync(() =>
+					removeEventSubscription(subscription.id),
+				);
+				if (revertedResult.isErr()) {
+					// A rejected delete does not prove Twitch kept the subscription, the response can be lost
+					// after it was processed. Persisting a row for a subscription that is actually gone is worse
+					// than persisting none: a later add would take the `connect` branch, report success, and then
+					// never deliver a notification. Only keep the row once Twitch still lists the subscription.
+					const confirmed = await this.#isEventSubSubscriptionListed(
+						streamer.id,
+						TwitchEventSubTypes[type],
+						subscription.id,
+					);
+					if (!confirmed) {
+						this.container.logger.fatal(
+							`[twitch-subscriptions] Could not confirm the ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id} after the revert failed, so it was not persisted; if it still exists on Twitch it must be removed manually.`,
+							revertedResult.unwrapErr(),
+						);
+					} else {
+						// The subscription is still live on Twitch, so persist the shared row alone: a later add
+						// reuses it through the `connect` branch instead of hitting Twitch's 409 forever.
+						const recoveryResult = await Result.fromAsync(() =>
+							this.container.prisma.twitchSubscription.create({
+								data: {
+									streamerId: streamer.id,
+									subscriptionId: subscription.id,
+									subscriptionType: type,
+								},
+								select: null,
+							}),
+						);
+						if (recoveryResult.isErr()) {
+							// The EventSub subscription is now orphaned: it exists on Twitch with no row pointing at
+							// it. Log the id at `fatal` so it can be deleted by hand.
+							this.container.logger.fatal(
+								`[twitch-subscriptions] Orphaned ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}: the rollback failed and it must be removed manually.`,
+								revertedResult.unwrapErr(),
+								recoveryResult.unwrapErr(),
+							);
+						} else {
+							this.container.logger.error(
+								`[twitch-subscriptions] Failed to revert the ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}, persisted it so a later add can reuse it.`,
+								revertedResult.unwrapErr(),
+							);
+						}
+					}
+				}
+				return deferred.update({
+					content: await resolveKey(interaction, Root.AddFailedDatabase),
+				});
+			}
 		}
 
 		const content = cast<string>(
@@ -190,14 +286,11 @@ export class UserCommand extends Command {
 		interaction: Command.ChatInputInteraction,
 		options: Options,
 	) {
+		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const streamer = await this.#getStreamer(options.streamer);
-		if (!streamer) {
-			return interaction.reply({
-				content: await resolveKey(
-					interaction,
-					LanguageKeys.Commands.Twitch.StreamerNotFound,
-				),
-				flags: MessageFlags.Ephemeral,
+		if (isNullish(streamer)) {
+			return deferred.update({
+				content: await resolveKey(interaction, Root.StreamerNotFound),
 			});
 		}
 
@@ -207,10 +300,12 @@ export class UserCommand extends Command {
 			BigInt(interaction.guildId!),
 		);
 		if (guildSubscriptionsResult.isErr()) {
-			return interaction.reply({
-				content:
-					"An error occurred while trying to remove the subscription. Please try again later.",
-				flags: MessageFlags.Ephemeral,
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to read the guild subscriptions",
+				guildSubscriptionsResult.unwrapErr(),
+			);
+			return deferred.update({
+				content: await resolveKey(interaction, Root.RemoveFailed),
 			});
 		}
 		const guildSubscriptions = guildSubscriptionsResult.unwrap();
@@ -220,17 +315,12 @@ export class UserCommand extends Command {
 		);
 
 		if (!streamers.length) {
-			return interaction.reply({
+			return deferred.update({
 				content: cast<string>(
-					await resolveKey(
-						interaction,
-						LanguageKeys.Commands.Twitch.RemoveStreamerNotSubscribed,
-						{
-							streamer: streamer.display_name,
-						},
-					),
+					await resolveKey(interaction, Root.RemoveStreamerNotSubscribed, {
+						streamer: streamer.display_name,
+					}),
 				),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -241,21 +331,13 @@ export class UserCommand extends Command {
 
 		if (!statuses.length) {
 			const showStatuses = await resolveKey(interaction, Root.ShowStatus);
-			return interaction.reply({
+			return deferred.update({
 				content: cast<string>(
-					await resolveKey(
-						interaction,
-						LanguageKeys.Commands.Twitch.RemoveStreamerStatusNotMatch,
-						{
-							streamer: streamer.display_name,
-							status: this.getSubscriptionStatus(
-								subscriptionType,
-								showStatuses,
-							),
-						},
-					),
+					await resolveKey(interaction, Root.RemoveStreamerStatusNotMatch, {
+						streamer: streamer.display_name,
+						status: this.getSubscriptionStatus(subscriptionType, showStatuses),
+					}),
 				),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -264,28 +346,28 @@ export class UserCommand extends Command {
 		);
 
 		if (!streamerWithStatusHasChannel) {
-			return interaction.reply({
+			return deferred.update({
 				content: cast<string>(
-					await resolveKey(
-						interaction,
-						LanguageKeys.Commands.Twitch.RemoveNotToProvidedChannel,
-						{ channel: channelMention(channel.id) },
-					),
+					await resolveKey(interaction, Root.RemoveNotToProvidedChannel, {
+						channel: channelMention(channel.id),
+					}),
 				),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		try {
+		const removalResult = await Result.fromAsync(async () => {
 			await this.#deleteSubscription(streamerWithStatusHasChannel);
 			await this.#removeSubscription(
 				streamerWithStatusHasChannel.subscriptionId,
 			);
-		} catch {
-			return interaction.reply({
-				content:
-					"An error occurred while trying to remove the subscription. Please try again later.",
-				flags: MessageFlags.Ephemeral,
+		});
+		if (removalResult.isErr()) {
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to remove the subscription",
+				removalResult.unwrapErr(),
+			);
+			return deferred.update({
+				content: await resolveKey(interaction, Root.RemoveFailed),
 			});
 		}
 
@@ -293,12 +375,12 @@ export class UserCommand extends Command {
 			await resolveKey(
 				interaction,
 				subscriptionType === TwitchSubscriptionType.StreamOnline
-					? LanguageKeys.Commands.Twitch.RemoveSuccessLive
-					: LanguageKeys.Commands.Twitch.RemoveSuccessOffline,
+					? Root.RemoveSuccessLive
+					: Root.RemoveSuccessOffline,
 				{ name: streamer.display_name, channel: channelMention(channel.id) },
 			),
 		);
-		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
+		return deferred.update({ content });
 	}
 
 	@RegisterSubcommand((builder) =>
@@ -312,31 +394,33 @@ export class UserCommand extends Command {
 		interaction: Command.ChatInputInteraction,
 		options: ResetShowOptions,
 	) {
+		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const guildId = BigInt(interaction.guildId!);
 
 		const guildSubscriptionsResult = await this.getGuildSubscriptions(guildId);
 		if (guildSubscriptionsResult.isErr()) {
-			return interaction.reply({
-				content: await resolveKey(interaction, Root.NoSubscriptions),
-				flags: MessageFlags.Ephemeral,
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to read the guild subscriptions",
+				guildSubscriptionsResult.unwrapErr(),
+			);
+			return deferred.update({
+				content: await resolveKey(interaction, Root.ResetFailed),
 			});
 		}
 
 		let guildSubscriptions = guildSubscriptionsResult.unwrap();
 
 		if (!guildSubscriptions.length) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(interaction, Root.NoSubscriptions),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		if (!isNullish(options.streamer)) {
 			const streamer = await this.#getStreamer(options.streamer);
-			if (!streamer) {
-				return interaction.reply({
+			if (isNullish(streamer)) {
+				return deferred.update({
 					content: await resolveKey(interaction, Root.StreamerNotFound),
-					flags: MessageFlags.Ephemeral,
 				});
 			}
 			guildSubscriptions = guildSubscriptions.filter(
@@ -345,9 +429,8 @@ export class UserCommand extends Command {
 		}
 
 		if (!guildSubscriptions.length) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(interaction, Root.NoSubscriptions),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -356,19 +439,30 @@ export class UserCommand extends Command {
 			...new Set(guildSubscriptions.map((gs) => gs.subscriptionId)),
 		];
 
-		await Promise.all(
-			guildSubscriptions.map((gs) => this.#deleteSubscription(gs)),
-		);
-		await Promise.all(
-			uniqueSubscriptionIds.map((subscriptionId) =>
-				this.#removeSubscription(subscriptionId),
-			),
-		);
+		const removalResult = await Result.fromAsync(async () => {
+			await Promise.all(
+				guildSubscriptions.map((gs) => this.#deleteSubscription(gs)),
+			);
+			await Promise.all(
+				uniqueSubscriptionIds.map((subscriptionId) =>
+					this.#removeSubscription(subscriptionId),
+				),
+			);
+		});
+		if (removalResult.isErr()) {
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to reset the subscriptions",
+				removalResult.unwrapErr(),
+			);
+			return deferred.update({
+				content: await resolveKey(interaction, Root.ResetFailed),
+			});
+		}
 
 		const content = cast<string>(
 			await resolveKey(interaction, Root.ResetSuccess, { count }),
 		);
-		return interaction.reply({ content, flags: MessageFlags.Ephemeral });
+		return deferred.update({ content });
 	}
 
 	@RegisterSubcommand((builder) =>
@@ -382,32 +476,34 @@ export class UserCommand extends Command {
 		interaction: Command.ChatInputInteraction,
 		options: ResetShowOptions,
 	) {
+		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const guildId = BigInt(interaction.guildId!);
 
 		const guildSubscriptionsResult = await this.getGuildSubscriptions(guildId);
 		if (guildSubscriptionsResult.isErr()) {
-			return interaction.reply({
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to read the guild subscriptions",
+				guildSubscriptionsResult.unwrapErr(),
+			);
+			return deferred.update({
 				content: await resolveKey(interaction, Root.NoSubscriptions),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		const allSubscriptions = guildSubscriptionsResult.unwrap();
 
 		if (!allSubscriptions.length) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(interaction, Root.NoSubscriptions),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		let streamerFilter: { id: string; display_name: string } | null = null;
 		if (!isNullish(options.streamer)) {
 			streamerFilter = await this.#getStreamer(options.streamer);
-			if (!streamerFilter) {
-				return interaction.reply({
+			if (isNullish(streamerFilter)) {
+				return deferred.update({
 					content: await resolveKey(interaction, Root.StreamerNotFound),
-					flags: MessageFlags.Ephemeral,
 				});
 			}
 		}
@@ -419,9 +515,8 @@ export class UserCommand extends Command {
 			: allSubscriptions;
 
 		if (!subscriptions.length) {
-			return interaction.reply({
+			return deferred.update({
 				content: await resolveKey(interaction, Root.ShowStreamerNotSubscribed),
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -430,20 +525,11 @@ export class UserCommand extends Command {
 			resolveKey(interaction, Root.ShowUnknownUser),
 		]);
 
-		let names: Map<string, string>;
-		if (streamerFilter) {
-			names = new Map([[streamerFilter.id, streamerFilter.display_name]]);
-		} else {
-			const streamerIds = [
-				...new Set(subscriptions.map((gs) => gs.twitchSubscription.streamerId)),
-			];
-			const profilesResult = await fetchUsers({ ids: streamerIds });
-			names = profilesResult.isOk()
-				? new Map(
-						profilesResult.unwrap().data.map((p) => [p.id, p.display_name]),
-					)
-				: new Map();
-		}
+		const names = streamerFilter
+			? new Map([[streamerFilter.id, streamerFilter.display_name]])
+			: await this.#fetchStreamerNames(
+					subscriptions.map((gs) => gs.twitchSubscription.streamerId),
+				);
 
 		const lines = subscriptions.map((gs) => {
 			const name = names.get(gs.twitchSubscription.streamerId) ?? unknownUser;
@@ -457,10 +543,7 @@ export class UserCommand extends Command {
 		const embed = new EmbedBuilder()
 			.setTitle(await resolveKey(interaction, Root.ShowEmbedTitle))
 			.setDescription(lines.join("\n"));
-		return interaction.reply({
-			embeds: [embed.toJSON()],
-			flags: MessageFlags.Ephemeral,
-		});
+		return deferred.update({ embeds: [embed.toJSON()] });
 	}
 
 	public override async autocompleteRun(
@@ -504,12 +587,115 @@ export class UserCommand extends Command {
 			: statuses.offline;
 	}
 
+	#createGuildSubscription(
+		guildId: bigint,
+		channelId: bigint,
+		message: string | null,
+		twitchSubscription: Prisma.TwitchSubscriptionCreateNestedOneWithoutGuildSubscriptionInput,
+	) {
+		return this.container.prisma.guildSubscription.create({
+			data: {
+				channelId,
+				message: message ?? undefined,
+				guild: {
+					connectOrCreate: {
+						where: { id: guildId },
+						create: { id: guildId },
+					},
+				},
+				twitchSubscription,
+			},
+			select: null,
+		});
+	}
+
+	/**
+	 * Checks whether Twitch still lists an EventSub subscription.
+	 *
+	 * The listing is filtered by broadcaster and event type, which narrows it to the handful of
+	 * subscriptions that can exist for that pair, and every pagination cursor Twitch returns is
+	 * still followed so the subscription is only reported absent once the listing is exhausted.
+	 *
+	 * A failed lookup still answers `false`: callers must read it as "not confirmed" and never rely on
+	 * the subscription.
+	 */
+	async #isEventSubSubscriptionListed(
+		streamerId: string,
+		subscriptionType: TwitchEventSubTypes,
+		subscriptionId: string,
+	) {
+		const query = `user_id=${encodeURIComponent(streamerId)}&type=${encodeURIComponent(subscriptionType)}`;
+		let cursor: string | undefined;
+		do {
+			const path = `eventsub/subscriptions?${query}${cursor ? `&after=${encodeURIComponent(cursor)}` : ""}`;
+			// oxlint-disable-next-line no-await-in-loop -- each cursor comes from the previous response
+			const result = await Result.fromAsync(() =>
+				getRequest<
+					TwitchHelixResponse<TwitchEventSubResult> & {
+						pagination?: { cursor?: string };
+					}
+				>(path),
+			);
+			if (result.isErr()) {
+				this.container.logger.error(
+					`[twitch-subscriptions] Failed to list the ${subscriptionType} EventSub subscriptions of ${streamerId} while confirming "${subscriptionId}"`,
+					result.unwrapErr(),
+				);
+				return false;
+			}
+
+			const { data, pagination } = result.unwrap();
+			if (data.some((entry) => entry.id === subscriptionId)) return true;
+			cursor = pagination?.cursor;
+		} while (cursor);
+
+		return false;
+	}
+
 	async #getStreamer(streamerName: string) {
-		const result = await fetchUsers({ logins: [streamerName] });
-		if (result.isErr()) return null;
+		// `Result.fromAsync` flattens the returned `FetchResult` and additionally catches the errors
+		// `fetchUsers` throws when the Twitch client credentials are missing.
+		const result = await Result.fromAsync(() =>
+			fetchUsers({ logins: [streamerName] }),
+		);
+		if (result.isErr()) {
+			this.container.logger.error(
+				`[twitch-subscriptions] Failed to look up the streamer "${streamerName}"`,
+				result.unwrapErr(),
+			);
+			return null;
+		}
+
 		const { data } = result.unwrap();
-		if (data.length > 0) return data[0];
-		return null;
+		return data.length > 0 ? data[0] : null;
+	}
+
+	async #fetchStreamerNames(streamerIds: readonly string[]) {
+		const names = new Map<string, string>();
+		const uniqueIds = [...new Set(streamerIds)];
+
+		for (
+			let index = 0;
+			index < uniqueIds.length;
+			index += MaximumUsersPerRequest
+		) {
+			const chunk = uniqueIds.slice(index, index + MaximumUsersPerRequest);
+			// oxlint-disable-next-line no-await-in-loop -- sequential to stay within Twitch's rate limits
+			const result = await Result.fromAsync(() => fetchUsers({ ids: chunk }));
+			if (result.isErr()) {
+				this.container.logger.error(
+					"[twitch-subscriptions] Failed to resolve the streamer names",
+					result.unwrapErr(),
+				);
+				continue;
+			}
+
+			for (const profile of result.unwrap().data) {
+				names.set(profile.id, profile.display_name);
+			}
+		}
+
+		return names;
 	}
 
 	async #deleteSubscription(subscription: GuildSubscription) {
