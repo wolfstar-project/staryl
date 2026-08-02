@@ -269,8 +269,15 @@ describe("twitchsubscriptions add", () => {
 		);
 	});
 
-	it("reports a Twitch failure when the EventSub credentials are missing", async () => {
+	it("reports a Twitch failure when a new subscription needs absent EventSub credentials", async () => {
 		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
 
 		const interaction = buildInteraction(
 			"add",
@@ -287,6 +294,46 @@ describe("twitchsubscriptions add", () => {
 		expect(addEventSubscription).not.toHaveBeenCalled();
 		expect(patchedContent()).toContain(
 			"I could not create the subscription on Twitch's side",
+		);
+	});
+
+	it("associates an existing shared subscription without EventSub credentials", async () => {
+		// This branch only connects a `TwitchSubscription` another guild already created, so it must
+		// not be gated behind the EventSub variables.
+		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue({
+			id: SubscriptionId,
+		});
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+		prismaMock.guildSubscription.create.mockResolvedValue({});
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(addEventSubscription).not.toHaveBeenCalled();
+		expect(prismaMock.guildSubscription.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					twitchSubscription: { connect: { id: SubscriptionId } },
+				}) as unknown,
+			}),
+		);
+		expect(patchedContent()).toContain(
+			`Success! Whenever ${StreamerDisplayName} goes live`,
 		);
 	});
 
@@ -348,6 +395,45 @@ describe("twitchsubscriptions add", () => {
 			String(SubscriptionId),
 		);
 		expect(patchedContent()).toContain("I could not save the subscription");
+	});
+
+	it("logs the orphaned EventSub subscription when the revert also fails", async () => {
+		const fatal = vi.spyOn(container.logger, "fatal").mockImplementation(() => {
+			// noop
+		});
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+		vi.mocked(addEventSubscription).mockResolvedValue({
+			id: String(SubscriptionId),
+		} as never);
+		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
+		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(fatal).toHaveBeenCalledWith(
+			expect.stringContaining(
+				`Orphaned stream.online EventSub subscription "${SubscriptionId}"`,
+			),
+			expect.any(Error),
+		);
+		expect(patchedContent()).toContain("I could not save the subscription");
+		fatal.mockRestore();
 	});
 });
 

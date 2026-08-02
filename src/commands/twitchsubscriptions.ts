@@ -91,17 +91,6 @@ export class UserCommand extends Command {
 			});
 		}
 
-		// `addEventSubscription` throws a `ReferenceError` when the EventSub variables are missing, which would
-		// otherwise surface as an opaque failure at the very end of the flow.
-		if (!areTwitchEventSubCredentialsSet()) {
-			this.container.logger.error(
-				"[twitch-subscriptions] TWITCH_EVENT_SUB_CALLBACK and/or TWITCH_EVENT_SUB_SECRET are not set, EventSub subscriptions cannot be created.",
-			);
-			return deferred.update({
-				content: await resolveKey(interaction, Root.AddFailedTwitch),
-			});
-		}
-
 		const streamer = await this.#getStreamer(options.streamer);
 		if (isNullish(streamer)) {
 			return deferred.update({
@@ -164,6 +153,19 @@ export class UserCommand extends Command {
 				});
 			}
 		} else {
+			// Only this branch talks to Twitch; the branch above merely connects an already existing
+			// subscription, so it must stay reachable when the EventSub variables are unset.
+			// `addEventSubscription` throws a `ReferenceError` in that case, which would otherwise
+			// surface as an opaque failure.
+			if (!areTwitchEventSubCredentialsSet()) {
+				this.container.logger.error(
+					"[twitch-subscriptions] TWITCH_EVENT_SUB_CALLBACK and/or TWITCH_EVENT_SUB_SECRET are not set, EventSub subscriptions cannot be created.",
+				);
+				return deferred.update({
+					content: await resolveKey(interaction, Root.AddFailedTwitch),
+				});
+			}
+
 			const eventSubResult = await Result.fromAsync(() =>
 				addEventSubscription(streamer.id, TwitchEventSubTypes[type]),
 			);
@@ -205,7 +207,17 @@ export class UserCommand extends Command {
 				);
 				// Twitch answers 409 for duplicated subscriptions, so leaving this behind would make the
 				// streamer impossible to add ever again.
-				await Result.fromAsync(() => removeEventSubscription(subscription.id));
+				const revertedResult = await Result.fromAsync(() =>
+					removeEventSubscription(subscription.id),
+				);
+				if (revertedResult.isErr()) {
+					// The compensation itself failed, so the EventSub subscription is now orphaned: it exists on
+					// Twitch with no row pointing at it. Log the id at `fatal` so it can be deleted by hand.
+					this.container.logger.fatal(
+						`[twitch-subscriptions] Orphaned ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}: the rollback failed and it must be removed manually.`,
+						revertedResult.unwrapErr(),
+					);
+				}
 				return deferred.update({
 					content: await resolveKey(interaction, Root.AddFailedDatabase),
 				});
