@@ -33,6 +33,7 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 		await importOriginal<typeof import("@wolfstar/twitch-helpers")>();
 	return {
 		...actual,
+		areTwitchEventSubCredentialsSet: vi.fn(),
 		fetchUsers: vi.fn(),
 		addEventSubscription: vi.fn(),
 		removeEventSubscription: vi.fn(),
@@ -41,6 +42,7 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 });
 
 const {
+	areTwitchEventSubCredentialsSet,
 	fetchUsers,
 	addEventSubscription,
 	removeEventSubscription,
@@ -81,6 +83,7 @@ afterAll(() => {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(true);
 	container.prisma = prismaMock as never;
 	vi.spyOn(container.rest, "patch").mockResolvedValue({
 		id: "1",
@@ -141,9 +144,17 @@ function channelResolved(): APIInteractionDataResolved {
 	} as APIInteractionDataResolved;
 }
 
-function patchedContent(): string {
+function patchedBody(): { content?: string; embeds?: { title: string }[] } {
 	const [, body] = vi.mocked(container.rest.patch).mock.calls[0]!;
-	return (body as { body: { content: string } }).body.content;
+	return (
+		body as {
+			body: { content?: string; embeds?: { title: string }[] };
+		}
+	).body;
+}
+
+function patchedContent(): string {
+	return patchedBody().content!;
 }
 
 describe("twitchsubscriptions add", () => {
@@ -257,6 +268,87 @@ describe("twitchsubscriptions add", () => {
 			"You're already subscribed to that streamer",
 		);
 	});
+
+	it("reports a Twitch failure when the EventSub credentials are missing", async () => {
+		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(addEventSubscription).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain(
+			"I could not create the subscription on Twitch's side",
+		);
+	});
+
+	it("reports a Twitch failure when the EventSub subscription cannot be created", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+		vi.mocked(addEventSubscription).mockRejectedValue(new Error("boom"));
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain(
+			"I could not create the subscription on Twitch's side",
+		);
+	});
+
+	it("reverts the EventSub subscription when the database write fails", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+		vi.mocked(addEventSubscription).mockResolvedValue({
+			id: String(SubscriptionId),
+		} as never);
+		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
+		vi.mocked(removeEventSubscription).mockResolvedValue(undefined as never);
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(removeEventSubscription).toHaveBeenCalledWith(
+			String(SubscriptionId),
+		);
+		expect(patchedContent()).toContain("I could not save the subscription");
+	});
 });
 
 describe("twitchsubscriptions remove", () => {
@@ -296,14 +388,8 @@ describe("twitchsubscriptions remove", () => {
 		const result = await runner.run(interaction);
 
 		expect(result).toHaveStatus(200);
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					`I will no longer post messages to`,
-				) as unknown as string,
-			},
-		});
+		expect(result.json()).toMatchObject({ type: 5 });
+		expect(patchedContent()).toContain("I will no longer post messages to");
 	});
 
 	it("reports when the streamer has no subscriptions at all", async () => {
@@ -324,16 +410,11 @@ describe("twitchsubscriptions remove", () => {
 			channelResolved(),
 		);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					"because you are not subscribed to them",
-				) as unknown as string,
-			},
-		});
+		expect(patchedContent()).toContain(
+			"because you are not subscribed to them",
+		);
 	});
 
 	it("reports when the subscribed status does not match", async () => {
@@ -363,16 +444,9 @@ describe("twitchsubscriptions remove", () => {
 			channelResolved(),
 		);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					"it looks like you're not getting",
-				) as unknown as string,
-			},
-		});
+		expect(patchedContent()).toContain("it looks like you're not getting");
 	});
 
 	it("reports when the subscription is not posted to the provided channel", async () => {
@@ -402,16 +476,42 @@ describe("twitchsubscriptions remove", () => {
 			channelResolved(),
 		);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					"their subscription is not posted to",
-				) as unknown as string,
+		expect(patchedContent()).toContain("their subscription is not posted to");
+	});
+
+	it("reports a failure when the removal throws", async () => {
+		prismaMock.guildSubscription.findMany.mockResolvedValue([
+			{
+				channelId: BigInt(ChannelId),
+				subscriptionId: SubscriptionId,
+				twitchSubscription: {
+					streamerId: StreamerId,
+					subscriptionType: TwitchSubscriptionType.StreamOnline,
+				},
 			},
-		});
+		]);
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.guildSubscription.delete.mockRejectedValue(new Error("boom"));
+
+		const interaction = buildInteraction(
+			"remove",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(patchedContent()).toContain("I could not remove the subscription");
 	});
 });
 
@@ -436,16 +536,9 @@ describe("twitchsubscriptions reset", () => {
 
 		const interaction = buildInteraction("reset", []);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					"has been removed from this server",
-				) as unknown as string,
-			},
-		});
+		expect(patchedContent()).toContain("has been removed from this server");
 	});
 
 	it("reports when there is nothing to reset", async () => {
@@ -453,16 +546,9 @@ describe("twitchsubscriptions reset", () => {
 
 		const interaction = buildInteraction("reset", []);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					"not subscribed to any streamers",
-				) as unknown as string,
-			},
-		});
+		expect(patchedContent()).toContain("not subscribed to any streamers");
 	});
 });
 
@@ -486,13 +572,10 @@ describe("twitchsubscriptions show", () => {
 
 		const interaction = buildInteraction("show", []);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				embeds: [{ title: "Twitch Subscriptions" }],
-			},
+		expect(patchedBody()).toMatchObject({
+			embeds: [{ title: "Twitch Subscriptions" }],
 		});
 	});
 
@@ -501,16 +584,9 @@ describe("twitchsubscriptions show", () => {
 
 		const interaction = buildInteraction("show", []);
 
-		const result = await runner.run(interaction);
+		await runner.run(interaction);
 
-		expect(result.json()).toMatchObject({
-			type: 4,
-			data: {
-				content: expect.stringContaining(
-					"not subscribed to any streamers",
-				) as unknown as string,
-			},
-		});
+		expect(patchedContent()).toContain("not subscribed to any streamers");
 	});
 });
 

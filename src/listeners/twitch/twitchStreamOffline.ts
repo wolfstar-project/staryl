@@ -68,7 +68,7 @@ export default class extends Listener {
 						guildSubscription.message,
 					);
 					floatPromise(
-						await api().channels.createMessage(channel.id, {
+						api().channels.createMessage(channel.id, {
 							content: this.buildMessage(guildSubscription.message, date, t),
 							allowed_mentions: {
 								parse: detailedMentions.parse,

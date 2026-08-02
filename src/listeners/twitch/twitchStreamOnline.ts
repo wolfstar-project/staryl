@@ -18,7 +18,7 @@ import { canSendEmbeds } from "#utils/discordUtilities";
 import { streamNotificationDrip } from "#utils/twitch";
 import { extractDetailedMentions } from "#utils/util";
 import { EmbedBuilder, escapeMarkdown } from "@discordjs/builders";
-import { isNullish, isNullishOrEmpty } from "@sapphire/utilities";
+import { isNullish } from "@sapphire/utilities";
 import { Listener } from "@wolfstar/http-framework";
 import { getT } from "@wolfstar/http-framework-i18n";
 import {
@@ -71,29 +71,24 @@ export default class extends Listener {
 					continue;
 				}
 
-				// Construct a message embed and send it.
-				// If the message could not be retrieved then skip this notification.
-				if (!isNullishOrEmpty(guildSubscription.message)) {
-					const detailedMentions = extractDetailedMentions(
-						guildSubscription.message,
-					);
-					floatPromise(
-						await api().channels.createMessage(channel.id, {
-							content: guildSubscription.message || undefined,
-							embeds: [
-								this.buildEmbed(
-									this.transformTextToObject(data, streamData),
-									t,
-								),
-							],
-							allowed_mentions: {
-								parse: detailedMentions.parse,
-								users: [...detailedMentions.users],
-								roles: [...detailedMentions.roles],
-							},
-						}),
-					);
-				}
+				// Construct a message embed and send it. The custom message is optional for online
+				// subscriptions, the embed alone is already the notification.
+				const detailedMentions = extractDetailedMentions(
+					guildSubscription.message,
+				);
+				floatPromise(
+					api().channels.createMessage(channel.id, {
+						content: guildSubscription.message || undefined,
+						embeds: [
+							this.buildEmbed(this.transformTextToObject(data, streamData), t),
+						],
+						allowed_mentions: {
+							parse: detailedMentions.parse,
+							users: [...detailedMentions.users],
+							roles: [...detailedMentions.roles],
+						},
+					}),
+				);
 			}
 		}
 	}
