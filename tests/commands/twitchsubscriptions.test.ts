@@ -292,6 +292,7 @@ describe("twitchsubscriptions add", () => {
 		await runner.run(interaction);
 
 		expect(addEventSubscription).not.toHaveBeenCalled();
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
 		expect(patchedContent()).toContain(
 			"I could not create the subscription on Twitch's side",
 		);
@@ -397,7 +398,48 @@ describe("twitchsubscriptions add", () => {
 		expect(patchedContent()).toContain("I could not save the subscription");
 	});
 
-	it("logs the orphaned EventSub subscription when the revert also fails", async () => {
+	it("persists the shared subscription when the EventSub rollback also fails", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+		vi.mocked(addEventSubscription).mockResolvedValue({
+			id: String(SubscriptionId),
+		} as never);
+		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
+		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
+		prismaMock.twitchSubscription.create.mockResolvedValue({});
+
+		const interaction = buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+
+		await runner.run(interaction);
+
+		expect(removeEventSubscription).toHaveBeenCalledWith(
+			String(SubscriptionId),
+		);
+		expect(prismaMock.twitchSubscription.create).toHaveBeenCalledWith({
+			data: {
+				streamerId: StreamerId,
+				subscriptionId: String(SubscriptionId),
+				subscriptionType: TwitchSubscriptionType.StreamOnline,
+			},
+			select: null,
+		});
+		expect(patchedContent()).toContain("I could not save the subscription");
+	});
+
+	it("logs the orphaned EventSub subscription when the revert and recovery both fail", async () => {
 		const fatal = vi.spyOn(container.logger, "fatal").mockImplementation(() => {
 			// noop
 		});
@@ -413,6 +455,9 @@ describe("twitchsubscriptions add", () => {
 		} as never);
 		prismaMock.guildSubscription.create.mockRejectedValue(new Error("boom"));
 		vi.mocked(removeEventSubscription).mockRejectedValue(new Error("offline"));
+		prismaMock.twitchSubscription.create.mockRejectedValue(
+			new Error("db down"),
+		);
 
 		const interaction = buildInteraction(
 			"add",
@@ -430,6 +475,7 @@ describe("twitchsubscriptions add", () => {
 			expect.stringContaining(
 				`Orphaned stream.online EventSub subscription "${SubscriptionId}"`,
 			),
+			expect.any(Error),
 			expect.any(Error),
 		);
 		expect(patchedContent()).toContain("I could not save the subscription");

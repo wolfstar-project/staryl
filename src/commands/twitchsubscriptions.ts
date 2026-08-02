@@ -211,12 +211,32 @@ export class UserCommand extends Command {
 					removeEventSubscription(subscription.id),
 				);
 				if (revertedResult.isErr()) {
-					// The compensation itself failed, so the EventSub subscription is now orphaned: it exists on
-					// Twitch with no row pointing at it. Log the id at `fatal` so it can be deleted by hand.
-					this.container.logger.fatal(
-						`[twitch-subscriptions] Orphaned ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}: the rollback failed and it must be removed manually.`,
-						revertedResult.unwrapErr(),
+					// The compensation itself failed, so persist the shared row alone: a later add can then reuse
+					// it through the `connect` branch instead of hitting Twitch's 409 forever.
+					const recoveryResult = await Result.fromAsync(() =>
+						this.container.prisma.twitchSubscription.create({
+							data: {
+								streamerId: streamer.id,
+								subscriptionId: subscription.id,
+								subscriptionType: type,
+							},
+							select: null,
+						}),
 					);
+					if (recoveryResult.isErr()) {
+						// The EventSub subscription is now orphaned: it exists on Twitch with no row pointing at
+						// it. Log the id at `fatal` so it can be deleted by hand.
+						this.container.logger.fatal(
+							`[twitch-subscriptions] Orphaned ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}: the rollback failed and it must be removed manually.`,
+							revertedResult.unwrapErr(),
+							recoveryResult.unwrapErr(),
+						);
+					} else {
+						this.container.logger.error(
+							`[twitch-subscriptions] Failed to revert the ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}, persisted it so a later add can reuse it.`,
+							revertedResult.unwrapErr(),
+						);
+					}
 				}
 				return deferred.update({
 					content: await resolveKey(interaction, Root.AddFailedDatabase),
