@@ -25,6 +25,7 @@ import {
 	addEventSubscription,
 	areTwitchEventSubCredentialsSet,
 	fetchUsers,
+	getCurrentTwitchSubscriptions,
 	getRequest,
 	removeEventSubscription,
 	TwitchEventSubTypes,
@@ -211,31 +212,45 @@ export class UserCommand extends Command {
 					removeEventSubscription(subscription.id),
 				);
 				if (revertedResult.isErr()) {
-					// The compensation itself failed, so persist the shared row alone: a later add can then reuse
-					// it through the `connect` branch instead of hitting Twitch's 409 forever.
-					const recoveryResult = await Result.fromAsync(() =>
-						this.container.prisma.twitchSubscription.create({
-							data: {
-								streamerId: streamer.id,
-								subscriptionId: subscription.id,
-								subscriptionType: type,
-							},
-							select: null,
-						}),
+					// A rejected delete does not prove Twitch kept the subscription, the response can be lost
+					// after it was processed. Persisting a row for a subscription that is actually gone is worse
+					// than persisting none: a later add would take the `connect` branch, report success, and then
+					// never deliver a notification. Only keep the row once Twitch still lists the subscription.
+					const confirmed = await this.#isEventSubSubscriptionListed(
+						subscription.id,
 					);
-					if (recoveryResult.isErr()) {
-						// The EventSub subscription is now orphaned: it exists on Twitch with no row pointing at
-						// it. Log the id at `fatal` so it can be deleted by hand.
+					if (!confirmed) {
 						this.container.logger.fatal(
-							`[twitch-subscriptions] Orphaned ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}: the rollback failed and it must be removed manually.`,
+							`[twitch-subscriptions] Could not confirm the ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id} after the revert failed, so it was not persisted; if it still exists on Twitch it must be removed manually.`,
 							revertedResult.unwrapErr(),
-							recoveryResult.unwrapErr(),
 						);
 					} else {
-						this.container.logger.error(
-							`[twitch-subscriptions] Failed to revert the ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}, persisted it so a later add can reuse it.`,
-							revertedResult.unwrapErr(),
+						// The subscription is still live on Twitch, so persist the shared row alone: a later add
+						// reuses it through the `connect` branch instead of hitting Twitch's 409 forever.
+						const recoveryResult = await Result.fromAsync(() =>
+							this.container.prisma.twitchSubscription.create({
+								data: {
+									streamerId: streamer.id,
+									subscriptionId: subscription.id,
+									subscriptionType: type,
+								},
+								select: null,
+							}),
 						);
+						if (recoveryResult.isErr()) {
+							// The EventSub subscription is now orphaned: it exists on Twitch with no row pointing at
+							// it. Log the id at `fatal` so it can be deleted by hand.
+							this.container.logger.fatal(
+								`[twitch-subscriptions] Orphaned ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}: the rollback failed and it must be removed manually.`,
+								revertedResult.unwrapErr(),
+								recoveryResult.unwrapErr(),
+							);
+						} else {
+							this.container.logger.error(
+								`[twitch-subscriptions] Failed to revert the ${TwitchEventSubTypes[type]} EventSub subscription "${subscription.id}" for streamer ${streamer.id}, persisted it so a later add can reuse it.`,
+								revertedResult.unwrapErr(),
+							);
+						}
 					}
 				}
 				return deferred.update({
@@ -588,6 +603,28 @@ export class UserCommand extends Command {
 			},
 			select: null,
 		});
+	}
+
+	/**
+	 * Checks whether Twitch still lists an EventSub subscription.
+	 *
+	 * `getCurrentTwitchSubscriptions` returns only the first page, so a miss is inconclusive rather
+	 * than proof of deletion. The result is therefore a confirmation, not an existence check: `false`
+	 * means "not confirmed" and callers must treat it as "do not rely on this subscription".
+	 */
+	async #isEventSubSubscriptionListed(subscriptionId: string) {
+		const result = await Result.fromAsync(() =>
+			getCurrentTwitchSubscriptions(),
+		);
+		if (result.isErr()) {
+			this.container.logger.error(
+				`[twitch-subscriptions] Failed to list the EventSub subscriptions while confirming "${subscriptionId}"`,
+				result.unwrapErr(),
+			);
+			return false;
+		}
+
+		return result.unwrap().data.some((entry) => entry.id === subscriptionId);
 	}
 
 	async #getStreamer(streamerName: string) {
