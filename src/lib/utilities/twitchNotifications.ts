@@ -223,7 +223,9 @@ async function resolveTarget(
 	// escape `resolveTarget` and abort the delivery outside the `Result` error path.
 	const preferredLocale = (guildResult.unwrap().preferred_locale ??
 		"en-US") as Locale;
-	const t = getT(loadedLocales.has(preferredLocale) ? preferredLocale : "en-US");
+	const t = getT(
+		loadedLocales.has(preferredLocale) ? preferredLocale : "en-US",
+	);
 
 	const channelsResult = await Result.fromAsync(() =>
 		api().guilds.getChannels(String(guildId)),
