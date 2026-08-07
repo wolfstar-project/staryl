@@ -152,6 +152,25 @@ describe("sendOnlineNotification", () => {
 		expect(result.unwrapErr()).toBe(NotificationDeliveryError.ChannelNotFound);
 	});
 
+	it("falls back to en-US when the guild locale is not loaded", async () => {
+		// Regression: `getT` throws `ReferenceError: Invalid language (de)` for locales the bot has
+		// not loaded, which escaped the `Result` error path and aborted the delivery entirely.
+		apiMock.guilds.get.mockResolvedValue({ preferred_locale: "de" });
+
+		const result = await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+		});
+
+		expect(result.isOk()).toBe(true);
+		expect(sentBody().embeds?.[0]?.description).toBe(
+			`${StreamerName} is now live - Streaming Just Chatting!`,
+		);
+	});
+
 	it("reports an unreachable guild", async () => {
 		apiMock.guilds.get.mockRejectedValue(new Error("404"));
 

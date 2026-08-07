@@ -25,7 +25,7 @@ import {
 import { err, ok, Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
-import { getT } from "@wolfstar/http-framework-i18n";
+import { getT, loadedLocales } from "@wolfstar/http-framework-i18n";
 import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
 
 /**
@@ -218,9 +218,12 @@ async function resolveTarget(
 		return err(NotificationDeliveryError.GuildUnavailable);
 	}
 
-	const t = await getT(
-		(guildResult.unwrap().preferred_locale ?? "en-US") as Locale,
-	);
+	// `getT` throws when Discord reports a locale the bot has not loaded (e.g. `de` while only
+	// `en-US` is bundled). An unsupported guild locale must degrade to the default language, not
+	// escape `resolveTarget` and abort the delivery outside the `Result` error path.
+	const preferredLocale = (guildResult.unwrap().preferred_locale ??
+		"en-US") as Locale;
+	const t = getT(loadedLocales.has(preferredLocale) ? preferredLocale : "en-US");
 
 	const channelsResult = await Result.fromAsync(() =>
 		api().guilds.getChannels(String(guildId)),
