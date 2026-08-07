@@ -8,3 +8,7 @@ export const EmbedDescriptionWithGame = FT<
 	string
 >("events/twitch:embedDescriptionWithGame");
 export const OfflinePostfix = T<string>("events/twitch:offlinePostfix");
+export const TestNotice = T<string>("events/twitch:testNotice");
+export const TestPlaceholderTitle = T<string>(
+	"events/twitch:testPlaceholderTitle",
+);

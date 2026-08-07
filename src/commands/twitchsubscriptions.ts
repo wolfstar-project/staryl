@@ -1,18 +1,29 @@
-import type { GuildSubscription, Prisma } from "#lib/setup/prisma";
+import type {
+	GuildSubscription,
+	Prisma,
+	TwitchSubscription,
+} from "#lib/setup/prisma";
+import type { TypedT } from "@wolfstar/http-framework-i18n";
 import type {
 	TwitchEventSubResult,
 	TwitchHelixResponse,
+	TwitchHelixUsersSearchResult,
 } from "@wolfstar/twitch-helpers";
 import type { APIChannel } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import { LanguageKeys } from "#i18n";
+import {
+	NotificationDeliveryError,
+	sendOfflineNotification,
+	sendOnlineNotification,
+} from "#utils/twitchNotifications";
 import {
 	EmbedBuilder,
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
 } from "@discordjs/builders";
 import { channelMention } from "@discordjs/formatters";
-import { Result } from "@sapphire/result";
+import { err, ok, Result } from "@sapphire/result";
 import { cast, isNullish, isNullishOrEmpty } from "@sapphire/utilities";
 import {
 	Command,
@@ -27,6 +38,7 @@ import {
 import {
 	addEventSubscription,
 	areTwitchEventSubCredentialsSet,
+	fetchStream,
 	fetchUsers,
 	getRequest,
 	removeEventSubscription,
@@ -52,6 +64,21 @@ const MaximumMessageLength = 200;
  * The `users` Twitch Helix endpoint accepts at most 100 ids per request.
  */
 const MaximumUsersPerRequest = 100;
+
+/**
+ * The message the `test` subcommand answers with for each delivery failure. Every entry names the
+ * concrete thing to fix, since diagnosing a silent notification is the whole point of the command.
+ */
+const DeliveryErrorKeys = {
+	[NotificationDeliveryError.GuildUnavailable]: Root.TestFailedGuild,
+	[NotificationDeliveryError.ChannelNotFound]: Root.TestFailedChannel,
+	[NotificationDeliveryError.MissingPermissions]: Root.TestFailedPermissions,
+	[NotificationDeliveryError.SendFailed]: Root.TestFailedSend,
+} as const;
+
+type GuildSubscriptionWithTwitch = GuildSubscription & {
+	twitchSubscription: TwitchSubscription;
+};
 
 @RegisterCommand((builder) =>
 	applyLocalizedBuilder(builder, Root.RootName, Root.RootDescription)
@@ -296,64 +323,18 @@ export class UserCommand extends Command {
 
 		const { channel, type: subscriptionType } = options;
 
-		const guildSubscriptionsResult = await this.getGuildSubscriptions(
-			BigInt(interaction.guildId!),
+		const subscriptionResult = await this.#resolveSubscription(
+			interaction,
+			streamer,
+			channel,
+			subscriptionType,
+			Root.RemoveFailed,
 		);
-		if (guildSubscriptionsResult.isErr()) {
-			this.container.logger.error(
-				"[twitch-subscriptions] Failed to read the guild subscriptions",
-				guildSubscriptionsResult.unwrapErr(),
-			);
-			return deferred.update({
-				content: await resolveKey(interaction, Root.RemoveFailed),
-			});
-		}
-		const guildSubscriptions = guildSubscriptionsResult.unwrap();
-
-		const streamers = guildSubscriptions.filter(
-			({ twitchSubscription }) => twitchSubscription.streamerId === streamer.id,
-		);
-
-		if (!streamers.length) {
-			return deferred.update({
-				content: cast<string>(
-					await resolveKey(interaction, Root.RemoveStreamerNotSubscribed, {
-						streamer: streamer.display_name,
-					}),
-				),
-			});
+		if (subscriptionResult.isErr()) {
+			return deferred.update({ content: subscriptionResult.unwrapErr() });
 		}
 
-		const statuses = streamers.filter(
-			({ twitchSubscription }) =>
-				twitchSubscription.subscriptionType === subscriptionType,
-		);
-
-		if (!statuses.length) {
-			const showStatuses = await resolveKey(interaction, Root.ShowStatus);
-			return deferred.update({
-				content: cast<string>(
-					await resolveKey(interaction, Root.RemoveStreamerStatusNotMatch, {
-						streamer: streamer.display_name,
-						status: this.getSubscriptionStatus(subscriptionType, showStatuses),
-					}),
-				),
-			});
-		}
-
-		const streamerWithStatusHasChannel = statuses.find(
-			(guildSubscription) => guildSubscription.channelId === BigInt(channel.id),
-		);
-
-		if (!streamerWithStatusHasChannel) {
-			return deferred.update({
-				content: cast<string>(
-					await resolveKey(interaction, Root.RemoveNotToProvidedChannel, {
-						channel: channelMention(channel.id),
-					}),
-				),
-			});
-		}
+		const streamerWithStatusHasChannel = subscriptionResult.unwrap();
 
 		const removalResult = await Result.fromAsync(async () => {
 			await this.#deleteSubscription(streamerWithStatusHasChannel);
@@ -378,6 +359,95 @@ export class UserCommand extends Command {
 					? Root.RemoveSuccessLive
 					: Root.RemoveSuccessOffline,
 				{ name: streamer.display_name, channel: channelMention(channel.id) },
+			),
+		);
+		return deferred.update({ content });
+	}
+
+	@RegisterSubcommand((builder) =>
+		applyLocalizedBuilder(builder, Root.TestName, Root.TestDescription)
+			.addStringOption(createStreamerOption(true))
+			.addChannelOption(createChannelOption().setRequired(true))
+			.addStringOption(createTypeChoiceOption().setRequired(true)),
+	)
+	public async test(
+		interaction: Command.ChatInputInteraction,
+		options: Options,
+	) {
+		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
+		const streamer = await this.#getStreamer(options.streamer);
+		if (isNullish(streamer)) {
+			return deferred.update({
+				content: await resolveKey(interaction, Root.StreamerNotFound),
+			});
+		}
+
+		const { channel, type: subscriptionType } = options;
+
+		const subscriptionResult = await this.#resolveSubscription(
+			interaction,
+			streamer,
+			channel,
+			subscriptionType,
+			Root.TestFailed,
+		);
+		if (subscriptionResult.isErr()) {
+			return deferred.update({ content: subscriptionResult.unwrapErr() });
+		}
+
+		const guildSubscription = subscriptionResult.unwrap();
+		const target = {
+			guildId: BigInt(interaction.guildId!),
+			channelId: BigInt(channel.id),
+		};
+
+		// The notification is sent through the very same helpers the listeners use, so a success here
+		// proves the real path works. The drip is deliberately skipped: this is an explicit manual
+		// action and must neither be suppressed nor consume the bucket of the real notifications.
+		let deliveryResult: Result<void, NotificationDeliveryError>;
+		if (subscriptionType === TwitchSubscriptionType.StreamOnline) {
+			const streamData = (
+				await Result.fromAsync(() => fetchStream(streamer.id))
+			).unwrapOr(null);
+
+			deliveryResult = await sendOnlineNotification({
+				...target,
+				message: guildSubscription.message,
+				event: {
+					broadcaster_user_id: streamer.id,
+					broadcaster_user_login: streamer.login,
+					broadcaster_user_name: streamer.display_name,
+					id: "0",
+					type: "live",
+					started_at: (streamData?.started_at ?? new Date()).toISOString(),
+				},
+				streamData,
+				testNotice: true,
+			});
+		} else {
+			// `add` enforces a message for offline subscriptions, but a row predating that check would
+			// leave nothing to send.
+			if (isNullishOrEmpty(guildSubscription.message)) {
+				return deferred.update({
+					content: await resolveKey(interaction, Root.TestMissingMessage),
+				});
+			}
+
+			deliveryResult = await sendOfflineNotification({
+				...target,
+				message: guildSubscription.message,
+				date: new Date(),
+				testNotice: true,
+			});
+		}
+
+		const content = cast<string>(
+			await resolveKey(
+				interaction,
+				deliveryResult.isErr()
+					? DeliveryErrorKeys[deliveryResult.unwrapErr()]
+					: Root.TestSuccess,
+				{ channel: channelMention(channel.id) },
 			),
 		);
 		return deferred.update({ content });
@@ -650,6 +720,82 @@ export class UserCommand extends Command {
 		} while (cursor);
 
 		return false;
+	}
+
+	/**
+	 * Resolves the guild subscription matching the streamer, channel and status trio, or the message
+	 * to answer with when there is none.
+	 *
+	 * Shared by `remove` and `test` so both report the same reason for the same mismatch; only the
+	 * message used when the lookup itself fails differs, hence {@link failedKey}.
+	 */
+	async #resolveSubscription(
+		interaction: Command.ChatInputInteraction,
+		streamer: TwitchHelixUsersSearchResult,
+		channel: APIChannel,
+		subscriptionType: TwitchSubscriptionType,
+		failedKey: TypedT,
+	): Promise<Result<GuildSubscriptionWithTwitch, string>> {
+		const guildSubscriptionsResult = await this.getGuildSubscriptions(
+			BigInt(interaction.guildId!),
+		);
+		if (guildSubscriptionsResult.isErr()) {
+			this.container.logger.error(
+				"[twitch-subscriptions] Failed to read the guild subscriptions",
+				guildSubscriptionsResult.unwrapErr(),
+			);
+			return err(cast<string>(await resolveKey(interaction, failedKey)));
+		}
+
+		const streamers = guildSubscriptionsResult
+			.unwrap()
+			.filter(
+				({ twitchSubscription }) =>
+					twitchSubscription.streamerId === streamer.id,
+			);
+
+		if (!streamers.length) {
+			return err(
+				cast<string>(
+					await resolveKey(interaction, Root.RemoveStreamerNotSubscribed, {
+						streamer: streamer.display_name,
+					}),
+				),
+			);
+		}
+
+		const statuses = streamers.filter(
+			({ twitchSubscription }) =>
+				twitchSubscription.subscriptionType === subscriptionType,
+		);
+
+		if (!statuses.length) {
+			const showStatuses = await resolveKey(interaction, Root.ShowStatus);
+			return err(
+				cast<string>(
+					await resolveKey(interaction, Root.RemoveStreamerStatusNotMatch, {
+						streamer: streamer.display_name,
+						status: this.getSubscriptionStatus(subscriptionType, showStatuses),
+					}),
+				),
+			);
+		}
+
+		const match = statuses.find(
+			(guildSubscription) => guildSubscription.channelId === BigInt(channel.id),
+		);
+
+		if (!match) {
+			return err(
+				cast<string>(
+					await resolveKey(interaction, Root.RemoveNotToProvidedChannel, {
+						channel: channelMention(channel.id),
+					}),
+				),
+			);
+		}
+
+		return ok(match);
 	}
 
 	async #getStreamer(streamerName: string) {

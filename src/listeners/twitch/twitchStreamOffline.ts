@@ -1,22 +1,9 @@
 // oxlint-disable no-await-in-loop -- sequential per-guild processing is intentional
-import type { TFunction } from "@wolfstar/http-framework-i18n";
 import type { TwitchEventSubEvent } from "@wolfstar/twitch-helpers";
-import type {
-	APIChannel,
-	APIDMChannel,
-	APIGroupDMChannel,
-	Locale,
-} from "discord-api-types/v10";
-import { floatPromise } from "#common/promises";
-import { LanguageKeys } from "#i18n";
-import { api } from "#utils/discordApi";
-import { canSendMessages } from "#utils/discordUtilities";
 import { streamNotificationDrip } from "#utils/twitch";
-import { extractDetailedMentions } from "#utils/util";
-import { time, TimestampStyles } from "@discordjs/builders";
-import { isNullish, isNullishOrEmpty } from "@sapphire/utilities";
+import { sendOfflineNotification } from "#utils/twitchNotifications";
+import { isNullishOrEmpty } from "@sapphire/utilities";
 import { Listener } from "@wolfstar/http-framework";
-import { getT } from "@wolfstar/http-framework-i18n";
 import { TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
 export default class extends Listener {
@@ -35,6 +22,9 @@ export default class extends Listener {
 		if (twitchSubscription) {
 			// Iterate over all the guilds that are subscribed to this streamer and subscription type
 			for (const guildSubscription of twitchSubscription.guildSubscription) {
+				// The offline notification is the custom message; without one there is nothing to send.
+				if (isNullishOrEmpty(guildSubscription.message)) continue;
+
 				if (
 					streamNotificationDrip(
 						`${twitchSubscription.streamerId}-${guildSubscription.channelId}-${TwitchEventSubTypes.StreamOffline}`,
@@ -43,46 +33,19 @@ export default class extends Listener {
 					continue;
 				}
 
-				// Retrieve the guild, if not found, skip to the next loop cycle.
-				const guild = await api().guilds.get(String(guildSubscription.guildId));
-				if (typeof guild === "undefined") continue;
+				const result = await sendOfflineNotification({
+					guildId: guildSubscription.guildId,
+					channelId: guildSubscription.channelId,
+					message: guildSubscription.message,
+					date,
+				});
 
-				// Retrieve the language for this guild
-				const t = await getT((guild.preferred_locale ?? "en-US") as Locale);
-
-				// Retrieve the channel to send the message to
-				const channel = (
-					await api().guilds.getChannels(String(guildSubscription.guildId))
-				).find((c) => c.id === String(guildSubscription.channelId)) as Exclude<
-					APIChannel,
-					APIDMChannel | APIGroupDMChannel
-				>;
-				if (isNullish(channel) || !canSendMessages(channel)) {
-					continue;
-				}
-
-				// Construct a message embed and send it.
-				// If the message could not be retrieved then skip this notification.
-				if (!isNullishOrEmpty(guildSubscription.message)) {
-					const detailedMentions = extractDetailedMentions(
-						guildSubscription.message,
-					);
-					floatPromise(
-						api().channels.createMessage(channel.id, {
-							content: this.buildMessage(guildSubscription.message, date, t),
-							allowed_mentions: {
-								parse: detailedMentions.parse,
-								users: [...detailedMentions.users],
-								roles: [...detailedMentions.roles],
-							},
-						}),
+				if (result.isErr()) {
+					this.container.logger.error(
+						`[twitch-stream-offline] Could not notify channel ${guildSubscription.channelId} of guild ${guildSubscription.guildId} for streamer ${twitchSubscription.streamerId} (reason ${result.unwrapErr()})`,
 					);
 				}
 			}
 		}
-	}
-
-	private buildMessage(message: string, date: Date, t: TFunction): string {
-		return `${message} | ${time(date, TimestampStyles.ShortDateTime)} | ${t(LanguageKeys.Events.Twitch.OfflinePostfix)}`;
 	}
 }

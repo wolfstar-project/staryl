@@ -16,6 +16,7 @@ import {
 import {
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
+	PermissionFlagsBits,
 } from "discord-api-types/v10";
 import {
 	afterAll,
@@ -35,15 +36,29 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 		...actual,
 		areTwitchEventSubCredentialsSet: vi.fn(),
 		fetchUsers: vi.fn(),
+		fetchStream: vi.fn(),
 		addEventSubscription: vi.fn(),
 		removeEventSubscription: vi.fn(),
 		getRequest: vi.fn(),
 	};
 });
 
+const apiMock = vi.hoisted(() => ({
+	guilds: {
+		get: vi.fn(),
+		getChannels: vi.fn(),
+		getMember: vi.fn(),
+	},
+	channels: { createMessage: vi.fn() },
+	users: { getCurrent: vi.fn() },
+}));
+
+vi.mock("#utils/discordApi", () => ({ api: () => apiMock }));
+
 const {
 	areTwitchEventSubCredentialsSet,
 	fetchUsers,
+	fetchStream,
 	addEventSubscription,
 	removeEventSubscription,
 	getRequest,
@@ -932,5 +947,203 @@ describe("twitchsubscriptions autocomplete", () => {
 				choices: [{ name: StreamerDisplayName, value: "coolstreamer" }],
 			},
 		});
+	});
+});
+
+describe("twitchsubscriptions test", () => {
+	const GuildId = "737141877803057244";
+	const SubscriptionMessage = "Hey, we are live!";
+
+	function grantPermissions(permissions: bigint) {
+		apiMock.guilds.get.mockResolvedValue({ preferred_locale: "en-US" });
+		apiMock.guilds.getChannels.mockResolvedValue([
+			{ id: ChannelId, name: "general", type: 0, guild_id: GuildId },
+		]);
+		apiMock.users.getCurrent.mockResolvedValue({ id: "bot-id" });
+		apiMock.guilds.getMember.mockResolvedValue({
+			permissions: String(permissions),
+		});
+		apiMock.channels.createMessage.mockResolvedValue({ id: "1" });
+	}
+
+	function subscribe(
+		subscriptionType: TwitchSubscriptionType,
+		overrides: Record<string, unknown> = {},
+	) {
+		prismaMock.guildSubscription.findMany.mockResolvedValue([
+			{
+				guildId: BigInt(GuildId),
+				channelId: BigInt(ChannelId),
+				subscriptionId: SubscriptionId,
+				message: SubscriptionMessage,
+				twitchSubscription: {
+					streamerId: StreamerId,
+					subscriptionType,
+				},
+				...overrides,
+			},
+		]);
+	}
+
+	function sentBody() {
+		const [, body] = apiMock.channels.createMessage.mock.calls[0]!;
+		return body as {
+			content?: string;
+			embeds?: { title?: string; description?: string }[];
+		};
+	}
+
+	function buildTestInteraction(type: string) {
+		return buildInteraction(
+			"test",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption(type),
+			],
+			channelResolved(),
+		);
+	}
+
+	beforeEach(() => {
+		grantPermissions(
+			PermissionFlagsBits.ViewChannel |
+				PermissionFlagsBits.SendMessages |
+				PermissionFlagsBits.EmbedLinks,
+		);
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [
+					{
+						id: StreamerId,
+						display_name: StreamerDisplayName,
+						login: "coolstreamer",
+					},
+				],
+			}) as never,
+		);
+	});
+
+	it("posts the configured online notification and confirms it", async () => {
+		subscribe(TwitchSubscriptionType.StreamOnline);
+		vi.mocked(fetchStream).mockResolvedValue({
+			game_name: "Just Chatting",
+			thumbnail_url: "https://cdn.twitch.tv/thumb-{width}x{height}.png",
+			started_at: new Date("2026-08-07T12:00:00.000Z"),
+			title: "A great stream",
+			viewer_count: 42,
+		} as never);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(apiMock.channels.createMessage).toHaveBeenCalledOnce();
+		const body = sentBody();
+		expect(body.content).toContain("Test notification");
+		expect(body.content).toContain(SubscriptionMessage);
+		expect(body.embeds?.[0]?.title).toBe("A great stream");
+		expect(patchedContent()).toContain("Sent! Check");
+	});
+
+	it("still posts a preview when the streamer is not live", async () => {
+		subscribe(TwitchSubscriptionType.StreamOnline);
+		vi.mocked(fetchStream).mockResolvedValue(null as never);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(sentBody().embeds?.[0]?.title).toBe("Test notification");
+		expect(patchedContent()).toContain("Sent! Check");
+	});
+
+	it("posts the stored message for an offline subscription", async () => {
+		subscribe(TwitchSubscriptionType.StreamOffline);
+
+		await runner.run(buildTestInteraction("StreamOffline"));
+
+		const body = sentBody();
+		expect(body.embeds).toBeUndefined();
+		expect(body.content).toContain(SubscriptionMessage);
+		expect(body.content).toContain("Staryl Twitch Notifications");
+		expect(patchedContent()).toContain("Sent! Check");
+	});
+
+	it("reports the exact missing permission instead of failing silently", async () => {
+		subscribe(TwitchSubscriptionType.StreamOnline);
+		vi.mocked(fetchStream).mockResolvedValue(null as never);
+		grantPermissions(
+			PermissionFlagsBits.ViewChannel | PermissionFlagsBits.SendMessages,
+		);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("I cannot post in");
+		expect(patchedContent()).toContain("Embed Links");
+	});
+
+	it("reports a rejected send", async () => {
+		subscribe(TwitchSubscriptionType.StreamOnline);
+		vi.mocked(fetchStream).mockResolvedValue(null as never);
+		apiMock.channels.createMessage.mockRejectedValue(new Error("403"));
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(patchedContent()).toContain("Discord rejected the message");
+	});
+
+	it("reports a channel it can no longer see", async () => {
+		subscribe(TwitchSubscriptionType.StreamOnline);
+		vi.mocked(fetchStream).mockResolvedValue(null as never);
+		apiMock.guilds.getChannels.mockResolvedValue([]);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(patchedContent()).toContain("I can no longer see");
+	});
+
+	it("reports when the streamer is not subscribed at all", async () => {
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("you cannot unsubscribe from");
+	});
+
+	it("reports when the subscribed status does not match", async () => {
+		subscribe(TwitchSubscriptionType.StreamOffline);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("you're not getting");
+	});
+
+	it("reports when the subscription is not posted to the provided channel", async () => {
+		subscribe(TwitchSubscriptionType.StreamOnline, {
+			channelId: BigInt("800000000000000999"),
+		});
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("their subscription is not posted to");
+	});
+
+	it("reports an offline subscription that has no message to send", async () => {
+		subscribe(TwitchSubscriptionType.StreamOffline, { message: null });
+
+		await runner.run(buildTestInteraction("StreamOffline"));
+
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("has no message saved");
+	});
+
+	it("reports the streamer as not found when Twitch returns no match", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue(ok({ data: [] }) as never);
+
+		await runner.run(buildTestInteraction("StreamOnline"));
+
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("I could not find the streamer");
 	});
 });
