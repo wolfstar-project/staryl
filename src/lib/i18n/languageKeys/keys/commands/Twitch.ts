@@ -8,6 +8,8 @@ export const AddDescription = T("commands/twitch:addDescription");
 
 export const RemoveName = T("commands/twitch:removeName");
 export const RemoveDescription = T("commands/twitch:removeDescription");
+export const TestName = T("commands/twitch:testName");
+export const TestDescription = T("commands/twitch:testDescription");
 export const ResetName = T("commands/twitch:resetName");
 export const ResetDescription = T("commands/twitch:resetDescription");
 export const ShowName = T("commands/twitch:showName");
@@ -51,6 +53,23 @@ export const AddFailedTwitch = T("commands/twitch:addFailedTwitch");
 export const AddFailedDatabase = T("commands/twitch:addFailedDatabase");
 export const RemoveFailed = T("commands/twitch:removeFailed");
 export const ResetFailed = T("commands/twitch:resetFailed");
+export const TestSuccess = FT<{ channel: string }>(
+	"commands/twitch:testSuccess",
+);
+export const TestFailed = T("commands/twitch:testFailed");
+export const TestFailedGuild = FT<{ channel: string }>(
+	"commands/twitch:testFailedGuild",
+);
+export const TestFailedChannel = FT<{ channel: string }>(
+	"commands/twitch:testFailedChannel",
+);
+export const TestFailedPermissions = FT<{ channel: string }>(
+	"commands/twitch:testFailedPermissions",
+);
+export const TestFailedSend = FT<{ channel: string }>(
+	"commands/twitch:testFailedSend",
+);
+export const TestMissingMessage = T("commands/twitch:testMissingMessage");
 export const NoSubscriptions = T("commands/twitch:noSubscriptions");
 export const RemoveStreamerNotSubscribed = FT<{ streamer: string }>(
 	"commands/twitch:removeStreamerNotSubscribed",

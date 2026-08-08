@@ -1,35 +1,11 @@
 // oxlint-disable no-await-in-loop -- sequential per-guild processing is intentional
-import type { TFunction } from "@wolfstar/http-framework-i18n";
-import type {
-	TwitchEventSubOnlineEvent,
-	TwitchHelixStreamsResult,
-	TwitchOnlineEmbedData,
-} from "@wolfstar/twitch-helpers";
-import type {
-	APIChannel,
-	APIDMChannel,
-	APIGroupDMChannel,
-	Locale,
-} from "discord-api-types/v10";
-import { floatPromise } from "#common/promises";
-import { LanguageKeys } from "#i18n";
-import { api } from "#utils/discordApi";
-import { canSendEmbeds } from "#utils/discordUtilities";
+import type { TwitchEventSubOnlineEvent } from "@wolfstar/twitch-helpers";
 import { streamNotificationDrip } from "#utils/twitch";
-import { extractDetailedMentions } from "#utils/util";
-import { EmbedBuilder, escapeMarkdown } from "@discordjs/builders";
-import { isNullish } from "@sapphire/utilities";
+import { sendOnlineNotification } from "#utils/twitchNotifications";
 import { Listener } from "@wolfstar/http-framework";
-import { getT } from "@wolfstar/http-framework-i18n";
-import {
-	fetchStream,
-	TwitchBrandingColor,
-	TwitchEventSubTypes,
-} from "@wolfstar/twitch-helpers";
+import { fetchStream, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
 export default class extends Listener {
-	private readonly kTwitchImageReplacerRegex = /(\{width\}|\{height\})/gi;
-
 	public async run(data: TwitchEventSubOnlineEvent) {
 		const twitchSubscription =
 			await this.container.prisma.twitchSubscription.findFirst({
@@ -53,107 +29,20 @@ export default class extends Listener {
 					continue;
 				}
 
-				// Retrieve the guild, if not found, skip to the next loop cycle.
-				const guild = await api().guilds.get(String(guildSubscription.guildId));
-				if (typeof guild === "undefined") continue;
+				const result = await sendOnlineNotification({
+					guildId: guildSubscription.guildId,
+					channelId: guildSubscription.channelId,
+					message: guildSubscription.message,
+					event: data,
+					streamData,
+				});
 
-				// Retrieve the language for this guild
-				const t = await getT((guild.preferred_locale ?? "en-US") as Locale);
-
-				// Retrieve the channel to send the message to
-				const channel = (
-					await api().guilds.getChannels(String(guildSubscription.guildId))
-				).find((c) => c.id === String(guildSubscription.channelId)) as Exclude<
-					APIChannel,
-					APIDMChannel | APIGroupDMChannel
-				>;
-				if (isNullish(channel) || !canSendEmbeds(channel)) {
-					continue;
+				if (result.isErr()) {
+					this.container.logger.error(
+						`[twitch-stream-online] Could not notify channel ${guildSubscription.channelId} of guild ${guildSubscription.guildId} for streamer ${twitchSubscription.streamerId} (reason ${result.unwrapErr()})`,
+					);
 				}
-
-				// Construct a message embed and send it. The custom message is optional for online
-				// subscriptions, the embed alone is already the notification.
-				const detailedMentions = extractDetailedMentions(
-					guildSubscription.message,
-				);
-				floatPromise(
-					api().channels.createMessage(channel.id, {
-						content: guildSubscription.message || undefined,
-						embeds: [
-							this.buildEmbed(this.transformTextToObject(data, streamData), t),
-						],
-						allowed_mentions: {
-							parse: detailedMentions.parse,
-							users: [...detailedMentions.users],
-							roles: [...detailedMentions.roles],
-						},
-					}),
-				);
 			}
 		}
-	}
-
-	private transformTextToObject(
-		notification: TwitchEventSubOnlineEvent,
-		streamData: TwitchHelixStreamsResult | null,
-	): TwitchOnlineEmbedData {
-		return {
-			embedThumbnailUrl: streamData?.game_box_art_url?.replace(
-				this.kTwitchImageReplacerRegex,
-				"128",
-			),
-			gameName: streamData?.game_name,
-			language: streamData?.language,
-			startedAt: new Date(notification.started_at),
-			title: this.escapeText(streamData?.title),
-			userName: notification.broadcaster_user_name,
-			viewerCount: streamData?.viewer_count,
-			embedImageUrl: streamData?.thumbnail_url.replace(
-				this.kTwitchImageReplacerRegex,
-				"128",
-			),
-		};
-	}
-
-	private buildEmbed(data: TwitchOnlineEmbedData, t: TFunction) {
-		const embed = new EmbedBuilder()
-			.setTitle(data.title)
-			.setURL(`https://twitch.tv/${data.userName}`)
-			.setFooter({ text: t(LanguageKeys.Events.Twitch.OfflinePostfix) })
-			.setColor(TwitchBrandingColor)
-			.setTimestamp(data.startedAt);
-
-		if (data.gameName) {
-			embed.setDescription(
-				t(LanguageKeys.Events.Twitch.EmbedDescriptionWithGame, {
-					userName: data.userName,
-					gameName: data.gameName,
-				}),
-			);
-		} else {
-			embed.setDescription(
-				t(LanguageKeys.Events.Twitch.EmbedDescription, {
-					userName: data.userName,
-				}),
-			);
-		}
-
-		if (data.embedImageUrl) {
-			embed.setImage(data.embedImageUrl);
-		}
-
-		if (data.embedThumbnailUrl) {
-			embed.setThumbnail(data.embedThumbnailUrl ?? "");
-		}
-
-		return embed.toJSON();
-	}
-
-	private escapeText(text?: string) {
-		if (isNullish(text)) {
-			return "";
-		}
-
-		return escapeMarkdown(text.replace(/\\/g, "\\\\").replace(/"/g, '\\"'));
 	}
 }

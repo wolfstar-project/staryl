@@ -1,5 +1,7 @@
 {
 	"embedDescription": "{{userName}} is now live!",
 	"embedDescriptionWithGame": "{{userName}} is now live - Streaming {{gameName}}!",
-	"offlinePostfix": "Staryl Twitch Notifications"
+	"offlinePostfix": "Staryl Twitch Notifications",
+	"testNotice": "🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.",
+	"testPlaceholderTitle": "Test notification"
 }
