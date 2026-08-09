@@ -419,7 +419,7 @@ export class UserCommand extends Command {
 					broadcaster_user_name: streamer.display_name,
 					id: "0",
 					type: "live",
-					started_at: (streamData?.started_at ?? new Date()).toISOString(),
+					started_at: new Date(streamData?.started_at ?? new Date()).toISOString(),
 				},
 				streamData,
 				testNotice: true,
