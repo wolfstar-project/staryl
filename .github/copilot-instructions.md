@@ -66,6 +66,14 @@
   language keys defined as nested objects in `src/lib/i18n/languageKeys/`
 - **Rate Limiting**: Use `@sapphire/ratelimits` `RateLimitManager` for
   notification drip control
+- **Testable Listener Logic**: `Listener` pieces have no test harness, so
+  business logic that needs coverage (building/sending a notification,
+  resolving a target channel, etc.) lives in a `#utils/*` module returning
+  `Result<T, E>` instead of a private listener method; the listener becomes a
+  thin loop that calls the module and logs on `isErr()`. This also lets a
+  command (e.g. `/twitch-subscriptions test`) reuse the exact same delivery
+  path as the listeners. See `src/lib/utilities/twitchNotifications.ts` /
+  `tests/utilities/twitchNotifications.test.ts`.
 
 ### Directory Structure
 
@@ -85,8 +93,9 @@
 - `prisma/schema.prisma` - Database schema
 - `tests/` - Vitest test suite, organized by area
   (`tests/commands/twitchsubscriptions.test.ts` tests
-  `src/commands/twitchsubscriptions.ts`); `tests/setup.ts` registers the
-  `@wolfstar/http-framework-test-utils` matchers and boots i18n
+  `src/commands/twitchsubscriptions.ts`; `tests/utilities/twitchNotifications.test.ts`
+  tests `src/lib/utilities/twitchNotifications.ts`); `tests/setup.ts` registers
+  the `@wolfstar/http-framework-test-utils` matchers and boots i18n
 
 ### Command Structure
 
@@ -228,6 +237,9 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - **Command not appearing:** Commands auto-register on startup via
   `@wolfstar/shared-http-pieces`; check Discord developer portal
 - **New or changed command:** Add or update its test under `tests/commands/`
+- **New or changed listener logic:** There is no listener test harness —
+  extract the logic into a `#utils/*` module and add/update its test under
+  `tests/utilities/`
 
 **When in doubt:** Copy existing patterns from similar files (e.g.,
 `src/listeners/twitch/`, `src/commands/`) before inventing new ones.
