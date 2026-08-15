@@ -5,7 +5,10 @@ import type {
 } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import { err, ok } from "@sapphire/result";
-import { container } from "@wolfstar/http-framework";
+import {
+	applicationCommandRegistry,
+	container,
+} from "@wolfstar/http-framework";
 import {
 	ApplicationCommandAutocompleteInteractionData,
 	ChatInputApplicationCommandInteractionData,
@@ -13,6 +16,10 @@ import {
 	getAndDelete,
 	makeCommand,
 } from "@wolfstar/http-framework-test-utils";
+import {
+	clearSubcommandRegistries,
+	wireParentSubcommands,
+} from "@wolfstar/plugin-subcommands-advanced";
 import {
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
@@ -27,7 +34,12 @@ import {
 	it,
 	vi,
 } from "vitest";
-import { UserCommand } from "../../src/commands/twitchsubscriptions.ts";
+import { UserCommand as ParentCommand } from "../../src/commands/subscriptions/parent.ts";
+import { UserCommand as AddCommand } from "../../src/commands/subscriptions/twitch/add.ts";
+import { UserCommand as RemoveCommand } from "../../src/commands/subscriptions/twitch/remove.ts";
+import { UserCommand as ResetCommand } from "../../src/commands/subscriptions/twitch/reset.ts";
+import { UserCommand as ShowCommand } from "../../src/commands/subscriptions/twitch/show.ts";
+import { UserCommand as TestCommand } from "../../src/commands/subscriptions/twitch/test.ts";
 
 vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 	const actual =
@@ -64,7 +76,8 @@ const {
 	getRequest,
 } = await import("@wolfstar/twitch-helpers");
 
-const CommandName = "twitch-subscriptions";
+const CommandName = "subscriptions";
+const GroupName = "twitch";
 const StreamerId = "123456789";
 const StreamerDisplayName = "CoolStreamer";
 const ChannelId = "800000000000000001";
@@ -89,11 +102,27 @@ const { runner } = createTestHarness({
 });
 
 beforeAll(async () => {
-	await container.stores.get("commands").insert(makeCommand(UserCommand));
+	// Constructing the children is what registers them with the plugin; they are deliberately not
+	// inserted into the store, both because `makeCommand` names every piece the same and because the
+	// parent's router is what dispatches to them.
+	for (const Child of [
+		AddCommand,
+		RemoveCommand,
+		ResetCommand,
+		ShowCommand,
+		TestCommand,
+	]) {
+		makeCommand(Child);
+	}
+
+	const parent = makeCommand(ParentCommand);
+	wireParentSubcommands(parent);
+	await container.stores.get("commands").insert(parent);
 });
 
 afterAll(() => {
-	getAndDelete(UserCommand);
+	getAndDelete(ParentCommand);
+	clearSubcommandRegistries();
 });
 
 beforeEach(() => {
@@ -119,9 +148,15 @@ function buildInteraction(
 			type: ApplicationCommandType.ChatInput,
 			options: [
 				{
-					type: ApplicationCommandOptionType.Subcommand,
-					name: subcommand,
-					options,
+					type: ApplicationCommandOptionType.SubcommandGroup,
+					name: GroupName,
+					options: [
+						{
+							type: ApplicationCommandOptionType.Subcommand,
+							name: subcommand,
+							options,
+						},
+					],
 				},
 			],
 			resolved,
@@ -172,7 +207,7 @@ function patchedContent(): string {
 	return patchedBody().content!;
 }
 
-describe("twitchsubscriptions add", () => {
+describe("subscriptions twitch add", () => {
 	it("subscribes a new streamer and edits the deferred reply with a success message", async () => {
 		vi.mocked(fetchUsers).mockResolvedValue(
 			ok({
@@ -645,7 +680,7 @@ describe("twitchsubscriptions add", () => {
 	});
 });
 
-describe("twitchsubscriptions remove", () => {
+describe("subscriptions twitch remove", () => {
 	it("removes a matching subscription", async () => {
 		prismaMock.guildSubscription.findMany.mockResolvedValue([
 			{
@@ -809,7 +844,7 @@ describe("twitchsubscriptions remove", () => {
 	});
 });
 
-describe("twitchsubscriptions reset", () => {
+describe("subscriptions twitch reset", () => {
 	it("removes every subscription for the guild", async () => {
 		prismaMock.guildSubscription.findMany.mockResolvedValue([
 			{
@@ -846,7 +881,7 @@ describe("twitchsubscriptions reset", () => {
 	});
 });
 
-describe("twitchsubscriptions show", () => {
+describe("subscriptions twitch show", () => {
 	it("lists the guild's subscriptions", async () => {
 		prismaMock.guildSubscription.findMany.mockResolvedValue([
 			{
@@ -884,7 +919,7 @@ describe("twitchsubscriptions show", () => {
 	});
 });
 
-describe("twitchsubscriptions autocomplete", () => {
+describe("subscriptions twitch autocomplete", () => {
 	function buildAutocompleteInteraction(query: string) {
 		return {
 			...ApplicationCommandAutocompleteInteractionData,
@@ -894,14 +929,20 @@ describe("twitchsubscriptions autocomplete", () => {
 				type: ApplicationCommandType.ChatInput,
 				options: [
 					{
-						type: ApplicationCommandOptionType.Subcommand,
-						name: "add",
+						type: ApplicationCommandOptionType.SubcommandGroup,
+						name: GroupName,
 						options: [
 							{
-								type: ApplicationCommandOptionType.String,
-								name: "streamer",
-								value: query,
-								focused: true,
+								type: ApplicationCommandOptionType.Subcommand,
+								name: "add",
+								options: [
+									{
+										type: ApplicationCommandOptionType.String,
+										name: "streamer",
+										value: query,
+										focused: true,
+									},
+								],
 							},
 						],
 					},
@@ -950,7 +991,7 @@ describe("twitchsubscriptions autocomplete", () => {
 	});
 });
 
-describe("twitchsubscriptions test", () => {
+describe("subscriptions twitch test", () => {
 	const GuildId = "737141877803057244";
 	const SubscriptionMessage = "Hey, we are live!";
 
@@ -1145,5 +1186,33 @@ describe("twitchsubscriptions test", () => {
 
 		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
 		expect(patchedContent()).toContain("I could not find the streamer");
+	});
+});
+
+describe("subscriptions registration", () => {
+	function registeredCommand() {
+		return applicationCommandRegistry.get(ParentCommand)!.chatInput!.toJSON();
+	}
+
+	it("registers a single command named subscriptions", () => {
+		expect(registeredCommand()).toMatchObject({
+			name: CommandName,
+			default_member_permissions: String(PermissionFlagsBits.Administrator),
+		});
+	});
+
+	it("nests every subcommand under the twitch group", () => {
+		const [group, ...rest] = registeredCommand().options!;
+
+		expect(rest).toHaveLength(0);
+		expect(group).toMatchObject({
+			type: ApplicationCommandOptionType.SubcommandGroup,
+			name: GroupName,
+		});
+		expect(
+			(group as { options: { name: string }[] }).options
+				.map((option) => option.name)
+				.toSorted(),
+		).toEqual(["add", "remove", "reset", "show", "test"]);
 	});
 });
