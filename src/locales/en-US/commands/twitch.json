@@ -1,6 +1,6 @@
 {
-	"name": "twitch-subscriptions",
-	"description": "Manage the subscriptions for your server.",
+	"name": "twitch",
+	"description": "Manage the Twitch stream notification subscriptions.",
 	"addName": "add",
 	"addDescription": "Add a new Twitch subscription for a streamer.",
 	"removeName": "remove",

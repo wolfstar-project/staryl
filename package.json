@@ -49,6 +49,7 @@
 		"@wolfstar/http-framework-i18n": "^1.2.3",
 		"@wolfstar/logger": "^2.1.1",
 		"@wolfstar/plugin-api": "^1.0.0",
+		"@wolfstar/plugin-subcommands-advanced": "^2.0.0",
 		"@wolfstar/safe-fetch": "^1.1.6",
 		"@wolfstar/shared-http-pieces": "^1.2.6",
 		"@wolfstar/start-banner": "^2.0.4",
