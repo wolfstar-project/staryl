@@ -247,8 +247,8 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@wolfstar/plugin-api` - Standalone REST API server (`Route`/`Middleware`
   pieces) for health checks and Twitch EventSub webhooks
 - `@wolfstar/plugin-subcommands-advanced` - Parent/child subcommand group
-  pattern (`@RegisterAsSubcommandGroup`) for commands with enough subcommands
-  to warrant one file each, e.g. `src/commands/subscriptions/`
+  pattern (`@RegisterAsSubcommandGroup`) for commands with enough subcommands to
+  warrant one file each, e.g. `src/commands/subscriptions/`
 - `vitest` - Test runner for unit/integration tests (`tests/`)
 - `@wolfstar/http-framework-test-utils` - Test harness for dispatching fake
   Discord interactions through commands (`createTestHarness`,
