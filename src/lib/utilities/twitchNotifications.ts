@@ -312,7 +312,14 @@ async function send(
 		: message;
 
 	container.logger.debug(
-		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} embeds=${embeds?.length ?? 0} mentions=${JSON.stringify(detailedMentions)}`,
+		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} embeds=${embeds?.length ?? 0} mentions=${JSON.stringify(
+			{
+				parse: detailedMentions.parse,
+				users: [...detailedMentions.users],
+				roles: [...detailedMentions.roles],
+				channels: [...detailedMentions.channels],
+			},
+		)}`,
 	);
 
 	const result = await Result.fromAsync(() =>
