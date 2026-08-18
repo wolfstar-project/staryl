@@ -1,8 +1,8 @@
-import type { NotificationDeliveryError } from "#utils/twitchNotifications";
 import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import { LanguageKeys } from "#i18n";
 import {
+	NotificationDeliveryError,
 	sendOfflineNotification,
 	sendOnlineNotification,
 } from "#utils/twitchNotifications";
@@ -19,6 +19,7 @@ import {
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { cast, isNullish, isNullishOrEmpty } from "@sapphire/utilities";
+import { container } from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
 	resolveKey,
@@ -47,14 +48,24 @@ export class UserCommand extends Command {
 		options: TwitchSubscriptionOptions,
 	) {
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
+		container.logger.debug(
+			`[twitch-test] Invoked in guild ${interaction.guildId} for streamer "${options.streamer}", channel ${options.channel.id}, type ${options.type}`,
+		);
+
 		const streamer = await getStreamer(options.streamer);
 		if (isNullish(streamer)) {
+			container.logger.debug(
+				`[twitch-test] Aborted: the streamer "${options.streamer}" was not found`,
+			);
 			return deferred.update({
 				content: await resolveKey(interaction, Root.StreamerNotFound),
 			});
 		}
 
 		const { channel, type: subscriptionType } = options;
+		container.logger.debug(
+			`[twitch-test] Resolved streamer ${streamer.login} (${streamer.id})`,
+		);
 
 		const subscriptionResult = await resolveSubscription(
 			interaction,
@@ -64,10 +75,16 @@ export class UserCommand extends Command {
 			Root.TestFailed,
 		);
 		if (subscriptionResult.isErr()) {
+			container.logger.debug(
+				`[twitch-test] Aborted: no ${subscriptionType} subscription for streamer ${streamer.id} in channel ${channel.id}`,
+			);
 			return deferred.update({ content: subscriptionResult.unwrapErr() });
 		}
 
 		const guildSubscription = subscriptionResult.unwrap();
+		container.logger.debug(
+			`[twitch-test] Resolved guild subscription ${guildSubscription.id}, message ${guildSubscription.message === null ? "unset" : `of ${guildSubscription.message.length} characters`}`,
+		);
 		const target = {
 			guildId: BigInt(interaction.guildId!),
 			channelId: BigInt(channel.id),
@@ -78,9 +95,20 @@ export class UserCommand extends Command {
 		// action and must neither be suppressed nor consume the bucket of the real notifications.
 		let deliveryResult: Result<void, NotificationDeliveryError>;
 		if (subscriptionType === TwitchSubscriptionType.StreamOnline) {
-			const streamData = (
-				await Result.fromAsync(() => fetchStream(streamer.id))
-			).unwrapOr(null);
+			const streamResult = await Result.fromAsync(() =>
+				fetchStream(streamer.id),
+			);
+			if (streamResult.isErr()) {
+				container.logger.debug(
+					`[twitch-test] Could not fetch the stream of ${streamer.id}`,
+					streamResult.unwrapErr(),
+				);
+			}
+
+			const streamData = streamResult.unwrapOr(null);
+			container.logger.debug(
+				`[twitch-test] Stream data for ${streamer.id}: ${JSON.stringify(streamData)}`,
+			);
 
 			deliveryResult = await sendOnlineNotification({
 				...target,
@@ -102,6 +130,9 @@ export class UserCommand extends Command {
 			// `add` enforces a message for offline subscriptions, but a row predating that check would
 			// leave nothing to send.
 			if (isNullishOrEmpty(guildSubscription.message)) {
+				container.logger.debug(
+					`[twitch-test] Aborted: the offline subscription ${guildSubscription.id} has no message`,
+				);
 				return deferred.update({
 					content: await resolveKey(interaction, Root.TestMissingMessage),
 				});
@@ -114,6 +145,14 @@ export class UserCommand extends Command {
 				testNotice: true,
 			});
 		}
+
+		container.logger.debug(
+			`[twitch-test] Delivery to channel ${channel.id}: ${
+				deliveryResult.isErr()
+					? `failed with ${NotificationDeliveryError[deliveryResult.unwrapErr()]}`
+					: "succeeded"
+			}`,
+		);
 
 		const content = cast<string>(
 			await resolveKey(
