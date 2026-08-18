@@ -78,21 +78,36 @@ const kTwitchImageReplacerRegex = /(\{width\}|\{height\})/gi;
 export async function sendOnlineNotification(
 	options: OnlineNotificationOptions,
 ): Promise<Result<void, NotificationDeliveryError>> {
+	container.logger.debug(
+		`[twitch-notifications] sendOnlineNotification guild=${options.guildId} channel=${options.channelId} streamer=${options.event.broadcaster_user_login} startedAt=${options.event.started_at} hasStreamData=${!isNullish(options.streamData)} hasMessage=${!isNullish(options.message)} testNotice=${options.testNotice ?? false}`,
+	);
+
 	const targetResult = await resolveTarget(
 		options.guildId,
 		options.channelId,
 		canSendEmbeds,
 	);
-	if (targetResult.isErr()) return err(targetResult.unwrapErr());
+	if (targetResult.isErr()) {
+		container.logger.debug(
+			`[twitch-notifications] sendOnlineNotification aborted for channel ${options.channelId}: ${NotificationDeliveryError[targetResult.unwrapErr()]}`,
+		);
+		return err(targetResult.unwrapErr());
+	}
 
 	const { channel, t } = targetResult.unwrap();
 	const data = buildOnlineEmbedData(options.event, options.streamData);
+	container.logger.debug(
+		`[twitch-notifications] Online embed data for channel ${channel.id}: ${JSON.stringify(data)}`,
+	);
 
 	// A `test` on a streamer that is not live has no stream to describe, and `setTitle("")` renders
 	// as a bare link. Only the test path substitutes it: a real notification that raced ahead of
 	// Twitch's stream data must keep the original behaviour.
 	if (options.testNotice && isNullish(options.streamData)) {
 		data.title = t(LanguageKeys.Events.Twitch.TestPlaceholderTitle);
+		container.logger.debug(
+			`[twitch-notifications] No stream data for channel ${channel.id}, substituting the placeholder title`,
+		);
 	}
 
 	// The custom message is optional for online subscriptions, the embed alone is already the
@@ -105,12 +120,21 @@ export async function sendOnlineNotification(
 export async function sendOfflineNotification(
 	options: OfflineNotificationOptions,
 ): Promise<Result<void, NotificationDeliveryError>> {
+	container.logger.debug(
+		`[twitch-notifications] sendOfflineNotification guild=${options.guildId} channel=${options.channelId} date=${options.date.toISOString()} testNotice=${options.testNotice ?? false}`,
+	);
+
 	const targetResult = await resolveTarget(
 		options.guildId,
 		options.channelId,
 		canSendMessages,
 	);
-	if (targetResult.isErr()) return err(targetResult.unwrapErr());
+	if (targetResult.isErr()) {
+		container.logger.debug(
+			`[twitch-notifications] sendOfflineNotification aborted for channel ${options.channelId}: ${NotificationDeliveryError[targetResult.unwrapErr()]}`,
+		);
+		return err(targetResult.unwrapErr());
+	}
 
 	const { channel, t } = targetResult.unwrap();
 	const content = buildOfflineMessage(options.message, options.date, t);
@@ -215,6 +239,10 @@ async function resolveTarget(
 		api().guilds.get(String(guildId)),
 	);
 	if (guildResult.isErr() || isNullish(guildResult.unwrap())) {
+		container.logger.debug(
+			`[twitch-notifications] Guild ${guildId} is unavailable`,
+			guildResult.isErr() ? guildResult.unwrapErr() : undefined,
+		);
 		return err(NotificationDeliveryError.GuildUnavailable);
 	}
 
@@ -223,14 +251,22 @@ async function resolveTarget(
 	// escape `resolveTarget` and abort the delivery outside the `Result` error path.
 	const preferredLocale = (guildResult.unwrap().preferred_locale ??
 		"en-US") as Locale;
-	const t = getT(
-		loadedLocales.has(preferredLocale) ? preferredLocale : "en-US",
+	const resolvedLocale = loadedLocales.has(preferredLocale)
+		? preferredLocale
+		: "en-US";
+	container.logger.debug(
+		`[twitch-notifications] Guild ${guildId} preferred locale ${preferredLocale}, resolved to ${resolvedLocale}`,
 	);
+	const t = getT(resolvedLocale);
 
 	const channelsResult = await Result.fromAsync(() =>
 		api().guilds.getChannels(String(guildId)),
 	);
 	if (channelsResult.isErr()) {
+		container.logger.debug(
+			`[twitch-notifications] Could not list the channels of guild ${guildId}`,
+			channelsResult.unwrapErr(),
+		);
 		return err(NotificationDeliveryError.ChannelNotFound);
 	}
 
@@ -239,12 +275,23 @@ async function resolveTarget(
 		.find((entry) => entry.id === String(channelId)) as
 		| GuildChannel
 		| undefined;
-	if (isNullish(channel)) return err(NotificationDeliveryError.ChannelNotFound);
+	if (isNullish(channel)) {
+		container.logger.debug(
+			`[twitch-notifications] Channel ${channelId} was not found in guild ${guildId}`,
+		);
+		return err(NotificationDeliveryError.ChannelNotFound);
+	}
 
 	if (!(await canSend(channel))) {
+		container.logger.debug(
+			`[twitch-notifications] Missing permissions to post in channel ${channelId} of guild ${guildId}`,
+		);
 		return err(NotificationDeliveryError.MissingPermissions);
 	}
 
+	container.logger.debug(
+		`[twitch-notifications] Resolved channel ${channelId} (type ${channel.type}) of guild ${guildId}`,
+	);
 	return ok({ channel, t });
 }
 
@@ -263,6 +310,17 @@ async function send(
 				.filter(Boolean)
 				.join("\n")
 		: message;
+
+	container.logger.debug(
+		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} embeds=${embeds?.length ?? 0} mentions=${JSON.stringify(
+			{
+				parse: detailedMentions.parse,
+				users: [...detailedMentions.users],
+				roles: [...detailedMentions.roles],
+				channels: [...detailedMentions.channels],
+			},
+		)}`,
+	);
 
 	const result = await Result.fromAsync(() =>
 		api().channels.createMessage(channelId, {
@@ -286,5 +344,8 @@ async function send(
 		return err(NotificationDeliveryError.SendFailed);
 	}
 
+	container.logger.debug(
+		`[twitch-notifications] Notification delivered to channel ${channelId}`,
+	);
 	return ok();
 }

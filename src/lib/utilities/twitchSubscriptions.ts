@@ -243,13 +243,18 @@ export async function resolveSubscription(
 		return err(cast<string>(await resolveKey(interaction, failedKey)));
 	}
 
-	const streamers = guildSubscriptionsResult
-		.unwrap()
-		.filter(
-			({ twitchSubscription }) => twitchSubscription.streamerId === streamer.id,
-		);
+	const guildSubscriptions = guildSubscriptionsResult.unwrap();
+	const streamers = guildSubscriptions.filter(
+		({ twitchSubscription }) => twitchSubscription.streamerId === streamer.id,
+	);
+	container.logger.debug(
+		`[twitch-subscriptions] Guild ${interaction.guildId} has ${guildSubscriptions.length} subscription(s), ${streamers.length} of them for streamer ${streamer.id}`,
+	);
 
 	if (!streamers.length) {
+		container.logger.debug(
+			`[twitch-subscriptions] Guild ${interaction.guildId} is not subscribed to streamer ${streamer.id}`,
+		);
 		return err(
 			cast<string>(
 				await resolveKey(interaction, Root.RemoveStreamerNotSubscribed, {
@@ -265,6 +270,9 @@ export async function resolveSubscription(
 	);
 
 	if (!statuses.length) {
+		container.logger.debug(
+			`[twitch-subscriptions] Streamer ${streamer.id} has no ${subscriptionType} subscription in guild ${interaction.guildId}`,
+		);
 		const showStatuses = await resolveKey(interaction, Root.ShowStatus);
 		return err(
 			cast<string>(
@@ -281,6 +289,9 @@ export async function resolveSubscription(
 	);
 
 	if (!match) {
+		container.logger.debug(
+			`[twitch-subscriptions] The ${subscriptionType} subscription of streamer ${streamer.id} does not point at channel ${channel.id}`,
+		);
 		return err(
 			cast<string>(
 				await resolveKey(interaction, Root.RemoveNotToProvidedChannel, {
@@ -308,6 +319,9 @@ export async function getStreamer(streamerName: string) {
 	}
 
 	const { data } = result.unwrap();
+	container.logger.debug(
+		`[twitch-subscriptions] Look-up of the streamer "${streamerName}" returned ${data.length} result(s)`,
+	);
 	return data.length > 0 ? data[0] : null;
 }
 
