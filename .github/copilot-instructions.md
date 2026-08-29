@@ -65,8 +65,13 @@
 - **Event System**: Twitch EventSub webhooks trigger internal events
   (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
   handle
-- **i18n**: Multi-language support via `@wolfstar/http-framework-i18n` with
-  language keys defined as nested objects in `src/lib/i18n/languageKeys/`
+- **i18n**: Multi-language support via `@wolfstar/plugin-i18next` with language
+  keys defined as nested objects in `src/lib/i18n/languageKeys/`. The plugin is
+  activated by the side-effect import `@wolfstar/plugin-i18next/register` in
+  `src/main.ts`; it installs an `InternationalizationHandler` on
+  `container.i18n` and loads the locales before the stores, so command builders
+  are localized at registration time. Locale discovery is configured through the
+  `i18n` key of the `Client` options.
 - **Rate Limiting**: Use `@sapphire/ratelimits` `RateLimitManager` for
   notification drip control
 - **Testable Listener Logic**: `Listener` pieces have no test harness, so
@@ -231,7 +236,8 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 ## Key Dependencies
 
 - `@wolfstar/http-framework` - Discord HTTP interaction framework
-- `@wolfstar/http-framework-i18n` - Internationalization for the HTTP framework
+- `@wolfstar/plugin-i18next` - i18next-powered internationalization plugin for
+  the HTTP framework
 - `@wolfstar/twitch-helpers` - Twitch EventSub types, helpers, and signature
   verification
 - `@wolfstar/shared-http-pieces` - Shared command registration and Sentry

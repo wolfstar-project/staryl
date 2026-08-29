@@ -4,7 +4,7 @@ import type {
 	TwitchSubscription,
 } from "#lib/setup/prisma";
 import type { Command } from "@wolfstar/http-framework";
-import type { TypedT } from "@wolfstar/http-framework-i18n";
+import type { TypedT } from "@wolfstar/plugin-i18next";
 import type {
 	TwitchEventSubResult,
 	TwitchEventSubTypes,
@@ -27,7 +27,7 @@ import {
 	applyLocalizedBuilder,
 	createSelectMenuChoiceName,
 	resolveKey,
-} from "@wolfstar/http-framework-i18n";
+} from "@wolfstar/plugin-i18next";
 import {
 	fetchUsers,
 	getRequest,

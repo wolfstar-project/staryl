@@ -2,7 +2,7 @@ import type { TwitchChannelSearchResult } from "#utils/twitchSubscriptions";
 import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
 import { LanguageKeys } from "#i18n";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
-import { applyLocalizedBuilder } from "@wolfstar/http-framework-i18n";
+import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
 import { Subcommand } from "@wolfstar/plugin-subcommands-advanced";
 import { getRequest } from "@wolfstar/twitch-helpers";
 import {

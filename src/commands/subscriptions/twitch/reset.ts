@@ -11,10 +11,7 @@ import {
 } from "#utils/twitchSubscriptions";
 import { Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";
-import {
-	applyLocalizedBuilder,
-	resolveKey,
-} from "@wolfstar/http-framework-i18n";
+import { applyLocalizedBuilder, resolveKey } from "@wolfstar/plugin-i18next";
 import {
 	Command,
 	RegisterAsSubcommandGroup,

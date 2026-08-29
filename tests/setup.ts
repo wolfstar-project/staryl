@@ -1,7 +1,8 @@
+import { fileURLToPath } from "node:url";
 import { container } from "@wolfstar/http-framework";
-import { init, load } from "@wolfstar/http-framework-i18n";
 import { httpFrameworkMatchers } from "@wolfstar/http-framework-test-utils/vitest";
 import { Logger } from "@wolfstar/logger";
+import { InternationalizationHandler } from "@wolfstar/plugin-i18next";
 import { expect } from "vitest";
 
 process.env["DISCORD_PUBLIC_KEY"] ??= "test-discord-public-key";
@@ -16,10 +17,18 @@ container.logger = new Logger({
 
 expect.extend(httpFrameworkMatchers);
 
-await load(new URL("../src/locales", import.meta.url));
-await init({
-	fallbackLng: "en-US",
-	returnNull: false,
-	returnObjects: true,
-	returnEmptyString: false,
+// No `Client` is created in the test suite, so `@wolfstar/plugin-i18next/register` never runs its
+// `preGenericsInitialization`/`preLoad` hooks; the handler is built and initialized by hand with
+// the same options `src/main.ts` passes to the client.
+container.i18n = new InternationalizationHandler({
+	defaultLanguageDirectory: fileURLToPath(
+		new URL("../src/locales", import.meta.url),
+	),
+	defaultName: "en-US",
+	i18next: {
+		returnNull: false,
+		returnObjects: true,
+		returnEmptyString: false,
+	},
 });
+await container.i18n.init();
