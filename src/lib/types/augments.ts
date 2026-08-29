@@ -5,7 +5,7 @@ import type {
 	TwitchEventSubOnlineEvent,
 } from "@wolfstar/twitch-helpers";
 
-declare module "@wolfstar/http-framework-i18n" {
+declare module "@wolfstar/http-framework" {
 	interface Client {
 		emit(
 			event: Events.TwitchStreamHookedAnalytics,

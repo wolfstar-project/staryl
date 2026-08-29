@@ -1,30 +1,37 @@
+import { fileURLToPath } from "node:url";
 import { setup } from "#lib/setup/all";
 import { envParseInteger, envParseString } from "@wolfstar/env-utilities";
 import { Client, container } from "@wolfstar/http-framework";
-import { init, load } from "@wolfstar/http-framework-i18n";
 import { registerCommands } from "@wolfstar/shared-http-pieces";
 import { createBanner } from "@wolfstar/start-banner";
 import { vice } from "gradient-string";
 // oxlint-disable-next-line import/no-unassigned-import -- side-effect import that registers the plugin-api Route/Middleware stores
 import "@wolfstar/plugin-api/register";
+// oxlint-disable-next-line import/no-unassigned-import -- side-effect import that registers the i18next handler on `container.i18n`
+import "@wolfstar/plugin-i18next/register";
 // oxlint-disable-next-line import/no-unassigned-import -- side-effect import that installs the subcommands-advanced loader strategy
 import "@wolfstar/plugin-subcommands-advanced/register";
 
 await setup();
-
-await load(new URL("./locales", import.meta.url));
-await init({
-	fallbackLng: "en-US",
-	returnNull: false,
-	returnObjects: true,
-	returnEmptyString: false,
-});
 
 const client = new Client({
 	api: {
 		listenOptions: {
 			port: envParseInteger("API_PORT"),
 			host: envParseString("API_ADDRESS"),
+		},
+	},
+	// The locales are copied next to the bundle by the tsdown `copyPlugin`, so the directory is
+	// resolved from this module instead of the plugin default (`<root>/languages`).
+	i18n: {
+		defaultLanguageDirectory: fileURLToPath(
+			new URL("./locales", import.meta.url),
+		),
+		defaultName: "en-US",
+		i18next: {
+			returnNull: false,
+			returnObjects: true,
+			returnEmptyString: false,
 		},
 	},
 	// Names the subcommand pieces `parent/group/sub`, so same-named files across groups

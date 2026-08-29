@@ -12,10 +12,7 @@ import {
 import { EmbedBuilder } from "@discordjs/builders";
 import { channelMention } from "@discordjs/formatters";
 import { isNullish } from "@sapphire/utilities";
-import {
-	applyLocalizedBuilder,
-	resolveKey,
-} from "@wolfstar/http-framework-i18n";
+import { applyLocalizedBuilder, resolveKey } from "@wolfstar/plugin-i18next";
 import {
 	Command,
 	RegisterAsSubcommandGroup,

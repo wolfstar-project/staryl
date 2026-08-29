@@ -1,4 +1,4 @@
-import type { TFunction } from "@wolfstar/http-framework-i18n";
+import type { TFunction } from "@wolfstar/plugin-i18next";
 import type {
 	TwitchEventSubOnlineEvent,
 	TwitchHelixStreamsResult,
@@ -25,7 +25,6 @@ import {
 import { err, ok, Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
-import { getT, loadedLocales } from "@wolfstar/http-framework-i18n";
 import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
 
 /**
@@ -246,18 +245,18 @@ async function resolveTarget(
 		return err(NotificationDeliveryError.GuildUnavailable);
 	}
 
-	// `getT` throws when Discord reports a locale the bot has not loaded (e.g. `de` while only
-	// `en-US` is bundled). An unsupported guild locale must degrade to the default language, not
-	// escape `resolveTarget` and abort the delivery outside the `Result` error path.
+	// `container.i18n.getT` throws when Discord reports a locale the bot has not loaded (e.g. `de`
+	// while only `en-US` is bundled). An unsupported guild locale must degrade to the default
+	// language, not escape `resolveTarget` and abort the delivery outside the `Result` error path.
 	const preferredLocale = (guildResult.unwrap().preferred_locale ??
 		"en-US") as Locale;
-	const resolvedLocale = loadedLocales.has(preferredLocale)
+	const resolvedLocale = container.i18n.languages.has(preferredLocale)
 		? preferredLocale
 		: "en-US";
 	container.logger.debug(
 		`[twitch-notifications] Guild ${guildId} preferred locale ${preferredLocale}, resolved to ${resolvedLocale}`,
 	);
-	const t = getT(resolvedLocale);
+	const t = container.i18n.getT(resolvedLocale);
 
 	const channelsResult = await Result.fromAsync(() =>
 		api().guilds.getChannels(String(guildId)),

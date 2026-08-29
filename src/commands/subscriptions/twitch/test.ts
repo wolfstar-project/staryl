@@ -20,10 +20,7 @@ import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { cast, isNullish, isNullishOrEmpty } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
-import {
-	applyLocalizedBuilder,
-	resolveKey,
-} from "@wolfstar/http-framework-i18n";
+import { applyLocalizedBuilder, resolveKey } from "@wolfstar/plugin-i18next";
 import {
 	Command,
 	RegisterAsSubcommandGroup,

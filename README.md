@@ -78,7 +78,7 @@ WebSocket connection.
 - **Custom Messages**: Configure custom notification messages per guild
   subscription.
 - **Multi-Language Support**: Internationalization via
-  `@wolfstar/http-framework-i18n` with support for multiple locales.
+  `@wolfstar/plugin-i18next` with support for multiple locales.
 - **Rate Limiting**: Built-in notification drip control to prevent spam using
   `@sapphire/ratelimits`.
 

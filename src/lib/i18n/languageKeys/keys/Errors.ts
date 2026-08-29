@@ -1,4 +1,4 @@
-import { T } from "@wolfstar/http-framework-i18n";
+import { T } from "@wolfstar/plugin-i18next";
 
 export const GenericUnknownChannel = T("errors:genericUnknownChannel");
 export const GenericUnknownGuild = T("errors:genericUnknownGuild");
