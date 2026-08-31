@@ -1,6 +1,5 @@
 import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
-import { LanguageKeys } from "#i18n";
 import {
 	createChannelOption,
 	createGuildSubscription,
@@ -31,21 +30,23 @@ import {
 } from "@wolfstar/twitch-helpers";
 import { MessageFlags } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Twitch;
-
 @RegisterAsSubcommandGroup(
 	SubscriptionsCommandName,
 	TwitchGroupName,
 	(builder) =>
-		applyLocalizedBuilder(builder, Root.AddName, Root.AddDescription)
+		applyLocalizedBuilder(
+			builder,
+			"commands/twitch:addName",
+			"commands/twitch:addDescription",
+		)
 			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption(createTypeChoiceOption().setRequired(true))
 			.addStringOption((option) =>
 				applyLocalizedBuilder(
 					option,
-					Root.OptionsMessageName,
-					Root.OptionsMessageDescription,
+					"commands/twitch:optionsMessageName",
+					"commands/twitch:optionsMessageDescription",
 				)
 					.setMaxLength(MaximumMessageLength)
 					.setRequired(false),
@@ -66,7 +67,7 @@ export class UserCommand extends Command {
 			return deferred.update({
 				content: await resolveKey(
 					interaction,
-					Root.AddMessageForOfflineRequired,
+					"commands/twitch:addMessageForOfflineRequired",
 				),
 			});
 		}
@@ -74,7 +75,10 @@ export class UserCommand extends Command {
 		const streamer = await getStreamer(options.streamer);
 		if (isNullish(streamer)) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.StreamerNotFound),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:streamerNotFound",
+				),
 			});
 		}
 
@@ -98,7 +102,10 @@ export class UserCommand extends Command {
 				existingResult.unwrapErr(),
 			);
 			return deferred.update({
-				content: await resolveKey(interaction, Root.AddFailedDatabase),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:addFailedDatabase",
+				),
 			});
 		}
 
@@ -113,7 +120,7 @@ export class UserCommand extends Command {
 
 		if (alreadyHasEntry) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.AddDuplicated),
+				content: await resolveKey(interaction, "commands/twitch:addDuplicated"),
 			});
 		}
 
@@ -129,7 +136,10 @@ export class UserCommand extends Command {
 					createdResult.unwrapErr(),
 				);
 				return deferred.update({
-					content: await resolveKey(interaction, Root.AddFailedDatabase),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:addFailedDatabase",
+					),
 				});
 			}
 		} else {
@@ -142,7 +152,10 @@ export class UserCommand extends Command {
 					"[twitch-subscriptions] TWITCH_EVENT_SUB_CALLBACK and/or TWITCH_EVENT_SUB_SECRET are not set, EventSub subscriptions cannot be created.",
 				);
 				return deferred.update({
-					content: await resolveKey(interaction, Root.AddFailedTwitch),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:addFailedTwitch",
+					),
 				});
 			}
 
@@ -155,7 +168,10 @@ export class UserCommand extends Command {
 					eventSubResult.unwrapErr(),
 				);
 				return deferred.update({
-					content: await resolveKey(interaction, Root.AddFailedTwitch),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:addFailedTwitch",
+					),
 				});
 			}
 
@@ -165,7 +181,10 @@ export class UserCommand extends Command {
 					`[twitch-subscriptions] Twitch returned an empty EventSub payload for ${streamer.id}`,
 				);
 				return deferred.update({
-					content: await resolveKey(interaction, Root.AddFailedTwitch),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:addFailedTwitch",
+					),
 				});
 			}
 
@@ -235,7 +254,10 @@ export class UserCommand extends Command {
 					}
 				}
 				return deferred.update({
-					content: await resolveKey(interaction, Root.AddFailedDatabase),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:addFailedDatabase",
+					),
 				});
 			}
 		}
@@ -244,8 +266,8 @@ export class UserCommand extends Command {
 			await resolveKey(
 				interaction,
 				type === TwitchSubscriptionType.StreamOnline
-					? Root.AddSuccessLive
-					: Root.AddSuccessOffline,
+					? "commands/twitch:addSuccessLive"
+					: "commands/twitch:addSuccessOffline",
 				{ name: streamer.display_name, channel: channelMention(channel.id) },
 			),
 		);

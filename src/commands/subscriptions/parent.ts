@@ -1,6 +1,5 @@
 import type { TwitchChannelSearchResult } from "#utils/twitchSubscriptions";
 import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
-import { LanguageKeys } from "#i18n";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
 import { Subcommand } from "@wolfstar/plugin-subcommands-advanced";
@@ -11,9 +10,6 @@ import {
 	PermissionFlagsBits,
 } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Subscriptions;
-const Twitch = LanguageKeys.Commands.Twitch;
-
 /**
  * The parent of every subscription subcommand. Each social network owns a subcommand group declared
  * here, and its subcommands live in their own classes under `commands/subscriptions/<social>/`,
@@ -23,12 +19,20 @@ const Twitch = LanguageKeys.Commands.Twitch;
  * autocomplete interactions are dispatched by top-level command name and never reach them.
  */
 @RegisterCommand((builder) =>
-	applyLocalizedBuilder(builder, Root.RootName, Root.RootDescription)
+	applyLocalizedBuilder(
+		builder,
+		"commands/subscriptions:name",
+		"commands/subscriptions:description",
+	)
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
 		.setContexts(InteractionContextType.Guild)
 		.addSubcommandGroup((group) =>
-			applyLocalizedBuilder(group, Twitch.RootName, Twitch.RootDescription),
+			applyLocalizedBuilder(
+				group,
+				"commands/twitch:name",
+				"commands/twitch:description",
+			),
 		),
 )
 export class UserCommand extends Subcommand {

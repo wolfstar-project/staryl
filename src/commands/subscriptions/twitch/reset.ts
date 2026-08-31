@@ -1,5 +1,4 @@
 import type { TwitchStreamerFilterOptions } from "#utils/twitchSubscriptions";
-import { LanguageKeys } from "#i18n";
 import {
 	createStreamerOption,
 	deleteSubscription,
@@ -21,16 +20,14 @@ import {
 } from "@wolfstar/plugin-subcommands-advanced";
 import { MessageFlags } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Twitch;
-
 @RegisterAsSubcommandGroup(
 	SubscriptionsCommandName,
 	TwitchGroupName,
 	(builder) =>
 		applyLocalizedBuilder(
 			builder,
-			Root.ResetName,
-			Root.ResetDescription,
+			"commands/twitch:resetName",
+			"commands/twitch:resetDescription",
 		).addStringOption(createStreamerOption(false)),
 )
 export class UserCommand extends Command {
@@ -48,7 +45,7 @@ export class UserCommand extends Command {
 				guildSubscriptionsResult.unwrapErr(),
 			);
 			return deferred.update({
-				content: await resolveKey(interaction, Root.ResetFailed),
+				content: await resolveKey(interaction, "commands/twitch:resetFailed"),
 			});
 		}
 
@@ -56,7 +53,10 @@ export class UserCommand extends Command {
 
 		if (!guildSubscriptions.length) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.NoSubscriptions),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:noSubscriptions",
+				),
 			});
 		}
 
@@ -64,7 +64,10 @@ export class UserCommand extends Command {
 			const streamer = await getStreamer(options.streamer);
 			if (isNullish(streamer)) {
 				return deferred.update({
-					content: await resolveKey(interaction, Root.StreamerNotFound),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:streamerNotFound",
+					),
 				});
 			}
 			guildSubscriptions = guildSubscriptions.filter(
@@ -74,7 +77,10 @@ export class UserCommand extends Command {
 
 		if (!guildSubscriptions.length) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.NoSubscriptions),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:noSubscriptions",
+				),
 			});
 		}
 
@@ -97,12 +103,12 @@ export class UserCommand extends Command {
 				removalResult.unwrapErr(),
 			);
 			return deferred.update({
-				content: await resolveKey(interaction, Root.ResetFailed),
+				content: await resolveKey(interaction, "commands/twitch:resetFailed"),
 			});
 		}
 
 		const content = cast<string>(
-			await resolveKey(interaction, Root.ResetSuccess, { count }),
+			await resolveKey(interaction, "commands/twitch:resetSuccess", { count }),
 		);
 		return deferred.update({ content });
 	}

@@ -1,6 +1,5 @@
 import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
-import { LanguageKeys } from "#i18n";
 import {
 	createChannelOption,
 	createStreamerOption,
@@ -25,13 +24,15 @@ import {
 } from "@wolfstar/plugin-subcommands-advanced";
 import { MessageFlags } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Twitch;
-
 @RegisterAsSubcommandGroup(
 	SubscriptionsCommandName,
 	TwitchGroupName,
 	(builder) =>
-		applyLocalizedBuilder(builder, Root.RemoveName, Root.RemoveDescription)
+		applyLocalizedBuilder(
+			builder,
+			"commands/twitch:removeName",
+			"commands/twitch:removeDescription",
+		)
 			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption(createTypeChoiceOption().setRequired(true)),
@@ -45,7 +46,10 @@ export class UserCommand extends Command {
 		const streamer = await getStreamer(options.streamer);
 		if (isNullish(streamer)) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.StreamerNotFound),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:streamerNotFound",
+				),
 			});
 		}
 
@@ -56,7 +60,7 @@ export class UserCommand extends Command {
 			streamer,
 			channel,
 			subscriptionType,
-			Root.RemoveFailed,
+			"commands/twitch:removeFailed",
 		);
 		if (subscriptionResult.isErr()) {
 			return deferred.update({ content: subscriptionResult.unwrapErr() });
@@ -74,7 +78,7 @@ export class UserCommand extends Command {
 				removalResult.unwrapErr(),
 			);
 			return deferred.update({
-				content: await resolveKey(interaction, Root.RemoveFailed),
+				content: await resolveKey(interaction, "commands/twitch:removeFailed"),
 			});
 		}
 
@@ -82,8 +86,8 @@ export class UserCommand extends Command {
 			await resolveKey(
 				interaction,
 				subscriptionType === TwitchSubscriptionType.StreamOnline
-					? Root.RemoveSuccessLive
-					: Root.RemoveSuccessOffline,
+					? "commands/twitch:removeSuccessLive"
+					: "commands/twitch:removeSuccessOffline",
 				{ name: streamer.display_name, channel: channelMention(channel.id) },
 			),
 		);

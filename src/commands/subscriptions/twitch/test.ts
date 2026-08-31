@@ -1,6 +1,5 @@
 import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
-import { LanguageKeys } from "#i18n";
 import {
 	NotificationDeliveryError,
 	sendOfflineNotification,
@@ -31,13 +30,15 @@ import {
 import { fetchStream } from "@wolfstar/twitch-helpers";
 import { MessageFlags } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Twitch;
-
 @RegisterAsSubcommandGroup(
 	SubscriptionsCommandName,
 	TwitchGroupName,
 	(builder) =>
-		applyLocalizedBuilder(builder, Root.TestName, Root.TestDescription)
+		applyLocalizedBuilder(
+			builder,
+			"commands/twitch:testName",
+			"commands/twitch:testDescription",
+		)
 			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption(createTypeChoiceOption().setRequired(true)),
@@ -58,7 +59,10 @@ export class UserCommand extends Command {
 				`[twitch-test] Aborted: the streamer "${options.streamer}" was not found`,
 			);
 			return deferred.update({
-				content: await resolveKey(interaction, Root.StreamerNotFound),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:streamerNotFound",
+				),
 			});
 		}
 
@@ -72,7 +76,7 @@ export class UserCommand extends Command {
 			streamer,
 			channel,
 			subscriptionType,
-			Root.TestFailed,
+			"commands/twitch:testFailed",
 		);
 		if (subscriptionResult.isErr()) {
 			container.logger.debug(
@@ -134,7 +138,10 @@ export class UserCommand extends Command {
 					`[twitch-test] Aborted: the offline subscription ${guildSubscription.id} has no message`,
 				);
 				return deferred.update({
-					content: await resolveKey(interaction, Root.TestMissingMessage),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:testMissingMessage",
+					),
 				});
 			}
 
@@ -159,7 +166,7 @@ export class UserCommand extends Command {
 				interaction,
 				deliveryResult.isErr()
 					? DeliveryErrorKeys[deliveryResult.unwrapErr()]
-					: Root.TestSuccess,
+					: "commands/twitch:testSuccess",
 				{ channel: channelMention(channel.id) },
 			),
 		);
