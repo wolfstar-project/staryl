@@ -1,15 +1,12 @@
-import { T } from "@wolfstar/plugin-i18next";
-
-export const GenericUnknownChannel = T("errors:genericUnknownChannel");
-export const GenericUnknownGuild = T("errors:genericUnknownGuild");
-export const GenericUnknownMember = T("errors:genericUnknownMember");
-export const GenericUnknownMessage = T("errors:genericUnknownMessage");
-export const GenericUnknownRole = T("errors:genericUnknownRole");
-export const GenericMissingAccess = T("errors:genericMissingAccess");
-export const GenericDiscordInternalServerError = T(
-	"errors:genericDiscordInternalServerError",
-);
-export const GenericDiscordGateway = T("errors:genericDiscordGateway");
-export const GenericDiscordUnavailable = T("errors:genericDiscordUnavailable");
-export const UnexpectedIssue = T("errors:unexpectedIssue");
-export const DiscordAbortError = T("errors:discordAbortError");
+export const GenericUnknownChannel = "errors:genericUnknownChannel";
+export const GenericUnknownGuild = "errors:genericUnknownGuild";
+export const GenericUnknownMember = "errors:genericUnknownMember";
+export const GenericUnknownMessage = "errors:genericUnknownMessage";
+export const GenericUnknownRole = "errors:genericUnknownRole";
+export const GenericMissingAccess = "errors:genericMissingAccess";
+export const GenericDiscordInternalServerError =
+	"errors:genericDiscordInternalServerError";
+export const GenericDiscordGateway = "errors:genericDiscordGateway";
+export const GenericDiscordUnavailable = "errors:genericDiscordUnavailable";
+export const UnexpectedIssue = "errors:unexpectedIssue";
+export const DiscordAbortError = "errors:discordAbortError";

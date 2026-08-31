@@ -1,26 +1,20 @@
-import { FT, T } from "@wolfstar/plugin-i18next";
-
-export const Yes = T("globals:yes");
-export const No = T("globals:no");
-export const None = T("globals:none");
-export const Unknown = T("globals:unknown");
-export const DurationValue = FT<{ value: number }>("globals:durationValue");
-export const NumberValue = FT<{ value: number }>("globals:numberValue");
-export const NumberCompactValue = FT<{ value: number }>(
-	"globals:numberCompactValue",
-);
-export const DateTimeValue = FT<{ value: number }>("globals:dateTimeValue");
-export const HumanDateTimeValue = FT<{ value: number }>(
-	"globals:humanDateTimeValue",
-);
-export const AndListValue = FT<{ value: string[] }>("globals:andListValue");
-export const OrListValue = FT<{ value: string[] }>("globals:orListValue");
-export const DateFormat = T("globals:dateFormat");
-export const DateFormatExplanation = T("globals:dateFormatExplanation");
-export const Back = T("globals:back");
-export const Stop = T("globals:stop");
-export const Set = T("globals:set");
-export const Remove = T("globals:remove");
-export const Reset = T("globals:reset");
-export const Value = T("globals:value");
-export const Cancel = T("globals:cancel");
+export const Yes = "globals:yes";
+export const No = "globals:no";
+export const None = "globals:none";
+export const Unknown = "globals:unknown";
+export const DurationValue = "globals:durationValue";
+export const NumberValue = "globals:numberValue";
+export const NumberCompactValue = "globals:numberCompactValue";
+export const DateTimeValue = "globals:dateTimeValue";
+export const HumanDateTimeValue = "globals:humanDateTimeValue";
+export const AndListValue = "globals:andListValue";
+export const OrListValue = "globals:orListValue";
+export const DateFormat = "globals:dateFormat";
+export const DateFormatExplanation = "globals:dateFormatExplanation";
+export const Back = "globals:back";
+export const Stop = "globals:stop";
+export const Set = "globals:set";
+export const Remove = "globals:remove";
+export const Reset = "globals:reset";
+export const Value = "globals:value";
+export const Cancel = "globals:cancel";

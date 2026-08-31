@@ -1,6 +1,7 @@
 import type { TFunction } from "@wolfstar/plugin-i18next";
 import { LanguageKeys } from "#i18n";
 import { DiscordAPIError, HTTPError } from "@discordjs/rest";
+import { cast } from "@sapphire/utilities";
 import { RESTJSONErrorCodes } from "discord-api-types/v10";
 import { exists } from "i18next";
 
@@ -23,7 +24,9 @@ export function stringifyError(t: TFunction, error: unknown): string {
 }
 
 function stringifyErrorString(t: TFunction, error: string): string {
-	return exists(error) ? (t(error) as string) : error;
+	return exists(error)
+		? String(t(cast<Parameters<TFunction>[0]>(error)))
+		: error;
 }
 
 function stringifyErrorObject(t: TFunction, error: object | null): string {

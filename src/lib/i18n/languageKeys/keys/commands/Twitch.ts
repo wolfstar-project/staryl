@@ -1,100 +1,63 @@
-import { FT, T } from "@wolfstar/plugin-i18next";
+export const RootName = "commands/twitch:name";
+export const RootDescription = "commands/twitch:description";
 
-export const RootName = T("commands/twitch:name");
-export const RootDescription = T("commands/twitch:description");
+export const AddName = "commands/twitch:addName";
+export const AddDescription = "commands/twitch:addDescription";
 
-export const AddName = T("commands/twitch:addName");
-export const AddDescription = T("commands/twitch:addDescription");
-
-export const RemoveName = T("commands/twitch:removeName");
-export const RemoveDescription = T("commands/twitch:removeDescription");
-export const TestName = T("commands/twitch:testName");
-export const TestDescription = T("commands/twitch:testDescription");
-export const ResetName = T("commands/twitch:resetName");
-export const ResetDescription = T("commands/twitch:resetDescription");
-export const ShowName = T("commands/twitch:showName");
-export const ShowDescription = T("commands/twitch:showDescription");
-export const OptionsStreamerName = T("commands/twitch:optionsStreamerName");
-export const OptionsStreamerDescription = T(
-	"commands/twitch:optionsStreamerDescription",
-);
-export const OptionsChannelName = T("commands/twitch:optionsChannelName");
-export const OptionsChannelDescription = T(
-	"commands/twitch:optionsChannelDescription",
-);
-export const OptionsTypeName = T("commands/twitch:optionsTypeName");
-export const OptionsTypeDescription = T(
-	"commands/twitch:optionsTypeDescription",
-);
-export const OptionsMessageName = T("commands/twitch:optionsMessageName");
-export const OptionsMessageDescription = T(
-	"commands/twitch:optionsMessageDescription",
-);
-export const OptionsTypeChoiceOnline = T(
-	"commands/twitch:optionsTypeChoiceOnline",
-);
-export const OptionsTypeChoiceOffline = T(
-	"commands/twitch:optionsTypeChoiceOffline",
-);
-export const StreamerNotFound = T("commands/twitch:streamerNotFound");
-export const StatusValues = T<[string, string]>("commands/twitch:statusValues");
-export const InvalidStatus = T("commands/twitch:invalidStatus");
-export const AddDuplicated = T("commands/twitch:addDuplicated");
-export const AddSuccessOffline = FT<{ name: string; channel: string }>(
-	"commands/twitch:addSuccessOffline",
-);
-export const AddSuccessLive = FT<{ name: string; channel: string }>(
-	"commands/twitch:addSuccessLive",
-);
-export const AddMessageForOfflineRequired = T(
-	"commands/twitch:addMessageForOfflineRequired",
-);
-export const AddFailedTwitch = T("commands/twitch:addFailedTwitch");
-export const AddFailedDatabase = T("commands/twitch:addFailedDatabase");
-export const RemoveFailed = T("commands/twitch:removeFailed");
-export const ResetFailed = T("commands/twitch:resetFailed");
-export const TestSuccess = FT<{ channel: string }>(
-	"commands/twitch:testSuccess",
-);
-export const TestFailed = T("commands/twitch:testFailed");
-export const TestFailedGuild = FT<{ channel: string }>(
-	"commands/twitch:testFailedGuild",
-);
-export const TestFailedChannel = FT<{ channel: string }>(
-	"commands/twitch:testFailedChannel",
-);
-export const TestFailedPermissions = FT<{ channel: string }>(
-	"commands/twitch:testFailedPermissions",
-);
-export const TestFailedSend = FT<{ channel: string }>(
-	"commands/twitch:testFailedSend",
-);
-export const TestMissingMessage = T("commands/twitch:testMissingMessage");
-export const NoSubscriptions = T("commands/twitch:noSubscriptions");
-export const RemoveStreamerNotSubscribed = FT<{ streamer: string }>(
-	"commands/twitch:removeStreamerNotSubscribed",
-);
-export const RemoveNotToProvidedChannel = FT<{ channel: string }>(
-	"commands/twitch:removeNotToProvidedChannel",
-);
-export const RemoveStreamerStatusNotMatch = FT<{
-	streamer: string;
-	status: string;
-}>("commands/twitch:removeStreamerStatusNotMatch");
-export const RemoveSuccessOffline = FT<{ name: string; channel: string }>(
-	"commands/twitch:removeSuccessOffline",
-);
-export const RemoveSuccessLive = FT<{ name: string; channel: string }>(
-	"commands/twitch:removeSuccessLive",
-);
-export const ResetSuccess = FT<{ count: number }>(
-	"commands/twitch:resetSuccess",
-);
-export const ShowStreamerNotSubscribed = T(
-	"commands/twitch:showStreamerNotSubscribed",
-);
-export const ShowStatus = T<{ live: string; offline: string }>(
-	"commands/twitch:showStatus",
-);
-export const ShowUnknownUser = T("commands/twitch:showUnknownUser");
-export const ShowEmbedTitle = T("commands/twitch:showEmbedTitle");
+export const RemoveName = "commands/twitch:removeName";
+export const RemoveDescription = "commands/twitch:removeDescription";
+export const TestName = "commands/twitch:testName";
+export const TestDescription = "commands/twitch:testDescription";
+export const ResetName = "commands/twitch:resetName";
+export const ResetDescription = "commands/twitch:resetDescription";
+export const ShowName = "commands/twitch:showName";
+export const ShowDescription = "commands/twitch:showDescription";
+export const OptionsStreamerName = "commands/twitch:optionsStreamerName";
+export const OptionsStreamerDescription =
+	"commands/twitch:optionsStreamerDescription";
+export const OptionsChannelName = "commands/twitch:optionsChannelName";
+export const OptionsChannelDescription =
+	"commands/twitch:optionsChannelDescription";
+export const OptionsTypeName = "commands/twitch:optionsTypeName";
+export const OptionsTypeDescription = "commands/twitch:optionsTypeDescription";
+export const OptionsMessageName = "commands/twitch:optionsMessageName";
+export const OptionsMessageDescription =
+	"commands/twitch:optionsMessageDescription";
+export const OptionsTypeChoiceOnline =
+	"commands/twitch:optionsTypeChoiceOnline";
+export const OptionsTypeChoiceOffline =
+	"commands/twitch:optionsTypeChoiceOffline";
+export const StreamerNotFound = "commands/twitch:streamerNotFound";
+export const StatusValues = "commands/twitch:statusValues";
+export const InvalidStatus = "commands/twitch:invalidStatus";
+export const AddDuplicated = "commands/twitch:addDuplicated";
+export const AddSuccessOffline = "commands/twitch:addSuccessOffline";
+export const AddSuccessLive = "commands/twitch:addSuccessLive";
+export const AddMessageForOfflineRequired =
+	"commands/twitch:addMessageForOfflineRequired";
+export const AddFailedTwitch = "commands/twitch:addFailedTwitch";
+export const AddFailedDatabase = "commands/twitch:addFailedDatabase";
+export const RemoveFailed = "commands/twitch:removeFailed";
+export const ResetFailed = "commands/twitch:resetFailed";
+export const TestSuccess = "commands/twitch:testSuccess";
+export const TestFailed = "commands/twitch:testFailed";
+export const TestFailedGuild = "commands/twitch:testFailedGuild";
+export const TestFailedChannel = "commands/twitch:testFailedChannel";
+export const TestFailedPermissions = "commands/twitch:testFailedPermissions";
+export const TestFailedSend = "commands/twitch:testFailedSend";
+export const TestMissingMessage = "commands/twitch:testMissingMessage";
+export const NoSubscriptions = "commands/twitch:noSubscriptions";
+export const RemoveStreamerNotSubscribed =
+	"commands/twitch:removeStreamerNotSubscribed";
+export const RemoveNotToProvidedChannel =
+	"commands/twitch:removeNotToProvidedChannel";
+export const RemoveStreamerStatusNotMatch =
+	"commands/twitch:removeStreamerStatusNotMatch";
+export const RemoveSuccessOffline = "commands/twitch:removeSuccessOffline";
+export const RemoveSuccessLive = "commands/twitch:removeSuccessLive";
+export const ResetSuccess = "commands/twitch:resetSuccess";
+export const ShowStreamerNotSubscribed =
+	"commands/twitch:showStreamerNotSubscribed";
+export const ShowStatus = "commands/twitch:showStatus";
+export const ShowUnknownUser = "commands/twitch:showUnknownUser";
+export const ShowEmbedTitle = "commands/twitch:showEmbedTitle";

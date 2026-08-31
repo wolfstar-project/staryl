@@ -28,6 +28,8 @@ const client = new Client({
 			new URL("./locales", import.meta.url),
 		),
 		defaultName: "en-US",
+		defaultNS: "globals",
+		defaultMissingKey: "globals:default",
 		i18next: {
 			returnNull: false,
 			returnObjects: true,

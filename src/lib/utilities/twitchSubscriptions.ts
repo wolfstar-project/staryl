@@ -4,7 +4,6 @@ import type {
 	TwitchSubscription,
 } from "#lib/setup/prisma";
 import type { Command } from "@wolfstar/http-framework";
-import type { TypedT } from "@wolfstar/plugin-i18next";
 import type {
 	TwitchEventSubResult,
 	TwitchEventSubTypes,
@@ -26,7 +25,7 @@ import { container } from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
 	createSelectMenuChoiceName,
-	resolveKey,
+	getSupportedLanguageT as resolveKey,
 } from "@wolfstar/plugin-i18next";
 import {
 	fetchUsers,
@@ -36,6 +35,7 @@ import {
 import { ChannelType } from "discord-api-types/v10";
 
 const Root = LanguageKeys.Commands.Twitch;
+type SubscriptionFailureKey = typeof Root.RemoveFailed | typeof Root.TestFailed;
 
 /**
  * The chat-input name of the parent command owning every subscription subcommand.
@@ -230,7 +230,7 @@ export async function resolveSubscription(
 	streamer: TwitchHelixUsersSearchResult,
 	channel: APIChannel,
 	subscriptionType: TwitchSubscriptionType,
-	failedKey: TypedT,
+	failedKey: SubscriptionFailureKey,
 ): Promise<Result<GuildSubscriptionWithTwitch, string>> {
 	const guildSubscriptionsResult = await getGuildSubscriptions(
 		BigInt(interaction.guildId!),
