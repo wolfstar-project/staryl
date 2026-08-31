@@ -12,7 +12,6 @@ import type {
 	APIGroupDMChannel,
 	Locale,
 } from "discord-api-types/v10";
-import { LanguageKeys } from "#i18n";
 import { api } from "#utils/discordApi";
 import { canSendEmbeds, canSendMessages } from "#utils/discordUtilities";
 import { extractDetailedMentions } from "#utils/util";
@@ -48,7 +47,7 @@ export interface OnlineNotificationOptions {
 	event: TwitchEventSubOnlineEvent;
 	streamData: TwitchHelixStreamsResult | null;
 	/**
-	 * Prepends {@link LanguageKeys.Events.Twitch.TestNotice} to the content so the members of the
+	 * Prepends the localized test notice to the content so the members of the
 	 * channel do not read a manually triggered preview as the streamer actually going live, and
 	 * substitutes a placeholder title when the streamer is not live and there is no stream to
 	 * describe.
@@ -103,7 +102,7 @@ export async function sendOnlineNotification(
 	// as a bare link. Only the test path substitutes it: a real notification that raced ahead of
 	// Twitch's stream data must keep the original behaviour.
 	if (options.testNotice && isNullish(options.streamData)) {
-		data.title = t(LanguageKeys.Events.Twitch.TestPlaceholderTitle);
+		data.title = t("events/twitch:testPlaceholderTitle");
 		container.logger.debug(
 			`[twitch-notifications] No stream data for channel ${channel.id}, substituting the placeholder title`,
 		);
@@ -169,7 +168,7 @@ export function buildOnlineEmbed(
 ): APIEmbed {
 	const embed = new EmbedBuilder()
 		.setURL(`https://twitch.tv/${data.userName}`)
-		.setFooter({ text: t(LanguageKeys.Events.Twitch.OfflinePostfix) })
+		.setFooter({ text: t("events/twitch:offlinePostfix") })
 		.setColor(TwitchBrandingColor)
 		.setTimestamp(data.startedAt);
 
@@ -182,14 +181,14 @@ export function buildOnlineEmbed(
 
 	if (data.gameName) {
 		embed.setDescription(
-			t(LanguageKeys.Events.Twitch.EmbedDescriptionWithGame, {
+			t("events/twitch:embedDescriptionWithGame", {
 				userName: data.userName,
 				gameName: data.gameName,
 			}),
 		);
 	} else {
 		embed.setDescription(
-			t(LanguageKeys.Events.Twitch.EmbedDescription, {
+			t("events/twitch:embedDescription", {
 				userName: data.userName,
 			}),
 		);
@@ -211,7 +210,7 @@ export function buildOfflineMessage(
 	date: Date,
 	t: TFunction,
 ): string {
-	return `${message} | ${time(date, TimestampStyles.ShortDateTime)} | ${t(LanguageKeys.Events.Twitch.OfflinePostfix)}`;
+	return `${message} | ${time(date, TimestampStyles.ShortDateTime)} | ${t("events/twitch:offlinePostfix")}`;
 }
 
 export function escapeText(text?: string) {
@@ -305,9 +304,7 @@ async function send(
 	// and must not be able to widen `allowed_mentions`.
 	const detailedMentions = extractDetailedMentions(message);
 	const content = testNotice
-		? [t(LanguageKeys.Events.Twitch.TestNotice), message]
-				.filter(Boolean)
-				.join("\n")
+		? [t("events/twitch:testNotice"), message].filter(Boolean).join("\n")
 		: message;
 
 	container.logger.debug(
