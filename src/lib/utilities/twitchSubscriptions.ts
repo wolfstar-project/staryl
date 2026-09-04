@@ -12,7 +12,6 @@ import type {
 } from "@wolfstar/twitch-helpers";
 import type { APIChannel } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
-import { LanguageKeys } from "#i18n";
 import { NotificationDeliveryError } from "#utils/twitchNotifications";
 import {
 	SlashCommandChannelOption,
@@ -34,8 +33,9 @@ import {
 } from "@wolfstar/twitch-helpers";
 import { ChannelType } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Twitch;
-type SubscriptionFailureKey = typeof Root.RemoveFailed | typeof Root.TestFailed;
+type SubscriptionFailureKey =
+	| "commands/twitch:removeFailed"
+	| "commands/twitch:testFailed";
 
 /**
  * The chat-input name of the parent command owning every subscription subcommand.
@@ -68,10 +68,13 @@ export const MaximumUsersPerRequest = 100;
  * concrete thing to fix, since diagnosing a silent notification is the whole point of the command.
  */
 export const DeliveryErrorKeys = {
-	[NotificationDeliveryError.GuildUnavailable]: Root.TestFailedGuild,
-	[NotificationDeliveryError.ChannelNotFound]: Root.TestFailedChannel,
-	[NotificationDeliveryError.MissingPermissions]: Root.TestFailedPermissions,
-	[NotificationDeliveryError.SendFailed]: Root.TestFailedSend,
+	[NotificationDeliveryError.GuildUnavailable]:
+		"commands/twitch:testFailedGuild",
+	[NotificationDeliveryError.ChannelNotFound]:
+		"commands/twitch:testFailedChannel",
+	[NotificationDeliveryError.MissingPermissions]:
+		"commands/twitch:testFailedPermissions",
+	[NotificationDeliveryError.SendFailed]: "commands/twitch:testFailedSend",
 } as const;
 
 export type GuildSubscriptionWithTwitch = GuildSubscription & {
@@ -99,13 +102,13 @@ export interface TwitchChannelSearchResult {
 export function createTypeChoiceOption() {
 	return applyLocalizedBuilder(
 		new SlashCommandStringOption(),
-		Root.OptionsTypeName,
-		Root.OptionsTypeDescription,
+		"commands/twitch:optionsTypeName",
+		"commands/twitch:optionsTypeDescription",
 	).addChoices(
-		createSelectMenuChoiceName(Root.OptionsTypeChoiceOnline, {
+		createSelectMenuChoiceName("commands/twitch:optionsTypeChoiceOnline", {
 			value: "StreamOnline",
 		}),
-		createSelectMenuChoiceName(Root.OptionsTypeChoiceOffline, {
+		createSelectMenuChoiceName("commands/twitch:optionsTypeChoiceOffline", {
 			value: "StreamOffline",
 		}),
 	);
@@ -114,16 +117,16 @@ export function createTypeChoiceOption() {
 export function createChannelOption() {
 	return applyLocalizedBuilder(
 		new SlashCommandChannelOption(),
-		Root.OptionsChannelName,
-		Root.OptionsChannelDescription,
+		"commands/twitch:optionsChannelName",
+		"commands/twitch:optionsChannelDescription",
 	).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
 }
 
 export function createStreamerOption(required: boolean) {
 	return applyLocalizedBuilder(
 		new SlashCommandStringOption(),
-		Root.OptionsStreamerName,
-		Root.OptionsStreamerDescription,
+		"commands/twitch:optionsStreamerName",
+		"commands/twitch:optionsStreamerDescription",
 	)
 		.setRequired(required)
 		.setAutocomplete(true);
@@ -257,9 +260,13 @@ export async function resolveSubscription(
 		);
 		return err(
 			cast<string>(
-				await resolveKey(interaction, Root.RemoveStreamerNotSubscribed, {
-					streamer: streamer.display_name,
-				}),
+				await resolveKey(
+					interaction,
+					"commands/twitch:removeStreamerNotSubscribed",
+					{
+						streamer: streamer.display_name,
+					},
+				),
 			),
 		);
 	}
@@ -273,13 +280,20 @@ export async function resolveSubscription(
 		container.logger.debug(
 			`[twitch-subscriptions] Streamer ${streamer.id} has no ${subscriptionType} subscription in guild ${interaction.guildId}`,
 		);
-		const showStatuses = await resolveKey(interaction, Root.ShowStatus);
+		const showStatuses = await resolveKey(
+			interaction,
+			"commands/twitch:showStatus",
+		);
 		return err(
 			cast<string>(
-				await resolveKey(interaction, Root.RemoveStreamerStatusNotMatch, {
-					streamer: streamer.display_name,
-					status: getSubscriptionStatus(subscriptionType, showStatuses),
-				}),
+				await resolveKey(
+					interaction,
+					"commands/twitch:removeStreamerStatusNotMatch",
+					{
+						streamer: streamer.display_name,
+						status: getSubscriptionStatus(subscriptionType, showStatuses),
+					},
+				),
 			),
 		);
 	}
@@ -294,9 +308,13 @@ export async function resolveSubscription(
 		);
 		return err(
 			cast<string>(
-				await resolveKey(interaction, Root.RemoveNotToProvidedChannel, {
-					channel: channelMention(channel.id),
-				}),
+				await resolveKey(
+					interaction,
+					"commands/twitch:removeNotToProvidedChannel",
+					{
+						channel: channelMention(channel.id),
+					},
+				),
 			),
 		);
 	}

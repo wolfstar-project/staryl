@@ -24,15 +24,6 @@ export const aliasEntries = [
 		replacement: resolve(RootDir, "src/generated/prisma/client.ts"),
 	},
 	{
-		find: "#i18n",
-		replacement: "#i18n",
-		customResolver(source: string) {
-			if (source === "#i18n") return resolve(RootDir, "src/lib/i18n/index.ts");
-			const subPath = source.replace("#i18n/", "");
-			return resolveSource("src/lib/i18n", subPath);
-		},
-	},
-	{
 		find: "#common",
 		replacement: "#common",
 		customResolver(source: string) {

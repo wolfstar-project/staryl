@@ -1,5 +1,4 @@
 import type { TwitchStreamerFilterOptions } from "#utils/twitchSubscriptions";
-import { LanguageKeys } from "#i18n";
 import {
 	createStreamerOption,
 	fetchStreamerNames,
@@ -22,16 +21,14 @@ import {
 } from "@wolfstar/plugin-subcommands-advanced";
 import { MessageFlags } from "discord-api-types/v10";
 
-const Root = LanguageKeys.Commands.Twitch;
-
 @RegisterAsSubcommandGroup(
 	SubscriptionsCommandName,
 	TwitchGroupName,
 	(builder) =>
 		applyLocalizedBuilder(
 			builder,
-			Root.ShowName,
-			Root.ShowDescription,
+			"commands/twitch:showName",
+			"commands/twitch:showDescription",
 		).addStringOption(createStreamerOption(false)),
 )
 export class UserCommand extends Command {
@@ -49,7 +46,10 @@ export class UserCommand extends Command {
 				guildSubscriptionsResult.unwrapErr(),
 			);
 			return deferred.update({
-				content: await resolveKey(interaction, Root.NoSubscriptions),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:noSubscriptions",
+				),
 			});
 		}
 
@@ -57,7 +57,10 @@ export class UserCommand extends Command {
 
 		if (!allSubscriptions.length) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.NoSubscriptions),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:noSubscriptions",
+				),
 			});
 		}
 
@@ -66,7 +69,10 @@ export class UserCommand extends Command {
 			streamerFilter = await getStreamer(options.streamer);
 			if (isNullish(streamerFilter)) {
 				return deferred.update({
-					content: await resolveKey(interaction, Root.StreamerNotFound),
+					content: await resolveKey(
+						interaction,
+						"commands/twitch:streamerNotFound",
+					),
 				});
 			}
 		}
@@ -79,13 +85,16 @@ export class UserCommand extends Command {
 
 		if (!subscriptions.length) {
 			return deferred.update({
-				content: await resolveKey(interaction, Root.ShowStreamerNotSubscribed),
+				content: await resolveKey(
+					interaction,
+					"commands/twitch:showStreamerNotSubscribed",
+				),
 			});
 		}
 
 		const [statuses, unknownUser] = await Promise.all([
-			resolveKey(interaction, Root.ShowStatus),
-			resolveKey(interaction, Root.ShowUnknownUser),
+			resolveKey(interaction, "commands/twitch:showStatus"),
+			resolveKey(interaction, "commands/twitch:showUnknownUser"),
 		]);
 
 		const names = streamerFilter
@@ -104,7 +113,7 @@ export class UserCommand extends Command {
 		});
 
 		const embed = new EmbedBuilder()
-			.setTitle(await resolveKey(interaction, Root.ShowEmbedTitle))
+			.setTitle(await resolveKey(interaction, "commands/twitch:showEmbedTitle"))
 			.setDescription(lines.join("\n"));
 		return deferred.update({ embeds: [embed.toJSON()] });
 	}

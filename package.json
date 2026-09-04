@@ -8,7 +8,6 @@
 	"type": "module",
 	"main": "dist/main.mjs",
 	"imports": {
-		"#i18n": "./dist/lib/i18n/index.mjs",
 		"#generated/prisma": "./dist/generated/prisma/client.mjs",
 		"#types": "./dist/lib/types/index.mjs",
 		"#types/*": "./dist/lib/types/*.mjs",
