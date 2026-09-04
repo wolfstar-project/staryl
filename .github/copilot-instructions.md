@@ -47,12 +47,11 @@
 ## Import Conventions
 
 - Use TypeScript path mapping aliases for internal imports: `#lib/*`,
-  `#utils/*`, `#common/*`, `#i18n`
+  `#utils/*`, `#common/*`
 - Use `type` imports for type-only values: `import type { ... } from "..."`
 - Group imports: type imports first, then internal aliases, then external
   packages
-- Prefer importing from barrel files (`#lib/types`, `#i18n/languageKeys`) over
-  deep paths
+- Prefer importing from barrel files (such as `#lib/types`) over deep paths
 
 ## Project Architecture
 
@@ -65,13 +64,13 @@
 - **Event System**: Twitch EventSub webhooks trigger internal events
   (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
   handle
-- **i18n**: Multi-language support via `@wolfstar/plugin-i18next` with language
-  keys defined as nested objects in `src/lib/i18n/languageKeys/`. The plugin is
-  activated by the side-effect import `@wolfstar/plugin-i18next/register` in
-  `src/main.ts`; it installs an `InternationalizationHandler` on
-  `container.i18n` and loads the locales before the stores, so command builders
-  are localized at registration time. Locale discovery is configured through the
-  `i18n` key of the `Client` options.
+- **i18n**: Multi-language support via `@wolfstar/plugin-i18next`, with keys
+  type-checked through the augmentation generated in `src/@types/i18next.d.ts`.
+  The plugin is activated by the side-effect import
+  `@wolfstar/plugin-i18next/register` in `src/main.ts`; it installs an
+  `InternationalizationHandler` on `container.i18n` and loads the locales before
+  the stores, so command builders are localized at registration time. Locale
+  discovery is configured through the `i18n` key of the `Client` options.
 - **Rate Limiting**: Use `@sapphire/ratelimits` `RateLimitManager` for
   notification drip control
 - **Testable Listener Logic**: `Listener` pieces have no test harness, so
@@ -113,7 +112,7 @@ Commands use the decorator pattern from `@wolfstar/http-framework`:
 @RegisterCommand((builder) =>
   builder
     .setName("command-name")
-    .setDescription(LanguageKeys.Commands.Namespace.Description)
+    .setDescription("commands/namespace:description")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 )
 export class UserCommand extends Command {
