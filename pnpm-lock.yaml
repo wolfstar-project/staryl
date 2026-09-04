@@ -150,8 +150,8 @@ importers:
         specifier: ^7.9.1
         version: 7.10.0(@types/react@19.2.18)(react-dom@19.2.8)(react@19.2.8)(typescript@5.9.3)
       taze:
-        specifier: ^20.0.2
-        version: 20.0.2
+        specifier: ^21.1.0
+        version: 21.1.0
       tsdown:
         specifier: ^0.22.14
         version: 0.22.14(typescript@5.9.3)
@@ -2913,8 +2913,8 @@ packages:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
     engines: {node: '>=8'}
 
-  taze@20.0.2:
-    resolution: {integrity: sha512-OlY3OEHIeVq7kSfidnkpEPE8Gqn1DgDU05Q4kdVrjrvVN8OIWu4xci+hK9DXofprHyw29vkgBpaz7n8dEUcHng==}
+  taze@21.1.0:
+    resolution: {integrity: sha512-NkFkadmqqpaVZ9x3bV4cul1xQnUknhs1HzE3Q/VXHKS7np2Kg7ZNL7nNsEsBXKsafmgepa+aZNtzoegDgsymPw==}
     hasBin: true
 
   through@2.3.8:
@@ -5741,7 +5741,7 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  taze@20.0.2:
+  taze@21.1.0:
     dependencies:
       '@antfu/ni': 30.5.0
       '@henrygd/queue': 1.2.0
