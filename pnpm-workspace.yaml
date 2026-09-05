@@ -21,6 +21,8 @@ shellEmulator: true
 minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
+  - "@wolfstar/http-framework@3.4.0"
+  - "@wolfstar/cli@0.1.0"
   - "@wolfstar/plugin-i18next@2.0.1"
   - "@wolfstar/i18next-type-generator@3.1.0"
 

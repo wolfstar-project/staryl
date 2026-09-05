@@ -96,7 +96,7 @@ stream notifications in their servers.
 5. Build and start:
 
    ```bash
-   pnpm dev                # Build + start
+   pnpm dev                # Build, watch and restart via stars CLI
    ```
 
 ## Development workflow
@@ -105,10 +105,10 @@ stream notifications in their servers.
 
 ```bash
 # Development
-pnpm build                # Build TypeScript via tsdown
+pnpm build                # Build through stars CLI + tsdown
 pnpm start                # Start the application
-pnpm dev                  # Build + start
-pnpm watch                # Watch mode for development
+pnpm dev                  # Build, watch and restart via stars CLI
+pnpm watch                # Watch build only (no bot process)
 
 # Code Quality
 pnpm lint                 # Run oxlint + oxfmt check
@@ -121,6 +121,23 @@ pnpm prisma:generate      # Regenerate Prisma client after schema changes
 pnpm clean                # Remove build artifacts
 pnpm update:interactive   # Update dependencies interactively via taze
 ```
+
+The developer workflow uses `@wolfstar/cli` (`stars`) and the typed
+`stars.config.ts` exported by `@wolfstar/http-framework/config`.
+`tsdown.config.ts` retains the build settings for aliases, Prisma and locale
+assets. `pnpm start` runs the production bundle directly and needs no CLI.
+
+- `pnpm dev --no-tui` runs the build/watch/restart loop with plain logs.
+- `pnpm watch` watches the build only; `pnpm watch:start` aliases `pnpm dev`.
+- `pnpm stars:info --json` prints the resolved Stars configuration.
+- `pnpm i18n:generate` runs the configured translation type generator.
+- `TUNNEL=1 pnpm dev` opens a Cloudflare quick tunnel through the CLI (requires
+  `cloudflared` on PATH). It does not update the Discord endpoint automatically.
+  The old build-time `--tunnel` flag is replaced by this option.
+
+Development logs are written to `.stars/dev.log` (gitignored). The dev URL uses
+`HTTP_PORT` from the environment or `src/.env.local` / `src/.env`, matching the
+bot's environment file location.
 
 ### Project structure
 

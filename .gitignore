@@ -35,3 +35,5 @@ plans/
 # Pnpm store
 .pnpm-store
 
+# Stars CLI development artifacts
+.stars/
