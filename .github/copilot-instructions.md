@@ -208,7 +208,7 @@ pnpm install              # Install dependencies
 pnpm build                # Build through stars CLI + tsdown
 pnpm start                # Start the application
 pnpm dev                  # Build, watch and restart via stars CLI
-pnpm watch                # Watch build only (no bot process)
+pnpm watch                # Alias for the Stars development loop
 pnpm lint                 # Run oxlint + oxfmt check
 pnpm lint:fix             # Auto-fix lint issues (oxlint --fix + oxfmt)
 pnpm prisma:generate      # Regenerate Prisma client after schema changes

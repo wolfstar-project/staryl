@@ -19,7 +19,7 @@
 		"build": "stars build",
 		"i18n:generate": "stars codegen",
 		"dev": "stars dev",
-		"watch": "tsdown --watch",
+		"watch": "stars dev",
 		"watch:start": "stars dev",
 		"prisma:generate": "pnpm prisma generate",
 		"clean": "node scripts/build/clean.mjs",
