@@ -46,6 +46,7 @@ COPY --chown=node:node scripts/ scripts/
 COPY --chown=node:node src/ src/
 COPY --chown=node:node tsconfig.base.json tsconfig.base.json
 COPY --chown=node:node tsdown.config.ts tsdown.config.ts
+COPY --chown=node:node stars.config.ts stars.config.ts
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile \

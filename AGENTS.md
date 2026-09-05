@@ -10,7 +10,7 @@ when the schema changes).
 ## Quick reference
 
 - Package manager: `pnpm`
-- Build: `pnpm build` (tsdown / rolldown)
+- Build: `pnpm build` (`stars build`, using tsdown / rolldown)
 - Lint + format: `pnpm lint` (oxlint + oxfmt --check); auto-fix with
   `pnpm lint:fix`
 - Prisma client output: `src/generated/prisma/` — regenerate with
@@ -86,7 +86,7 @@ and EventSub webhooks.
 | Plugin API (`@wolfstar/plugin-api`) | 3001 | Twitch EventSub + health route (`API_PORT`) |
 
 ```bash
-pnpm dev          # build + start (watch: pnpm watch with pnpm start)
+pnpm dev          # build, watch and restart via stars CLI
 pnpm lint         # oxlint + oxfmt
 pnpm build        # tsdown build (CI also runs prisma:generate first)
 pnpm test         # vitest run (CI also runs prisma:generate first)

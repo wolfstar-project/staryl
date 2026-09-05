@@ -205,10 +205,10 @@ export class ExampleMiddleware extends Middleware {
 
 ```bash
 pnpm install              # Install dependencies
-pnpm build                # Build TypeScript via tsdown
+pnpm build                # Build through stars CLI + tsdown
 pnpm start                # Start the application
-pnpm dev                  # Build + start
-pnpm watch                # Watch mode for development
+pnpm dev                  # Build, watch and restart via stars CLI
+pnpm watch                # Watch build only (no bot process)
 pnpm lint                 # Run oxlint + oxfmt check
 pnpm lint:fix             # Auto-fix lint issues (oxlint --fix + oxfmt)
 pnpm prisma:generate      # Regenerate Prisma client after schema changes
