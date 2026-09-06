@@ -52,7 +52,7 @@
 		"@wolfstar/plugin-i18next": "^2.0.1",
 		"@wolfstar/plugin-subcommands-advanced": "^2.0.2",
 		"@wolfstar/safe-fetch": "^1.1.9",
-		"@wolfstar/shared-http-pieces": "^1.2.9",
+		"@wolfstar/shared-http-pieces": "^2.0.0",
 		"@wolfstar/start-banner": "^2.0.9",
 		"@wolfstar/twitch-helpers": "^2.0.7",
 		"discord-api-types": "^0.38.48",
