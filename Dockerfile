@@ -28,10 +28,10 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 ENTRYPOINT ["dumb-init", "--"]
 
 # ================ #
-#  Prod Deps Stage #
+#   Builder Stage  #
 # ================ #
 
-FROM base AS prod-deps
+FROM base AS builder
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --prod --frozen-lockfile
