@@ -69,7 +69,7 @@ RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app app \
     && chown app:app /app
 
-COPY --from=prod-deps --chown=app:app /app/node_modules node_modules
+COPY --from=builder --chown=app:app /app/node_modules node_modules
 COPY --from=build --chown=app:app /app/dist dist
 COPY --from=build --chown=app:app /app/src/.env src/.env
 
