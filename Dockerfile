@@ -73,13 +73,4 @@ USER node
 
 EXPOSE 3000 3001
 
-# Start node directly rather than through `pnpm run start`. pnpm re-checks the
-# dependency tree on `pnpm run` and reinstalls it whenever it considers it
-# stale, which here means a container that boots as `node` trying to write the
-# whole dev+prod tree into a root-owned /pnpm/store — the "Failed to write
-# cafs: Permission denied (os error 13)" crash. The store is a BuildKit cache
-# mount, so it is not even in the image at runtime. Every recipe in
-# https://pnpm.io/docker ends with `pnpm start`, but those images keep pnpm in
-# the runtime path on purpose; this one only has to run an already-built
-# bundle, so it does not need pnpm at all.
-CMD [ "node", "dist/main.mjs" ]
+CMD [ "pnpm", "start" ]
