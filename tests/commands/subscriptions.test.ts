@@ -994,16 +994,21 @@ describe("subscriptions twitch autocomplete", () => {
 describe("subscriptions twitch test", () => {
 	const GuildId = "737141877803057244";
 	const SubscriptionMessage = "Hey, we are live!";
+	const BotRoleId = "900000000000000001";
 
 	function grantPermissions(permissions: bigint) {
-		apiMock.guilds.get.mockResolvedValue({ preferred_locale: "en-US" });
+		apiMock.guilds.get.mockResolvedValue({
+			preferred_locale: "en-US",
+			roles: [
+				{ id: GuildId, permissions: "0" },
+				{ id: BotRoleId, permissions: String(permissions) },
+			],
+		});
 		apiMock.guilds.getChannels.mockResolvedValue([
 			{ id: ChannelId, name: "general", type: 0, guild_id: GuildId },
 		]);
 		apiMock.users.getCurrent.mockResolvedValue({ id: "bot-id" });
-		apiMock.guilds.getMember.mockResolvedValue({
-			permissions: String(permissions),
-		});
+		apiMock.guilds.getMember.mockResolvedValue({ roles: [BotRoleId] });
 		apiMock.channels.createMessage.mockResolvedValue({ id: "1" });
 	}
 

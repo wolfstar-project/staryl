@@ -23,6 +23,7 @@ vi.mock("#utils/discordApi", () => ({ api: () => apiMock }));
 const GuildId = 737141877803057244n;
 const ChannelId = 800000000000000001n;
 const StreamerName = "CoolStreamer";
+const BotRoleId = "900000000000000001";
 
 const FullPermissions = String(
 	PermissionFlagsBits.ViewChannel |
@@ -55,18 +56,28 @@ function streamData(overrides: Record<string, unknown> = {}) {
 	} as never;
 }
 
-function grantPermissions(permissions: string) {
-	apiMock.guilds.get.mockResolvedValue({ preferred_locale: "en-US" });
+function grantPermissions(
+	permissions: string,
+	overwrites: { allow: string; deny: string; id: string; type: number }[] = [],
+) {
+	apiMock.guilds.get.mockResolvedValue({
+		preferred_locale: "en-US",
+		roles: [
+			{ id: String(GuildId), permissions: "0" },
+			{ id: BotRoleId, permissions },
+		],
+	});
 	apiMock.guilds.getChannels.mockResolvedValue([
 		{
 			id: String(ChannelId),
 			name: "general",
 			type: 0,
 			guild_id: String(GuildId),
+			permission_overwrites: overwrites,
 		},
 	]);
 	apiMock.users.getCurrent.mockResolvedValue({ id: "bot-id" });
-	apiMock.guilds.getMember.mockResolvedValue({ permissions });
+	apiMock.guilds.getMember.mockResolvedValue({ roles: [BotRoleId] });
 	apiMock.channels.createMessage.mockResolvedValue({ id: "1" });
 }
 
@@ -138,6 +149,30 @@ describe("sendOnlineNotification", () => {
 		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
 	});
 
+	it("applies a channel overwrite to the bot's roles", async () => {
+		grantPermissions(FullPermissions, [
+			{
+				allow: "0",
+				deny: String(PermissionFlagsBits.SendMessages),
+				id: BotRoleId,
+				type: 0,
+			},
+		]);
+
+		const result = await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+		});
+
+		expect(result.unwrapErr()).toBe(
+			NotificationDeliveryError.MissingPermissions,
+		);
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+	});
+
 	it("reports a missing channel", async () => {
 		apiMock.guilds.getChannels.mockResolvedValue([]);
 
@@ -155,7 +190,13 @@ describe("sendOnlineNotification", () => {
 	it("falls back to en-US when the guild locale is not loaded", async () => {
 		// Regression: `getT` throws `ReferenceError: Invalid language (de)` for locales the bot has
 		// not loaded, which escaped the `Result` error path and aborted the delivery entirely.
-		apiMock.guilds.get.mockResolvedValue({ preferred_locale: "de" });
+		apiMock.guilds.get.mockResolvedValue({
+			preferred_locale: "de",
+			roles: [
+				{ id: String(GuildId), permissions: "0" },
+				{ id: BotRoleId, permissions: FullPermissions },
+			],
+		});
 
 		const result = await sendOnlineNotification({
 			guildId: GuildId,
