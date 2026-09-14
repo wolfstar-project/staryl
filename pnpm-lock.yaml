@@ -166,9 +166,8 @@ settings:
 overrides:
   ansi-regex: ^6.3.0
   minimist: ^1.2.8
-  '@wolfstar/i18next-backend': ^2.0.11
-  '@wolfstar/env-utilities': ^2.0.8
-  '@wolfstar/safe-fetch': ^1.1.9
+  '@wolfstar/http-framework': ^4.0.0
+  '@wolfstar/plugin-i18next': 2.0.3
 
 importers:
 
@@ -214,26 +213,26 @@ importers:
         specifier: ^2.0.8
         version: 2.0.8
       '@wolfstar/http-framework':
-        specifier: ^3.6.0
-        version: 3.6.0(rolldown@1.2.8)(vite@8.3.0)
-      '@wolfstar/logger':
-        specifier: ^2.1.7
-        version: 2.1.7
+        specifier: ^4.0.0
+        version: 4.0.0(rolldown@1.2.8)(vite@8.3.0)
       '@wolfstar/plugin-api':
         specifier: ^1.1.5
-        version: 1.1.5(@wolfstar/http-framework@3.6.0)
+        version: 1.1.5(@wolfstar/http-framework@4.0.0)
       '@wolfstar/plugin-i18next':
-        specifier: 2.0.3-next-20260912190410
-        version: 2.0.3-next-20260912190410(@wolfstar/http-framework@3.6.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)
+        specifier: 2.0.3
+        version: 2.0.3(@wolfstar/http-framework@4.0.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)
+      '@wolfstar/plugin-logger':
+        specifier: ^0.2.0
+        version: 0.2.0(@sentry/node@10.74.0)(@wolfstar/http-framework@4.0.0)
       '@wolfstar/plugin-subcommands-advanced':
         specifier: ^2.0.3
-        version: 2.0.3(@wolfstar/http-framework@3.6.0)
+        version: 2.0.3(@wolfstar/http-framework@4.0.0)
       '@wolfstar/safe-fetch':
         specifier: ^1.1.9
         version: 1.1.9
       '@wolfstar/shared-http-pieces':
-        specifier: 2.0.2-next-20260912190454
-        version: 2.0.2-next-20260912190454(@opentelemetry/core@2.11.0)(@wolfstar/i18next-type-generator@3.1.2)(rolldown@1.2.8)(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.0)
+        specifier: 2.0.2
+        version: 2.0.2(@opentelemetry/core@2.11.0)(@wolfstar/i18next-type-generator@3.1.2)(rolldown@1.2.8)(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.0)
       '@wolfstar/start-banner':
         specifier: ^2.1.0
         version: 2.1.0
@@ -281,11 +280,11 @@ importers:
         specifier: ^24.13.4
         version: 24.13.4
       '@wolfstar/cli':
-        specifier: ^0.3.0
-        version: 0.3.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)
+        specifier: ^0.4.0
+        version: 0.4.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)
       '@wolfstar/http-framework-test-utils':
         specifier: ^3.0.6
-        version: 3.0.6(@wolfstar/http-framework@3.6.0)(vitest@5.0.0)
+        version: 3.0.6(@wolfstar/http-framework@4.0.0)(vitest@5.0.0)
       '@wolfstar/i18next-type-generator':
         specifier: 3.1.2
         version: 3.1.2
@@ -1488,8 +1487,8 @@ packages:
     resolution: {integrity: sha512-Xfe6rpCTxSxfbswi/W/Pz7zp1WWSNn4A0eW4mLkQUewCrXXtMj31lCg+iQyTkh/CkusZSq9eDflu7tjEDXUY6g==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@wolfstar/cli@0.3.0':
-    resolution: {integrity: sha512-UQg0B+E69OwI1I7kuVJRPqBl6z/xmKQe5SAeYXgWjcMNULTHo1+kQf4knsfeDeAekGn4BW31mVg8PPyf6+RkCg==}
+  '@wolfstar/cli@0.4.0':
+    resolution: {integrity: sha512-4jMCUtkHBo5piVRD+xUMyWU7V5jvBJGsWyz6E3kr+P28mZM/uVpRxTkPizL9F1YxPTBKw8kcQ9Vcp75VCXoayw==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -1512,14 +1511,14 @@ packages:
     resolution: {integrity: sha512-TXvMti+oLhZjpnwrvrytnf8bIib3ir0RpOJUGez8d5DfMojpsXN5jHK/7mMO9rr3jmNCz0zOLcWK6BMs6Qxuhg==}
     engines: {node: '>=20'}
     peerDependencies:
-      '@wolfstar/http-framework': ^3.2.1
+      '@wolfstar/http-framework': ^4.0.0
       vitest: '>=4.1.10'
     peerDependenciesMeta:
       vitest:
         optional: true
 
-  '@wolfstar/http-framework@3.6.0':
-    resolution: {integrity: sha512-b1Uw83NbC1PzTUi98NJ9STAyqMbfef/Cwa6YmwODVbGxz7/QJqDHLy68VatUWrXFrYPpT4WwKkTk67EPpR6jbQ==}
+  '@wolfstar/http-framework@4.0.0':
+    resolution: {integrity: sha512-SWiMPYDloZ8tyowdsWNTW3cdpez7FrO9LM4JfXqJ+8sD41aT/a9fD9nP1PzIeI+u+n8GV2r4ySEa29BLXED9/Q==}
     engines: {node: '>=20'}
 
   '@wolfstar/i18next-backend@2.0.11':
@@ -1531,48 +1530,53 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@wolfstar/logger@2.1.7':
-    resolution: {integrity: sha512-uHeZbKDGVs6cWH9BTEmryKFDxg0mxRa8zIKULLIer2bVY0SmgUJNnqOQj3ZBBXs0DgH6528GAqCdSiddqV3BvQ==}
-    engines: {node: '>=20'}
-
   '@wolfstar/plugin-api@1.1.5':
     resolution: {integrity: sha512-leHyXNxts7UVztliIZd0KXTYdwF09I4/R6SZaocdeqq3chEqgpJBQ2XnUibwym7U+uM+Db7WvK3CBPvuYbjAkA==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@wolfstar/http-framework': ^3.0.0
+      '@wolfstar/http-framework': ^4.0.0
 
-  '@wolfstar/plugin-i18next@2.0.1':
-    resolution: {integrity: sha512-wFolysPXugjAv9jfXfuw7bwuK2mxzp9EfBd3RUtDo6gKdSPbZ0yb/7fOUQXkiVHGPHOEeNkhlcXIxLIRjUwTRA==}
+  '@wolfstar/plugin-i18next@2.0.3':
+    resolution: {integrity: sha512-tz65AcO7vTpYnSeWyuOfaHvAVhGyjk79uPAl2ow4oloEcDytkrylLmRbT1KM7AfaRTL+6l0TE50epesSVMp0bA==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@wolfstar/http-framework': ^3.1.0
+      '@wolfstar/http-framework': ^4.0.0
       '@wolfstar/i18next-type-generator': ^3.0.0
     peerDependenciesMeta:
       '@wolfstar/i18next-type-generator':
         optional: true
 
-  '@wolfstar/plugin-i18next@2.0.3-next-20260912190410':
-    resolution: {integrity: sha512-Zs7I+cL2jO9RJPYzGYC1WbdH/wYnv/qDnuDxIrwCVAP4jnlsDUUraTuQhlTag6JceHanEPUMIY5R6xtQx/xt4A==}
+  '@wolfstar/plugin-logger@0.2.0':
+    resolution: {integrity: sha512-wmbvxjlOTBq/Koyl9lTyj0NafPVdDztqZhdkrRsSbmHql2WS9rXL1m+mWLieB0/FiW5CFPWOx8t12HnhXqpJ9Q==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@wolfstar/http-framework': ^3.1.0
-      '@wolfstar/i18next-type-generator': ^3.0.0
+      '@sentry/node': ^8.0.0 || ^9.0.0 || ^10.0.0
+      '@wolfstar/http-framework': ^4.0.0
+      consola: ^3.0.0
+      evlog: ^2.0.0
+      winston: ^3.0.0
     peerDependenciesMeta:
-      '@wolfstar/i18next-type-generator':
+      '@sentry/node':
+        optional: true
+      consola:
+        optional: true
+      evlog:
+        optional: true
+      winston:
         optional: true
 
   '@wolfstar/plugin-subcommands-advanced@2.0.3':
     resolution: {integrity: sha512-LJ+fBXZj03NaX/sSCTk//wTXEjvjFP+RYplOykJn96H/MOPrF+rqy6nCUwXrNarTzj2ADQwzhYh9n5tm6bSUOA==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@wolfstar/http-framework': ^3.1.0
+      '@wolfstar/http-framework': ^4.0.0
 
   '@wolfstar/safe-fetch@1.1.9':
     resolution: {integrity: sha512-xBG3mRZI5dB3BO1p0k7kDKBWP1dK0hVWfvyoKFK5MP920tX/1xGs7PE7f2F1gY1qqkAiUL0BlC84c9E1ViiFBQ==}
     engines: {node: '>=20'}
 
-  '@wolfstar/shared-http-pieces@2.0.2-next-20260912190454':
-    resolution: {integrity: sha512-e0i451HZQCkJ/lPmH/hc8mqgtusc0zdFqcvsqNlaI3GmhKMV46hCXRJxCglTOuP7T88EkMx4JC79wnxRaWmJdQ==}
+  '@wolfstar/shared-http-pieces@2.0.2':
+    resolution: {integrity: sha512-Sz12QUwxWPf7uY9j1soYjTI8kHynOdbT1A+5rYL/XQ8bGMQmkN32Hd6oG/vDiptPk+JOKiQ8M5y6g8AUdP0/Wg==}
     engines: {node: '>=20'}
 
   '@wolfstar/start-banner@2.1.0':
@@ -4666,10 +4670,10 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
-  '@wolfstar/cli@0.3.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)':
+  '@wolfstar/cli@0.4.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)':
     dependencies:
       '@clack/prompts': 1.8.0
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
       chokidar: 5.0.0
       citty: 0.2.2
       colorette: 2.0.20
@@ -4700,13 +4704,13 @@ snapshots:
       dotenv: 17.4.2
       dotenv-expand: 13.0.0
 
-  '@wolfstar/http-framework-test-utils@3.0.6(@wolfstar/http-framework@3.6.0)(vitest@5.0.0)':
+  '@wolfstar/http-framework-test-utils@3.0.6(@wolfstar/http-framework@4.0.0)(vitest@5.0.0)':
     dependencies:
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
     optionalDependencies:
       vitest: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(vite@8.3.0)
 
-  '@wolfstar/http-framework@3.6.0(rolldown@1.2.8)(vite@8.3.0)':
+  '@wolfstar/http-framework@4.0.0(rolldown@1.2.8)(vite@8.3.0)':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1
@@ -4750,23 +4754,19 @@ snapshots:
       - svelte
       - vite-plus
 
-  '@wolfstar/logger@2.1.7':
-    dependencies:
-      colorette: 2.0.20
-
-  '@wolfstar/plugin-api@1.1.5(@wolfstar/http-framework@3.6.0)':
+  '@wolfstar/plugin-api@1.1.5(@wolfstar/http-framework@4.0.0)':
     dependencies:
       '@sapphire/pieces': 4.4.1
       '@vladfrangu/async_event_emitter': 2.4.7
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
 
-  '@wolfstar/plugin-i18next@2.0.1(@wolfstar/http-framework@3.6.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)':
+  '@wolfstar/plugin-i18next@2.0.3(@wolfstar/http-framework@4.0.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)':
     dependencies:
       '@discordjs/collection': 2.1.1
       '@sapphire/pieces': 4.4.1
       '@sapphire/result': 2.8.0
       '@sapphire/utilities': 3.18.2
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
       '@wolfstar/i18next-backend': 2.0.11
       chokidar: 5.0.0
       discord-api-types: 0.38.55
@@ -4776,42 +4776,32 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@wolfstar/plugin-i18next@2.0.3-next-20260912190410(@wolfstar/http-framework@3.6.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)':
+  '@wolfstar/plugin-logger@0.2.0(@sentry/node@10.74.0)(@wolfstar/http-framework@4.0.0)':
     dependencies:
-      '@discordjs/collection': 2.1.1
-      '@sapphire/pieces': 4.4.1
-      '@sapphire/result': 2.8.0
-      '@sapphire/utilities': 3.18.2
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
-      '@wolfstar/i18next-backend': 2.0.11
-      chokidar: 5.0.0
-      discord-api-types: 0.38.55
-      i18next: 25.10.10(typescript@5.9.3)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
     optionalDependencies:
-      '@wolfstar/i18next-type-generator': 3.1.2
-    transitivePeerDependencies:
-      - typescript
+      '@sentry/node': 10.74.0(@opentelemetry/core@2.11.0)(supports-color@7.2.0)
 
-  '@wolfstar/plugin-subcommands-advanced@2.0.3(@wolfstar/http-framework@3.6.0)':
+  '@wolfstar/plugin-subcommands-advanced@2.0.3(@wolfstar/http-framework@4.0.0)':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
       discord-api-types: 0.38.55
 
   '@wolfstar/safe-fetch@1.1.9':
     dependencies:
       '@sapphire/result': 2.8.0
 
-  '@wolfstar/shared-http-pieces@2.0.2-next-20260912190454(@opentelemetry/core@2.11.0)(@wolfstar/i18next-type-generator@3.1.2)(rolldown@1.2.8)(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.0)':
+  '@wolfstar/shared-http-pieces@2.0.2(@opentelemetry/core@2.11.0)(@wolfstar/i18next-type-generator@3.1.2)(rolldown@1.2.8)(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.0)':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1
       '@sapphire/pieces': 4.4.1
       '@sentry/node': 10.74.0(@opentelemetry/core@2.11.0)(supports-color@7.2.0)
       '@wolfstar/env-utilities': 2.0.8
-      '@wolfstar/http-framework': 3.6.0(rolldown@1.2.8)(vite@8.3.0)
-      '@wolfstar/plugin-i18next': 2.0.1(@wolfstar/http-framework@3.6.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)
+      '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)
+      '@wolfstar/plugin-i18next': 2.0.3(@wolfstar/http-framework@4.0.0)(@wolfstar/i18next-type-generator@3.1.2)(typescript@5.9.3)
       discord-api-types: 0.38.55
       i18next: 25.10.10(typescript@5.9.3)
       tslib: 2.8.1

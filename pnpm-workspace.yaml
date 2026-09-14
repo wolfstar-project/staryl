@@ -1,13 +1,9 @@
 overrides:
   ansi-regex: ^6.3.0
   minimist: ^1.2.8
-  # @wolfstar/http-framework-i18n@1.2.3 publishes an unresolved
-  # "workspace:^" range for this dependency; pin it to a real release.
-  "@wolfstar/i18next-backend": ^2.0.11
-  # @wolfstar/twitch-helpers@2.0.4 publishes unresolved
-  # "workspace:^" ranges for these dependencies; pin them to real releases.
-  "@wolfstar/env-utilities": ^2.0.8
-  "@wolfstar/safe-fetch": ^1.1.9
+  # Plugins and CLI still declare v3; share the v4 client and plugin registry.
+  "@wolfstar/http-framework": ^4.0.0
+  "@wolfstar/plugin-i18next": 2.0.3
 
 allowBuilds:
   "@prisma/client": true
@@ -21,16 +17,12 @@ shellEmulator: true
 minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
-  - "@wolfstar/http-framework@3.4.0"
-  - "@wolfstar/cli@0.1.0"
-  - "@wolfstar/http-framework@3.5.0-next-20260905171401"
-  - "@wolfstar/cli@0.2.0-next-20260905171401"
-  - "@wolfstar/plugin-i18next@2.0.1"
-  - "@wolfstar/i18next-type-generator@3.1.0"
-  # Testing whether these next builds fix the fatal "commands/shared:infoName"
-  # crash during command registration (stars-components upstream issue).
-  - "@wolfstar/plugin-i18next@2.0.3-next-20260912190410"
-  - "@wolfstar/shared-http-pieces@2.0.2-next-20260912190454"
+  - "@wolfstar/http-framework@4.0.0"
+  - "@wolfstar/plugin-i18next@2.0.3"
+  - "@wolfstar/shared-http-pieces@2.0.2"
+  - "@wolfstar/cli@0.4.0"
+
+minimumReleaseAgeExcludePrune: true
 
 shamefullyHoist: true
 

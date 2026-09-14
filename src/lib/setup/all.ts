@@ -4,8 +4,7 @@ import {
 	setInvite,
 	setRepository,
 } from "@wolfstar/shared-http-pieces";
-/* oxlint-disable import/first */
-import "#lib/setup/logger";
+import "@wolfstar/plugin-logger/register";
 import "#lib/setup/prisma";
 import "@wolfstar/shared-http-pieces/register";
 

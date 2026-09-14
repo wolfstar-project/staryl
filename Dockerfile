@@ -71,6 +71,5 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 
 USER node
 
-EXPOSE 3000 3001
-
-CMD [ "pnpm", "start" ]
+# Run the built application directly; pnpm 12 may auto-install at startup.
+CMD [ "node", "dist/main.mjs" ]
