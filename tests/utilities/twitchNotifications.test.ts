@@ -173,6 +173,32 @@ describe("sendOnlineNotification", () => {
 		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
 	});
 
+	it("lets an administrator bypass denied channel permissions", async () => {
+		grantPermissions(String(PermissionFlagsBits.Administrator), [
+			{
+				allow: "0",
+				deny: String(
+					PermissionFlagsBits.ViewChannel |
+						PermissionFlagsBits.SendMessages |
+						PermissionFlagsBits.EmbedLinks,
+				),
+				id: BotRoleId,
+				type: 0,
+			},
+		]);
+
+		const result = await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+		});
+
+		expect(result.isOk()).toBe(true);
+		expect(apiMock.channels.createMessage).toHaveBeenCalledOnce();
+	});
+
 	it("reports a missing channel", async () => {
 		apiMock.guilds.getChannels.mockResolvedValue([]);
 
