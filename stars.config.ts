@@ -1,3 +1,7 @@
 import { defineConfig } from "@wolfstar/http-framework/config";
 
-export default defineConfig({});
+export default defineConfig({
+	tsdown: {
+		copy: [{ from: "src/locales", to: "dist" }],
+	},
+});

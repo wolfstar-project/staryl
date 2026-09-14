@@ -280,8 +280,8 @@ importers:
         specifier: ^24.13.4
         version: 24.13.4
       '@wolfstar/cli':
-        specifier: ^0.3.0
-        version: 0.3.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)
+        specifier: ^0.4.0
+        version: 0.4.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)
       '@wolfstar/http-framework-test-utils':
         specifier: ^3.0.6
         version: 3.0.6(@wolfstar/http-framework@4.0.0)(vitest@5.0.0)
@@ -1487,8 +1487,8 @@ packages:
     resolution: {integrity: sha512-Xfe6rpCTxSxfbswi/W/Pz7zp1WWSNn4A0eW4mLkQUewCrXXtMj31lCg+iQyTkh/CkusZSq9eDflu7tjEDXUY6g==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@wolfstar/cli@0.3.0':
-    resolution: {integrity: sha512-UQg0B+E69OwI1I7kuVJRPqBl6z/xmKQe5SAeYXgWjcMNULTHo1+kQf4knsfeDeAekGn4BW31mVg8PPyf6+RkCg==}
+  '@wolfstar/cli@0.4.0':
+    resolution: {integrity: sha512-4jMCUtkHBo5piVRD+xUMyWU7V5jvBJGsWyz6E3kr+P28mZM/uVpRxTkPizL9F1YxPTBKw8kcQ9Vcp75VCXoayw==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -4670,7 +4670,7 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
-  '@wolfstar/cli@0.3.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)':
+  '@wolfstar/cli@0.4.0(@types/react@19.3.0)(rolldown@1.2.8)(tsdown@0.23.0)(typescript@5.9.3)(vite@8.3.0)':
     dependencies:
       '@clack/prompts': 1.8.0
       '@wolfstar/http-framework': 4.0.0(rolldown@1.2.8)(vite@8.3.0)

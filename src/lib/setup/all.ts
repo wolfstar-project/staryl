@@ -9,7 +9,7 @@ import "#lib/setup/prisma";
 import "@wolfstar/shared-http-pieces/register";
 
 export async function setup() {
-	envRun();
+	envRun(new URL("../../../src/.env", import.meta.url));
 
 	setRepository("staryl");
 	setInvite(envParseString("DISCORD_CLIENT_ID"), "0");
