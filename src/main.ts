@@ -5,13 +5,6 @@ import { Client, container } from "@wolfstar/http-framework";
 import { registerCommands } from "@wolfstar/shared-http-pieces";
 import { createBanner } from "@wolfstar/start-banner";
 import { vice } from "gradient-string";
-// oxlint-disable-next-line import/no-unassigned-import -- side-effect import that registers the plugin-api Route/Middleware stores
-import "@wolfstar/plugin-api/register";
-// oxlint-disable-next-line import/no-unassigned-import -- side-effect import that registers the i18next handler on `container.i18n`
-import "@wolfstar/plugin-i18next/register";
-// oxlint-disable-next-line import/no-unassigned-import -- side-effect import that installs the subcommands-advanced loader strategy
-import "@wolfstar/plugin-subcommands-advanced/register";
-
 await setup();
 
 const client = new Client({

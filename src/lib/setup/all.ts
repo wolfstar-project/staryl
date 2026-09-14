@@ -4,7 +4,6 @@ import {
 	setInvite,
 	setRepository,
 } from "@wolfstar/shared-http-pieces";
-import "@wolfstar/plugin-logger/register";
 import "#lib/setup/prisma";
 import "@wolfstar/shared-http-pieces/register";
 
