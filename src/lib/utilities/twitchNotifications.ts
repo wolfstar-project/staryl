@@ -10,6 +10,7 @@ import type {
 	APIDMChannel,
 	APIEmbed,
 	APIGroupDMChannel,
+	APIRole,
 	Locale,
 } from "discord-api-types/v10";
 import { api } from "#utils/discordApi";
@@ -231,7 +232,7 @@ export function escapeText(text?: string) {
 async function resolveTarget(
 	guildId: bigint,
 	channelId: bigint,
-	canSend: (channel: GuildChannel) => Promise<boolean>,
+	canSend: (channel: GuildChannel, roles: APIRole[]) => Promise<boolean>,
 ): Promise<Result<NotificationTarget, NotificationDeliveryError>> {
 	const guildResult = await Result.fromAsync(() =>
 		api().guilds.get(String(guildId)),
@@ -280,7 +281,7 @@ async function resolveTarget(
 		return err(NotificationDeliveryError.ChannelNotFound);
 	}
 
-	if (!(await canSend(channel))) {
+	if (!(await canSend(channel, guildResult.unwrap().roles))) {
 		container.logger.debug(
 			`[twitch-notifications] Missing permissions to post in channel ${channelId} of guild ${guildId}`,
 		);
