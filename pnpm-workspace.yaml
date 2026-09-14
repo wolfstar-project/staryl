@@ -1,9 +1,8 @@
 overrides:
   ansi-regex: ^6.3.0
   minimist: ^1.2.8
-  # Plugins and CLI still declare v3; share the v4 client and plugin registry.
-  "@wolfstar/http-framework": ^4.0.0
-  "@wolfstar/plugin-i18next": 2.0.3
+  "@wolfstar/http-framework": "https://pkg.pr.new/@wolfstar/http-framework@191"
+  "@wolfstar/cli": "https://pkg.pr.new/@wolfstar/cli@191"
 
 allowBuilds:
   "@prisma/client": true
@@ -17,10 +16,8 @@ shellEmulator: true
 minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
-  - "@wolfstar/http-framework@4.0.0"
   - "@wolfstar/plugin-i18next@2.0.3"
   - "@wolfstar/shared-http-pieces@2.0.2"
-  - "@wolfstar/cli@0.4.0"
 
 minimumReleaseAgeExcludePrune: true
 
@@ -30,3 +27,6 @@ hoistPattern:
   - "*prisma*"
 
 ignoreWorkspaceRootCheck: true
+
+
+blockExoticSubdeps: false

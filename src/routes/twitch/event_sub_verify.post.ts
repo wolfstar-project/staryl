@@ -1,6 +1,6 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import type { TwitchEventSubVerificationMessage } from "@wolfstar/twitch-helpers";
-import { Events, TwitchStreamStatus } from "#types";
+import { StarylEvents, TwitchStreamStatus } from "#types";
 import { cast, isObject } from "@sapphire/utilities";
 import { Route } from "@wolfstar/plugin-api";
 import { checkSignature, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
@@ -88,16 +88,16 @@ export class UserRoute extends Route {
 			const { client } = this.container;
 			if (type === TwitchEventSubTypes.StreamOnline) {
 				client.emit(
-					Events.TwitchStreamHookedAnalytics,
+					StarylEvents.TwitchStreamHookedAnalytics,
 					TwitchStreamStatus.Online,
 				);
-				client.emit(Events.TwitchStreamOnline, event);
+				client.emit(StarylEvents.TwitchStreamOnline, event);
 			} else {
 				client.emit(
-					Events.TwitchStreamHookedAnalytics,
+					StarylEvents.TwitchStreamHookedAnalytics,
 					TwitchStreamStatus.Offline,
 				);
-				client.emit(Events.TwitchStreamOffline, event);
+				client.emit(StarylEvents.TwitchStreamOffline, event);
 			}
 		}
 
