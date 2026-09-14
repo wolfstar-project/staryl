@@ -1,7 +1,6 @@
 import { fileURLToPath } from "node:url";
-import { container } from "@wolfstar/http-framework";
+import { container, Logger, LogLevel } from "@wolfstar/http-framework";
 import { httpFrameworkMatchers } from "@wolfstar/http-framework-test-utils/vitest";
-import { Logger } from "@wolfstar/logger";
 import { InternationalizationHandler } from "@wolfstar/plugin-i18next";
 import { expect } from "vitest";
 
@@ -11,9 +10,7 @@ process.env["DISCORD_TOKEN"] ??= "test.discord.token";
 // `#lib/setup/logger` is only imported by the entrypoint, so pieces that log during a test would
 // otherwise blow up on an undefined `container.logger`. The level is set above `Fatal` so the
 // expected-failure tests do not spam the reporter.
-container.logger = new Logger({
-	level: (Logger.Level.Fatal + 1) as Logger.Level,
-});
+container.logger = new Logger(LogLevel.None);
 
 expect.extend(httpFrameworkMatchers);
 

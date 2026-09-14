@@ -4,13 +4,12 @@ import {
 	setInvite,
 	setRepository,
 } from "@wolfstar/shared-http-pieces";
-/* oxlint-disable import/first */
-import "#lib/setup/logger";
+import "@wolfstar/plugin-logger/register";
 import "#lib/setup/prisma";
 import "@wolfstar/shared-http-pieces/register";
 
 export async function setup() {
-	envRun(new URL("../../../src/.env", import.meta.url));
+	envRun();
 
 	setRepository("staryl");
 	setInvite(envParseString("DISCORD_CLIENT_ID"), "0");
