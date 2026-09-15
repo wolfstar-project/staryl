@@ -1,8 +1,10 @@
+import type { TFunction } from "i18next";
 import {
 	ButtonBuilder,
 	ContainerBuilder,
 	StringSelectMenuBuilder,
 } from "@discordjs/builders";
+import { cast } from "@sapphire/utilities";
 import { ButtonStyle, MessageFlags } from "discord-api-types/v10";
 
 export const SetupInteractionHandlerName = "setup";
@@ -20,7 +22,7 @@ export interface SetupMenuPayload {
 	flags: MessageFlags.IsComponentsV2;
 }
 
-const SetupPages: readonly SetupPage[] = new Set([
+const SetupPages: ReadonlySet<SetupPage> = new Set([
 	"overview",
 	"add",
 	"manage",
@@ -35,44 +37,59 @@ export function buildSetupCustomId(userId: string, action: string): string {
 	return `${SetupInteractionHandlerName}.${userId}.${action}`;
 }
 
-export function buildSetupMenu(state: SetupMenuState): SetupMenuPayload {
+export function buildSetupMenu(
+	state: SetupMenuState,
+	t: TFunction,
+): SetupMenuPayload {
 	const container = new ContainerBuilder()
 		.setAccentColor(9_520_895)
 		.addTextDisplayComponents((textDisplay) =>
-			textDisplay.setContent(renderPage(state)),
+			textDisplay.setContent(renderPage(state, t)),
 		)
 		.addSeparatorComponents((separator) => separator)
 		.addActionRowComponents((row) =>
 			row.setComponents(
 				new StringSelectMenuBuilder()
 					.setCustomId(buildSetupCustomId(state.userId, "navigate"))
-					.setPlaceholder("Choose what you want to configure")
+					.setPlaceholder(cast<string>(t("commands/setup:menu.placeholder")))
 					.addOptions(
 						{
-							label: "Overview",
+							label: cast<string>(
+								t("commands/setup:menu.options.overview.label"),
+							),
 							value: "overview",
-							description: "View the setup status",
+							description: cast<string>(
+								t("commands/setup:menu.options.overview.description"),
+							),
 							emoji: { name: "🏠" },
 							default: state.page === "overview",
 						},
 						{
-							label: "Add a notification",
+							label: cast<string>(t("commands/setup:menu.options.add.label")),
 							value: "add",
-							description: "Subscribe to a Twitch streamer",
+							description: cast<string>(
+								t("commands/setup:menu.options.add.description"),
+							),
 							emoji: { name: "➕" },
 							default: state.page === "add",
 						},
 						{
-							label: "Manage notifications",
+							label: cast<string>(
+								t("commands/setup:menu.options.manage.label"),
+							),
 							value: "manage",
-							description: "Review, remove, or reset subscriptions",
+							description: cast<string>(
+								t("commands/setup:menu.options.manage.description"),
+							),
 							emoji: { name: "⚙️" },
 							default: state.page === "manage",
 						},
 						{
-							label: "Test notifications",
+							label: cast<string>(t("commands/setup:menu.options.test.label")),
 							value: "test",
-							description: "Verify the real delivery path",
+							description: cast<string>(
+								t("commands/setup:menu.options.test.description"),
+							),
 							emoji: { name: "🧪" },
 							default: state.page === "test",
 						},
@@ -83,7 +100,7 @@ export function buildSetupMenu(state: SetupMenuState): SetupMenuPayload {
 			row.setComponents(
 				new ButtonBuilder()
 					.setCustomId(buildSetupCustomId(state.userId, "close"))
-					.setLabel("Close setup")
+					.setLabel(cast<string>(t("commands/setup:menu.close")))
 					.setEmoji({ name: "⏹️" })
 					.setStyle(ButtonStyle.Danger),
 			),
@@ -95,13 +112,11 @@ export function buildSetupMenu(state: SetupMenuState): SetupMenuPayload {
 	};
 }
 
-export function buildClosedSetupMenu(): SetupMenuPayload {
+export function buildClosedSetupMenu(t: TFunction): SetupMenuPayload {
 	const container = new ContainerBuilder()
 		.setAccentColor(5_793_266)
 		.addTextDisplayComponents((textDisplay) =>
-			textDisplay.setContent(
-				"## Setup closed\nRun `/setup` whenever you need it again.",
-			),
+			textDisplay.setContent(cast<string>(t("commands/setup:closed"))),
 		);
 
 	return {
@@ -110,37 +125,11 @@ export function buildClosedSetupMenu(): SetupMenuPayload {
 	};
 }
 
-function renderPage({ page, subscriptionCount }: SetupMenuState): string {
-	switch (page) {
-		case "add":
-			return [
-				"## Add a Twitch notification",
-				"Run `/subscriptions twitch add` and choose:",
-				"- the **streamer** to follow;",
-				"- the Discord **channel** that receives the notification;",
-				"- whether to notify when the stream goes **online** or **offline**;",
-				"- an optional custom message (required for offline notifications).",
-			].join("\n");
-		case "manage":
-			return [
-				"## Manage Twitch notifications",
-				`This server currently has **${subscriptionCount}** configured ${subscriptionCount === 1 ? "notification" : "notifications"}.`,
-				"- `/subscriptions twitch show` lists the current configuration.",
-				"- `/subscriptions twitch remove` removes one notification.",
-				"- `/subscriptions twitch reset` removes all notifications, or only those for one streamer.",
-			].join("\n");
-		case "test":
-			return [
-				"## Test a notification",
-				"Run `/subscriptions twitch test` after adding a subscription.",
-				"Staryl will send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions.",
-			].join("\n");
-		case "overview":
-			return [
-				"## Staryl setup",
-				"Configure Twitch notifications for this server from one place.",
-				`**Current notifications:** ${subscriptionCount}`,
-				"Use the menu below to add, manage, or test a notification.",
-			].join("\n");
-	}
+function renderPage(
+	{ page, subscriptionCount }: SetupMenuState,
+	t: TFunction,
+): string {
+	return cast<string>(
+		t(`commands/setup:pages.${page}`, { count: subscriptionCount }),
+	);
 }

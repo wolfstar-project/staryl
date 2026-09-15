@@ -6,6 +6,7 @@ import {
 import { Result } from "@sapphire/result";
 import { cast } from "@sapphire/utilities";
 import { InteractionHandler } from "@wolfstar/http-framework";
+import { getSupportedLanguageT } from "@wolfstar/plugin-i18next";
 import { ComponentType, MessageFlags } from "discord-api-types/v10";
 
 export class UserInteractionHandler extends InteractionHandler {
@@ -13,31 +14,30 @@ export class UserInteractionHandler extends InteractionHandler {
 		interaction: InteractionHandler.Interaction,
 		customIdValue: unknown,
 	) {
+		const t = getSupportedLanguageT(interaction);
 		const customIdParts = Array.isArray(customIdValue) ? customIdValue : [];
 		const [ownerId, action] = customIdParts;
 		if (typeof ownerId !== "string" || typeof action !== "string") {
 			return interaction.reply({
-				content: "This setup menu is invalid. Run `/setup` to open a new one.",
+				content: t("commands/setup:errors.invalid"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		if (interaction.user.id !== ownerId) {
 			return interaction.reply({
-				content:
-					"Only the administrator who opened this setup menu can use it.",
+				content: t("commands/setup:errors.ownerOnly"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		if (action === "close") return interaction.update(buildClosedSetupMenu());
+		if (action === "close") return interaction.update(buildClosedSetupMenu(t));
 		if (
 			action !== "navigate" ||
 			interaction.data.component_type !== ComponentType.StringSelect
 		) {
 			return interaction.reply({
-				content:
-					"This setup action is no longer available. Run `/setup` again.",
+				content: t("commands/setup:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
@@ -46,14 +46,14 @@ export class UserInteractionHandler extends InteractionHandler {
 			cast<InteractionHandler.SelectMenuInteraction>(interaction).values[0];
 		if (page === undefined || !isSetupPage(page)) {
 			return interaction.reply({
-				content: "That setup section is not available.",
+				content: t("commands/setup:errors.sectionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		const subscriptionCount = await this.#getSubscriptionCount(interaction);
 		return interaction.update(
-			buildSetupMenu({ page, subscriptionCount, userId: ownerId }),
+			buildSetupMenu({ page, subscriptionCount, userId: ownerId }, t),
 		);
 	}
 

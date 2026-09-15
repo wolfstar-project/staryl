@@ -4,16 +4,22 @@ import {
 	buildSetupMenu,
 	isSetupPage,
 } from "#utils/setupMenu";
+import { container } from "@wolfstar/http-framework";
 import { ComponentType, MessageFlags } from "discord-api-types/v10";
 import { describe, expect, it } from "vitest";
 
 describe("setup menu", () => {
+	const t = container.i18n.getT("en-US");
+
 	it("builds an ephemeral Components V2 overview bound to its owner", () => {
-		const payload = buildSetupMenu({
-			page: "overview",
-			subscriptionCount: 3,
-			userId: "123456789",
-		});
+		const payload = buildSetupMenu(
+			{
+				page: "overview",
+				subscriptionCount: 3,
+				userId: "123456789",
+			},
+			t,
+		);
 
 		expect(payload.flags).toBe(MessageFlags.IsComponentsV2);
 		expect(payload.components).toHaveLength(1);
@@ -32,7 +38,7 @@ describe("setup menu", () => {
 			expect(isSetupPage(page)).toBe(true);
 			expect(
 				JSON.stringify(
-					buildSetupMenu({ page, subscriptionCount: 1, userId: "1" }),
+					buildSetupMenu({ page, subscriptionCount: 1, userId: "1" }, t),
 				),
 			).toContain("components");
 		}
@@ -41,7 +47,7 @@ describe("setup menu", () => {
 	});
 
 	it("removes all interactive controls when the menu is closed", () => {
-		const payload = buildClosedSetupMenu();
+		const payload = buildClosedSetupMenu(t);
 
 		expect(JSON.stringify(payload.components)).toContain("Setup closed");
 		expect(JSON.stringify(payload.components)).not.toContain("custom_id");

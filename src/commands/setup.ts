@@ -1,7 +1,10 @@
 import { buildSetupMenu, SetupInteractionHandlerName } from "#utils/setupMenu";
 import { Result } from "@sapphire/result";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
-import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
+import {
+	applyLocalizedBuilder,
+	getSupportedLanguageT,
+} from "@wolfstar/plugin-i18next";
 import {
 	ApplicationIntegrationType,
 	InteractionContextType,
@@ -37,11 +40,14 @@ export class UserCommand extends Command {
 			);
 		}
 
-		const menu = buildSetupMenu({
-			page: "overview",
-			subscriptionCount: subscriptionCountResult.unwrapOr(0),
-			userId: interaction.user.id,
-		});
+		const menu = buildSetupMenu(
+			{
+				page: "overview",
+				subscriptionCount: subscriptionCountResult.unwrapOr(0),
+				userId: interaction.user.id,
+			},
+			getSupportedLanguageT(interaction),
+		);
 		return interaction.reply({
 			...menu,
 			flags: menu.flags | MessageFlags.Ephemeral,
