@@ -10,6 +10,46 @@ import "i18next";
 declare module "i18next" {
   interface CustomTypeOptions {
     resources: {
+      "commands/setup": {
+        name: "setup";
+        description: "Open the interactive setup menu for this server.";
+        menu: {
+          placeholder: "Choose what you want to configure";
+          close: "Close setup";
+          options: {
+            overview: {
+              label: "Overview";
+              description: "View the setup status";
+            };
+            add: {
+              label: "Add a notification";
+              description: "Subscribe to a Twitch streamer";
+            };
+            manage: {
+              label: "Manage notifications";
+              description: "Review, remove, or reset subscriptions";
+            };
+            test: {
+              label: "Test notifications";
+              description: "Verify the real delivery path";
+            };
+          };
+        };
+        pages: {
+          overview: "## Staryl setup\nConfigure Twitch notifications for this server from one place.\n**Current notifications:** {{count}}\nUse the menu below to add, manage, or test a notification.";
+          add: "## Add a Twitch notification\nRun `/subscriptions twitch add` and choose:\n- the **streamer** to follow;\n- the Discord **channel** that receives the notification;\n- whether to notify when the stream goes **online** or **offline**;\n- an optional custom message (required for offline notifications).";
+          manage_one: "## Manage Twitch notifications\nThis server currently has **{{count}}** configured notification.\n- `/subscriptions twitch show` lists the current configuration.\n- `/subscriptions twitch remove` removes one notification.\n- `/subscriptions twitch reset` removes all notifications, or only those for one streamer.";
+          manage_other: "## Manage Twitch notifications\nThis server currently has **{{count}}** configured notifications.\n- `/subscriptions twitch show` lists the current configuration.\n- `/subscriptions twitch remove` removes one notification.\n- `/subscriptions twitch reset` removes all notifications, or only those for one streamer.";
+          test: "## Test a notification\nRun `/subscriptions twitch test` after adding a subscription.\nStaryl will send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions.";
+        };
+        closed: "## Setup closed\nRun `/setup` whenever you need it again.";
+        errors: {
+          invalid: "This setup menu is invalid. Run `/setup` to open a new one.";
+          ownerOnly: "Only the administrator who opened this setup menu can use it.";
+          actionUnavailable: "This setup action is no longer available. Run `/setup` again.";
+          sectionUnavailable: "That setup section is not available.";
+        };
+      };
       "commands/subscriptions": {
         name: "subscriptions";
         description: "Manage the notification subscriptions for your server.";
