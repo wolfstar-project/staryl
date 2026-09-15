@@ -1,4 +1,4 @@
-import type { Events, TwitchStreamStatus } from "#types";
+import type { StarylEvents, TwitchStreamStatus } from "#types";
 import type { IntegerString } from "@wolfstar/env-utilities";
 import type {
 	TwitchEventSubEvent,
@@ -8,14 +8,17 @@ import type {
 declare module "@wolfstar/http-framework" {
 	interface Client {
 		emit(
-			event: Events.TwitchStreamHookedAnalytics,
+			event: StarylEvents.TwitchStreamHookedAnalytics,
 			status: TwitchStreamStatus,
 		): boolean;
 		emit(
-			event: Events.TwitchStreamOnline,
+			event: StarylEvents.TwitchStreamOnline,
 			data: TwitchEventSubOnlineEvent,
 		): boolean;
-		emit(event: Events.TwitchStreamOffline, data: TwitchEventSubEvent): boolean;
+		emit(
+			event: StarylEvents.TwitchStreamOffline,
+			data: TwitchEventSubEvent,
+		): boolean;
 		emit(event: string | symbol, ...args: any[]): boolean;
 	}
 }

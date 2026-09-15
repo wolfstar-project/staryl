@@ -1,9 +1,7 @@
 overrides:
   ansi-regex: ^6.3.0
   minimist: ^1.2.8
-  # Plugins and CLI still declare v3; share the v4 client and plugin registry.
-  "@wolfstar/http-framework": ^4.0.0
-  "@wolfstar/plugin-i18next": 2.0.3
+  "@wolfstar/http-framework": ^4.0.1
 
 allowBuilds:
   "@prisma/client": true
@@ -17,9 +15,9 @@ shellEmulator: true
 minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
-  - "@wolfstar/http-framework@4.0.0"
   - "@wolfstar/plugin-i18next@2.0.3"
   - "@wolfstar/shared-http-pieces@2.0.2"
+  - "@wolfstar/http-framework@4.0.1"
   - "@wolfstar/cli@0.6.0"
 
 minimumReleaseAgeExcludePrune: true
