@@ -10,6 +10,10 @@ import "i18next";
 declare module "i18next" {
   interface CustomTypeOptions {
     resources: {
+      "commands/setup": {
+        name: "setup";
+        description: "Open the interactive setup menu for this server.";
+      };
       "commands/subscriptions": {
         name: "subscriptions";
         description: "Manage the notification subscriptions for your server.";
