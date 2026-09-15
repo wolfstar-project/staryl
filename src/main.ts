@@ -1,11 +1,12 @@
 import { fileURLToPath } from "node:url";
-import { setup } from "#lib/setup/all";
+import { initializeApp } from "#lib/setup/all";
 import { envParseInteger, envParseString } from "@wolfstar/env-utilities";
 import { Client, container } from "@wolfstar/http-framework";
 import { registerCommands } from "@wolfstar/shared-http-pieces";
 import { createBanner } from "@wolfstar/start-banner";
 import { vice } from "gradient-string";
-await setup();
+
+await initializeApp();
 
 const client = new Client({
 	api: {

@@ -7,7 +7,7 @@ import {
 import "#lib/setup/prisma";
 import "@wolfstar/shared-http-pieces/register";
 
-export async function setup() {
+export async function initializeApp() {
 	envRun(new URL("../../../src/.env", import.meta.url));
 
 	setRepository("staryl");
