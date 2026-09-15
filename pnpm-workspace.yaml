@@ -16,8 +16,8 @@ minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
   - "@wolfstar/plugin-i18next@2.0.3"
   - "@wolfstar/shared-http-pieces@2.0.2"
-  - '@wolfstar/cli@0.4.0'
-  - '@wolfstar/http-framework@4.0.1'
+  - "@wolfstar/cli@0.4.0"
+  - "@wolfstar/http-framework@4.0.1"
 
 minimumReleaseAgeExcludePrune: true
 
