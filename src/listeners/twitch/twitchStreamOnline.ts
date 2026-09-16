@@ -1,7 +1,7 @@
 // oxlint-disable no-await-in-loop -- sequential per-guild processing is intentional
 import type { TwitchEventSubOnlineEvent } from "@wolfstar/twitch-helpers";
-import { streamNotificationDrip } from "#utils/twitch";
-import { sendOnlineNotification } from "#utils/twitch/notifications";
+import { streamNotificationDrip } from "#twitch";
+import { sendOnlineNotification } from "#twitch/notifications";
 import { Listener } from "@wolfstar/http-framework";
 import { fetchStream, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 

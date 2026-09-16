@@ -1,4 +1,4 @@
-import type { TwitchStreamerFilterOptions } from "#utils/twitch/subscriptions";
+import type { TwitchStreamerFilterOptions } from "#twitch/subscriptions";
 import {
 	createStreamerOption,
 	getGuildSubscriptions,
@@ -6,7 +6,7 @@ import {
 	resetGuildSubscriptions,
 	SubscriptionsCommandName,
 	TwitchGroupName,
-} from "#utils/twitch/subscriptions";
+} from "#twitch/subscriptions";
 import { cast, isNullish } from "@sapphire/utilities";
 import {
 	applyLocalizedBuilder,

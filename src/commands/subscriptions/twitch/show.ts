@@ -1,4 +1,4 @@
-import type { TwitchStreamerFilterOptions } from "#utils/twitch/subscriptions";
+import type { TwitchStreamerFilterOptions } from "#twitch/subscriptions";
 import {
 	createStreamerOption,
 	fetchStreamerNames,
@@ -7,7 +7,7 @@ import {
 	getSubscriptionStatus,
 	SubscriptionsCommandName,
 	TwitchGroupName,
-} from "#utils/twitch/subscriptions";
+} from "#twitch/subscriptions";
 import { EmbedBuilder } from "@discordjs/builders";
 import { channelMention } from "@discordjs/formatters";
 import { isNullish } from "@sapphire/utilities";

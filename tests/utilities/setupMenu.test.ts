@@ -1,4 +1,4 @@
-import type { GuildSubscriptionWithTwitch } from "#utils/twitch/subscriptions";
+import type { GuildSubscriptionWithTwitch } from "#twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	buildAddModal,

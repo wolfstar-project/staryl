@@ -1,4 +1,4 @@
-import type { TwitchSubscriptionOptions } from "#utils/twitch/subscriptions";
+import type { TwitchSubscriptionOptions } from "#twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	addSubscription,
@@ -8,7 +8,7 @@ import {
 	MaximumMessageLength,
 	SubscriptionsCommandName,
 	TwitchGroupName,
-} from "#utils/twitch/subscriptions";
+} from "#twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
 import { cast } from "@sapphire/utilities";
 import {

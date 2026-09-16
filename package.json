@@ -13,6 +13,8 @@
 		"#types/*": "./dist/lib/types/*.mjs",
 		"#lib/*": "./dist/lib/*.mjs",
 		"#common/*": "./dist/lib/common/*.mjs",
+		"#twitch": "./dist/lib/utilities/twitch/index.mjs",
+		"#twitch/*": "./dist/lib/utilities/twitch/*.mjs",
 		"#utils/*": "./dist/lib/utilities/*.mjs"
 	},
 	"scripts": {

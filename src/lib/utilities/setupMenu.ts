@@ -1,4 +1,4 @@
-import type { GuildSubscriptionWithTwitch } from "#utils/twitch/subscriptions";
+import type { GuildSubscriptionWithTwitch } from "#twitch/subscriptions";
 import type { MessageActionRowComponentBuilder } from "@discordjs/builders";
 import type { ModalResponseData } from "@wolfstar/http-framework";
 import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
@@ -6,7 +6,7 @@ import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	getSubscriptionStatus,
 	MaximumMessageLength,
-} from "#utils/twitch/subscriptions";
+} from "#twitch/subscriptions";
 import {
 	ActionRowBuilder,
 	ButtonBuilder,

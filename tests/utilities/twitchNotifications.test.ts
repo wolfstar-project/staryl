@@ -3,7 +3,7 @@ import {
 	NotificationDeliveryError,
 	sendOfflineNotification,
 	sendOnlineNotification,
-} from "#utils/twitch/notifications";
+} from "#twitch/notifications";
 import { container } from "@wolfstar/http-framework";
 import { PermissionFlagsBits } from "discord-api-types/v10";
 import { beforeEach, describe, expect, it, vi } from "vitest";

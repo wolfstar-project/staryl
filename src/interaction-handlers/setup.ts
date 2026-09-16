@@ -4,14 +4,6 @@ import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import type { APIModalSubmissionComponent } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
-	buildAddModal,
-	buildClosedSetupMenu,
-	buildSetupMenu,
-	buildSubscriptionKey,
-	isSetupPage,
-	parseSubscriptionKey,
-} from "#utils/setupMenu";
-import {
 	addSubscription,
 	DeliveryErrorKeys,
 	fetchStreamerNames,
@@ -19,7 +11,15 @@ import {
 	getStreamerById,
 	resetGuildSubscriptions,
 	testSubscriptionDelivery,
-} from "#utils/twitch/subscriptions";
+} from "#twitch/subscriptions";
+import {
+	buildAddModal,
+	buildClosedSetupMenu,
+	buildSetupMenu,
+	buildSubscriptionKey,
+	isSetupPage,
+	parseSubscriptionKey,
+} from "#utils/setupMenu";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { cast } from "@sapphire/utilities";

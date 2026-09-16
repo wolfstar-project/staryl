@@ -15,7 +15,7 @@ import {
 	NotificationDeliveryError,
 	sendOfflineNotification,
 	sendOnlineNotification,
-} from "#utils/twitch/notifications";
+} from "#twitch/notifications";
 import {
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
