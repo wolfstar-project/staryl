@@ -1,14 +1,12 @@
 import type { TwitchStreamerFilterOptions } from "#utils/twitchSubscriptions";
 import {
 	createStreamerOption,
-	deleteSubscription,
 	getGuildSubscriptions,
 	getStreamer,
-	removeSubscription,
+	resetGuildSubscriptions,
 	SubscriptionsCommandName,
 	TwitchGroupName,
 } from "#utils/twitchSubscriptions";
-import { Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";
 import {
 	applyLocalizedBuilder,
@@ -85,18 +83,8 @@ export class UserCommand extends Command {
 		}
 
 		const count = guildSubscriptions.length;
-		const uniqueSubscriptionIds = [
-			...new Set(guildSubscriptions.map((gs) => gs.subscriptionId)),
-		];
 
-		const removalResult = await Result.fromAsync(async () => {
-			await Promise.all(guildSubscriptions.map((gs) => deleteSubscription(gs)));
-			await Promise.all(
-				uniqueSubscriptionIds.map((subscriptionId) =>
-					removeSubscription(subscriptionId),
-				),
-			);
-		});
+		const removalResult = await resetGuildSubscriptions(guildSubscriptions);
 		if (removalResult.isErr()) {
 			this.container.logger.error(
 				"[twitch-subscriptions] Failed to reset the subscriptions",

@@ -23,12 +23,44 @@
 			}
 		}
 	},
+	"modal": {
+		"title": "Add a Twitch notification",
+		"streamer": {
+			"label": "Streamer",
+			"placeholder": "e.g. shroud"
+		},
+		"channel": {
+			"label": "Notification channel"
+		},
+		"type": {
+			"label": "Notify when",
+			"online": "Stream goes online",
+			"offline": "Stream goes offline"
+		},
+		"message": {
+			"label": "Custom message (optional)",
+			"placeholder": "Required for offline notifications"
+		}
+	},
+	"manage": {
+		"selectPlaceholder": "Select one or more notifications",
+		"removeButton": "Remove selected",
+		"resetButton": "Reset all",
+		"resetConfirmButton": "Confirm reset all",
+		"empty": "No notifications configured yet.",
+		"removeSuccess_one": "Removed {{count}} notification.",
+		"removeSuccess_other": "Removed {{count}} notifications."
+	},
+	"test": {
+		"selectPlaceholder": "Select a notification to test",
+		"empty": "No notifications configured yet."
+	},
 	"pages": {
-		"overview": "## Staryl setup\nConfigure Twitch notifications for this server from one place.\n**Current notifications:** {{count}}\nUse the menu below to add, manage, or test a notification.",
-		"add": "## Add a Twitch notification\nRun `/subscriptions twitch add` and choose:\n- the **streamer** to follow;\n- the Discord **channel** that receives the notification;\n- whether to notify when the stream goes **online** or **offline**;\n- an optional custom message (required for offline notifications).",
-		"manage_one": "## Manage Twitch notifications\nThis server currently has **{{count}}** configured notification.\n- `/subscriptions twitch show` lists the current configuration.\n- `/subscriptions twitch remove` removes one notification.\n- `/subscriptions twitch reset` removes all notifications, or only those for one streamer.",
-		"manage_other": "## Manage Twitch notifications\nThis server currently has **{{count}}** configured notifications.\n- `/subscriptions twitch show` lists the current configuration.\n- `/subscriptions twitch remove` removes one notification.\n- `/subscriptions twitch reset` removes all notifications, or only those for one streamer.",
-		"test": "## Test a notification\nRun `/subscriptions twitch test` after adding a subscription.\nStaryl will send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions."
+		"overview": "{{notice}}## Staryl setup\nConfigure Twitch notifications for this server from one place.\n**Current notifications:** {{count}}\nUse the menu below to add, manage, or test a notification.",
+		"add": "{{notice}}## Add a Twitch notification\nPress **Add notification** below and fill in:\n- the **streamer** to follow;\n- the Discord **channel** that receives the notification;\n- whether to notify when the stream goes **online** or **offline**;\n- an optional custom message (required for offline notifications).",
+		"manage_one": "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notification.\nSelect one or more below to remove them, or reset everything.",
+		"manage_other": "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notifications.\nSelect one or more below to remove them, or reset everything.",
+		"test": "{{notice}}## Test a notification\nSelect a notification below to send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions."
 	},
 	"closed": "## Setup closed\nRun `/setup` whenever you need it again.",
 	"errors": {
