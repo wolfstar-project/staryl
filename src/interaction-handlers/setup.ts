@@ -411,7 +411,10 @@ export class UserInteractionHandler extends InteractionHandler {
 
 		const value =
 			cast<InteractionHandler.SelectMenuInteraction>(interaction).values[0];
-		const { count, context } = await this.#loadManageContext(interaction, t);
+		const { count, context, loadFailed } = await this.#loadManageContext(
+			interaction,
+			t,
+		);
 		const parsed = value === undefined ? null : parseSubscriptionKey(value);
 		const subscription = parsed
 			? context.subscriptions.find(
@@ -422,7 +425,9 @@ export class UserInteractionHandler extends InteractionHandler {
 			: undefined;
 
 		let notice: string;
-		if (!subscription) {
+		if (loadFailed) {
+			notice = cast<string>(t("commands/twitch:testFailed"));
+		} else if (!subscription) {
 			notice = cast<string>(t("commands/setup:errors.sectionUnavailable"));
 		} else {
 			const streamer = await getStreamerById(

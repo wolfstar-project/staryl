@@ -49,4 +49,14 @@ export const aliasEntries = [
 			return resolveSource("src/lib/utilities", subPath);
 		},
 	},
+	{
+		find: "#twitch",
+		replacement: "#twitch",
+		customResolver(source: string) {
+			if (source === "#twitch")
+				return resolve(RootDir, "src/lib/utilities/twitch/index.ts");
+			const subPath = source.replace("#twitch/", "");
+			return resolveSource("src/lib/utilities/twitch", subPath);
+		},
+	},
 ];
