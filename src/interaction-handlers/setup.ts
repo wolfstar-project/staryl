@@ -272,7 +272,23 @@ export class UserInteractionHandler extends InteractionHandler {
 
 		const values =
 			cast<InteractionHandler.SelectMenuInteraction>(interaction).values;
-		const { context } = await this.#loadManageContext(interaction, t);
+		const loaded = await this.#loadManageContext(interaction, t);
+		if (loaded.loadFailed) {
+			return interaction.update(
+				buildSetupMenu(
+					{
+						page: "manage",
+						subscriptionCount: loaded.count,
+						userId: ownerId,
+						notice: cast<string>(t("commands/twitch:removeFailed")),
+					},
+					t,
+					loaded.context,
+				),
+			);
+		}
+
+		const { context } = loaded;
 		const matched = context.subscriptions.filter((subscription) =>
 			values.includes(
 				buildSubscriptionKey(
@@ -335,7 +351,23 @@ export class UserInteractionHandler extends InteractionHandler {
 		ownerId: string,
 		t: TFunction<AnyNamespace>,
 	) {
-		const { count, context } = await this.#loadManageContext(interaction, t);
+		const loaded = await this.#loadManageContext(interaction, t);
+		if (loaded.loadFailed) {
+			return interaction.update(
+				buildSetupMenu(
+					{
+						page: "manage",
+						subscriptionCount: loaded.count,
+						userId: ownerId,
+						notice: cast<string>(t("commands/twitch:resetFailed")),
+					},
+					t,
+					loaded.context,
+				),
+			);
+		}
+
+		const { count, context } = loaded;
 
 		const resetResult = await resetGuildSubscriptions(context.subscriptions);
 		if (resetResult.isErr()) {
@@ -446,11 +478,20 @@ export class UserInteractionHandler extends InteractionHandler {
 	/**
 	 * Loads everything the Manage and Test pages need to render: the guild's subscriptions, the
 	 * streamer display names for them, and the localized live/offline status labels.
+	 *
+	 * `loadFailed` distinguishes "the guild has no subscriptions" from "the subscriptions could not be
+	 * read": callers that mutate (remove selected, reset all) must treat the latter as a hard stop
+	 * instead of silently operating on the substituted empty list and reporting success for a change
+	 * that never happened.
 	 */
 	async #loadManageContext(
 		interaction: InteractionHandler.Interaction,
 		t: TFunction<AnyNamespace>,
-	): Promise<{ count: number; context: SetupMenuContext }> {
+	): Promise<{
+		count: number;
+		context: SetupMenuContext;
+		loadFailed: boolean;
+	}> {
 		if (!interaction.inGuild()) {
 			return {
 				count: 0,
@@ -459,6 +500,7 @@ export class UserInteractionHandler extends InteractionHandler {
 					streamerNames: new Map(),
 					statuses: { live: "", offline: "" },
 				},
+				loadFailed: false,
 			};
 		}
 
@@ -484,6 +526,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		return {
 			count: subscriptions.length,
 			context: { subscriptions, streamerNames, statuses },
+			loadFailed: subscriptionsResult.isErr(),
 		};
 	}
 }
