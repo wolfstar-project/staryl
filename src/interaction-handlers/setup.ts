@@ -29,7 +29,26 @@ import {
 	ComponentType,
 	InteractionType,
 	MessageFlags,
+	PermissionFlagsBits,
 } from "discord-api-types/v10";
+
+/**
+ * Whether the interacting member currently holds Administrator, re-checked on every privileged
+ * action instead of trusting the owner id alone: `/setup` is Administrator-gated at invocation,
+ * but a still-open menu outlives that single check, so a member who loses the role afterwards
+ * must not keep the ability to add, remove, reset, or test subscriptions through it.
+ */
+function hasAdministratorPermission(
+	interaction: InteractionHandler.Interaction,
+): boolean {
+	const permissions = interaction.member?.permissions;
+	if (typeof permissions !== "string") return false;
+
+	return (
+		(BigInt(permissions) & PermissionFlagsBits.Administrator) ===
+		PermissionFlagsBits.Administrator
+	);
+}
 
 /**
  * Reads every field of a modal submission keyed by its `custom_id`.
@@ -74,6 +93,13 @@ export class UserInteractionHandler extends InteractionHandler {
 		if (interaction.user.id !== ownerId) {
 			return interaction.reply({
 				content: t("commands/setup:errors.ownerOnly"),
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		if (!hasAdministratorPermission(interaction)) {
+			return interaction.reply({
+				content: t("commands/setup:errors.permissionRevoked"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
@@ -266,7 +292,9 @@ export class UserInteractionHandler extends InteractionHandler {
 
 		const refreshed = await this.#loadManageContext(interaction, t);
 		const notice = cast<string>(
-			t("commands/setup:manage.removeSuccess", { count: matched.length }),
+			resetResult.isErr()
+				? t("commands/twitch:removeFailed")
+				: t("commands/setup:manage.removeSuccess", { count: matched.length }),
 		);
 		return interaction.update(
 			buildSetupMenu(
@@ -318,7 +346,11 @@ export class UserInteractionHandler extends InteractionHandler {
 		}
 
 		const refreshed = await this.#loadManageContext(interaction, t);
-		const notice = cast<string>(t("commands/twitch:resetSuccess", { count }));
+		const notice = cast<string>(
+			resetResult.isErr()
+				? t("commands/twitch:resetFailed")
+				: t("commands/twitch:resetSuccess", { count }),
+		);
 		return interaction.update(
 			buildSetupMenu(
 				{

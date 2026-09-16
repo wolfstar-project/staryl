@@ -26,6 +26,13 @@ import {
 
 export const SetupInteractionHandlerName = "setup";
 
+/**
+ * Discord rejects a string select with more than 25 options, so Manage/Test cap the subscriptions
+ * they render to the first {@link MaximumSelectOptions}; subscriptions beyond that stay reachable
+ * through `/subscriptions twitch remove|reset|test`, which have no such limit.
+ */
+export const MaximumSelectOptions = 25;
+
 export type SetupPage = "overview" | "add" | "manage" | "test";
 
 export interface SetupMenuState {
@@ -238,6 +245,7 @@ export function buildManagePage(
 	const rows: SetupMenuActionRow[] = [];
 
 	if (subscriptions.length > 0) {
+		const selectable = subscriptions.slice(0, MaximumSelectOptions);
 		rows.push(
 			new ActionRowBuilder<MessageActionRowComponentBuilder>()
 				.setComponents(
@@ -247,13 +255,9 @@ export function buildManagePage(
 							cast<string>(t("commands/setup:manage.selectPlaceholder")),
 						)
 						.setMinValues(1)
-						.setMaxValues(subscriptions.length)
+						.setMaxValues(selectable.length)
 						.addOptions(
-							...buildSubscriptionOptions(
-								subscriptions,
-								streamerNames,
-								statuses,
-							),
+							...buildSubscriptionOptions(selectable, streamerNames, statuses),
 						),
 				)
 				.toJSON(),
@@ -295,6 +299,7 @@ export function buildTestPage(
 ): SetupMenuActionRow[] {
 	if (subscriptions.length === 0) return [];
 
+	const selectable = subscriptions.slice(0, MaximumSelectOptions);
 	const selectRow =
 		new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
 			new StringSelectMenuBuilder()
@@ -305,7 +310,7 @@ export function buildTestPage(
 				.setMinValues(1)
 				.setMaxValues(1)
 				.addOptions(
-					...buildSubscriptionOptions(subscriptions, streamerNames, statuses),
+					...buildSubscriptionOptions(selectable, streamerNames, statuses),
 				),
 		);
 

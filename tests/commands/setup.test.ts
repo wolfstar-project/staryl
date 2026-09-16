@@ -145,9 +145,18 @@ function buildSubscription(
 	} as GuildSubscriptionWithTwitch;
 }
 
+// The interaction handler re-checks Administrator on every privileged action (a still-open menu
+// must not outlive a permission revoked after `/setup` was opened), so every fixture below grants
+// it by default; `rejects a member who lost Administrator after opening the menu` overrides it.
+const AdminMember = {
+	...MessageComponentButtonInteractionData.member,
+	permissions: String(PermissionFlagsBits.Administrator),
+};
+
 function buttonInteraction(action: string, userId = OwnerId) {
 	return {
 		...MessageComponentButtonInteractionData,
+		member: AdminMember,
 		data: {
 			...MessageComponentButtonInteractionData.data,
 			custom_id: buildSetupCustomId(userId, action),
@@ -158,6 +167,7 @@ function buttonInteraction(action: string, userId = OwnerId) {
 function selectInteraction(action: string, values: string[], userId = OwnerId) {
 	return {
 		...MessageComponentStringSelectInteractionData,
+		member: AdminMember,
 		data: {
 			...MessageComponentStringSelectInteractionData.data,
 			custom_id: buildSetupCustomId(userId, action),
@@ -172,6 +182,7 @@ function modalInteraction(
 ) {
 	return {
 		...ModalSubmitInteractionData,
+		member: AdminMember,
 		data: {
 			...ModalSubmitInteractionData.data,
 			custom_id: buildSetupCustomId(userId, "add:submit"),
@@ -202,6 +213,24 @@ describe("setup interaction handler: owner check", () => {
 			data: {
 				content:
 					"Only the administrator who opened this setup menu can use it.",
+			},
+		});
+	});
+
+	it("rejects a member who lost Administrator after opening the menu", async () => {
+		const interaction = buttonInteraction("close", OwnerId);
+		const nonAdminInteraction = {
+			...interaction,
+			member: { ...interaction.member, permissions: "0" },
+		};
+
+		const result = await runner.run(nonAdminInteraction as never);
+
+		expect(result.json()).toMatchObject({
+			type: InteractionResponseType.ChannelMessageWithSource,
+			data: {
+				content:
+					"You no longer have Administrator permission in this server. Run `/setup` again once it's restored.",
 			},
 		});
 	});
@@ -553,6 +582,7 @@ describe("setup interaction handler: unhandled component types", () => {
 	it("replies with actionUnavailable for a modal submit action it does not recognise", async () => {
 		const interaction = {
 			...ModalSubmitInteractionData,
+			member: AdminMember,
 			data: {
 				...ModalSubmitInteractionData.data,
 				custom_id: buildSetupCustomId(OwnerId, "close"),
