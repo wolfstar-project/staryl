@@ -1,7 +1,7 @@
 import type { GuildSubscriptionWithTwitch } from "#utils/twitchSubscriptions";
 import type { MessageActionRowComponentBuilder } from "@discordjs/builders";
 import type { ModalResponseData } from "@wolfstar/http-framework";
-import type { TFunction } from "i18next";
+import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	getSubscriptionStatus,
@@ -122,7 +122,10 @@ export function parseSubscriptionKey(
  * components for modal use (`setChannelSelectMenuComponent`/`setStringSelectMenuComponent`, with
  * `setRequired` on the select itself) — see `node_modules/@discordjs/builders/dist/index.d.ts`.
  */
-export function buildAddModal(userId: string, t: TFunction): ModalResponseData {
+export function buildAddModal(
+	userId: string,
+	t: TFunction<AnyNamespace>,
+): ModalResponseData {
 	const modal = new ModalBuilder()
 		.setCustomId(buildSetupCustomId(userId, "add:submit"))
 		.setTitle(cast<string>(t("commands/setup:modal.title")))
@@ -230,7 +233,7 @@ export function buildManagePage(
 	subscriptions: GuildSubscriptionWithTwitch[],
 	streamerNames: ReadonlyMap<string, string>,
 	statuses: { live: string; offline: string },
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 ): SetupMenuActionRow[] {
 	const rows: SetupMenuActionRow[] = [];
 
@@ -288,7 +291,7 @@ export function buildTestPage(
 	subscriptions: GuildSubscriptionWithTwitch[],
 	streamerNames: ReadonlyMap<string, string>,
 	statuses: { live: string; offline: string },
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 ): SetupMenuActionRow[] {
 	if (subscriptions.length === 0) return [];
 
@@ -312,7 +315,7 @@ export function buildTestPage(
 function buildPageRows(
 	state: SetupMenuState,
 	context: SetupMenuContext,
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 ): SetupMenuActionRow[] {
 	switch (state.page) {
 		case "manage":
@@ -351,7 +354,7 @@ function buildPageRows(
 
 export function buildSetupMenu(
 	state: SetupMenuState,
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 	context: SetupMenuContext = EmptySetupMenuContext,
 ): SetupMenuPayload {
 	const container = new ContainerBuilder()
@@ -432,7 +435,9 @@ export function buildSetupMenu(
 	};
 }
 
-export function buildClosedSetupMenu(t: TFunction): SetupMenuPayload {
+export function buildClosedSetupMenu(
+	t: TFunction<AnyNamespace>,
+): SetupMenuPayload {
 	const container = new ContainerBuilder()
 		.setAccentColor(5_793_266)
 		.addTextDisplayComponents((textDisplay) =>
@@ -447,7 +452,7 @@ export function buildClosedSetupMenu(t: TFunction): SetupMenuPayload {
 
 function renderPage(
 	{ page, subscriptionCount, notice }: SetupMenuState,
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 ): string {
 	return cast<string>(
 		t(`commands/setup:pages.${page}`, {

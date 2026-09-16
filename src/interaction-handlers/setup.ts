@@ -1,7 +1,7 @@
 import type { SetupMenuContext } from "#utils/setupMenu";
 import type { ModalSubmitInteraction } from "@wolfstar/http-framework";
+import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import type { APIModalSubmissionComponent } from "discord-api-types/v10";
-import type { TFunction } from "i18next";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	buildAddModal,
@@ -119,7 +119,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	async #handleNavigate(
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	) {
 		if (interaction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
@@ -157,7 +157,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	async #handleAddSubmit(
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	) {
 		const modalInteraction = cast<ModalSubmitInteraction>(interaction);
 		const fields = collectModalFields(modalInteraction.data.components);
@@ -235,7 +235,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	async #handleManageSelect(
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	) {
 		if (interaction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
@@ -285,7 +285,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	async #handleManageResetOpen(
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	) {
 		const { count, context } = await this.#loadManageContext(interaction, t);
 		return interaction.update(
@@ -305,7 +305,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	async #handleManageResetConfirm(
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	) {
 		const { count, context } = await this.#loadManageContext(interaction, t);
 
@@ -336,7 +336,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	async #handleTestSelect(
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	) {
 		if (interaction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
@@ -417,7 +417,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	 */
 	async #loadManageContext(
 		interaction: InteractionHandler.Interaction,
-		t: TFunction,
+		t: TFunction<AnyNamespace>,
 	): Promise<{ count: number; context: SetupMenuContext }> {
 		if (!interaction.inGuild()) {
 			return {

@@ -1,4 +1,4 @@
-import type { TFunction } from "@wolfstar/plugin-i18next";
+import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import type {
 	TwitchEventSubOnlineEvent,
 	TwitchHelixStreamsResult,
@@ -69,7 +69,7 @@ type GuildChannel = Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>;
 
 interface NotificationTarget {
 	channel: GuildChannel;
-	t: TFunction;
+	t: TFunction<AnyNamespace>;
 }
 
 const kTwitchImageReplacerRegex = /(\{width\}|\{height\})/gi;
@@ -165,7 +165,7 @@ export function buildOnlineEmbedData(
 
 export function buildOnlineEmbed(
 	data: TwitchOnlineEmbedData,
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 ): APIEmbed {
 	const embed = new EmbedBuilder()
 		.setURL(`https://twitch.tv/${data.userName}`)
@@ -209,7 +209,7 @@ export function buildOnlineEmbed(
 export function buildOfflineMessage(
 	message: string,
 	date: Date,
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 ): string {
 	return `${message} | ${time(date, TimestampStyles.ShortDateTime)} | ${t("events/twitch:offlinePostfix")}`;
 }
@@ -256,7 +256,7 @@ async function resolveTarget(
 	container.logger.debug(
 		`[twitch-notifications] Guild ${guildId} preferred locale ${preferredLocale}, resolved to ${resolvedLocale}`,
 	);
-	const t = container.i18n.getT(resolvedLocale);
+	const t = cast<TFunction<AnyNamespace>>(container.i18n.getT(resolvedLocale));
 
 	const channelsResult = await Result.fromAsync(() =>
 		api().guilds.getChannels(String(guildId)),
@@ -298,7 +298,7 @@ async function send(
 	channelId: string,
 	message: string | null,
 	testNotice: boolean | undefined,
-	t: TFunction,
+	t: TFunction<AnyNamespace>,
 	embeds?: APIEmbed[],
 ): Promise<Result<void, NotificationDeliveryError>> {
 	// The mentions are extracted from the stored message alone; the test notice is a plain literal
