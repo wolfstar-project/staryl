@@ -343,7 +343,7 @@ function buildPageRows(
 							.setLabel(
 								cast<string>(t("commands/setup:menu.options.add.label")),
 							)
-							.setStyle(ButtonStyle.Primary),
+							.setStyle(ButtonStyle.Secondary),
 					)
 					.toJSON(),
 			];
@@ -362,14 +362,7 @@ export function buildSetupMenu(
 		.addTextDisplayComponents((textDisplay) =>
 			textDisplay.setContent(renderPage(state, t)),
 		)
-		.addSeparatorComponents((separator) => separator);
-
-	const pageRows = buildPageRows(state, context, t);
-	if (pageRows.length > 0) {
-		container.addActionRowComponents(...pageRows);
-	}
-
-	container
+		.addSeparatorComponents((separator) => separator)
 		.addActionRowComponents((row) =>
 			row.setComponents(
 				new StringSelectMenuBuilder()
@@ -418,16 +411,22 @@ export function buildSetupMenu(
 						},
 					),
 			),
-		)
-		.addActionRowComponents((row) =>
-			row.setComponents(
-				new ButtonBuilder()
-					.setCustomId(buildSetupCustomId(state.userId, "close"))
-					.setLabel(cast<string>(t("commands/setup:menu.close")))
-					.setEmoji({ name: "⏹️" })
-					.setStyle(ButtonStyle.Danger),
-			),
 		);
+
+	const pageRows = buildPageRows(state, context, t);
+	if (pageRows.length > 0) {
+		container.addActionRowComponents(...pageRows);
+	}
+
+	container.addActionRowComponents((row) =>
+		row.setComponents(
+			new ButtonBuilder()
+				.setCustomId(buildSetupCustomId(state.userId, "close"))
+				.setLabel(cast<string>(t("commands/setup:menu.close")))
+				.setEmoji({ name: "⏹️" })
+				.setStyle(ButtonStyle.Secondary),
+		),
+	);
 
 	return {
 		components: [container.toJSON()],
