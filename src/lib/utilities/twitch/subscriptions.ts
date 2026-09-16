@@ -15,7 +15,7 @@ import {
 	NotificationDeliveryError,
 	sendOfflineNotification,
 	sendOnlineNotification,
-} from "#utils/twitchNotifications";
+} from "#utils/twitch/notifications";
 import {
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
@@ -280,15 +280,9 @@ export async function resolveSubscription(
 			`[twitch-subscriptions] Guild ${interaction.guildId} is not subscribed to streamer ${streamer.id}`,
 		);
 		return err(
-			cast<string>(
-				await resolveKey(
-					interaction,
-					"commands/twitch:removeStreamerNotSubscribed",
-					{
-						streamer: streamer.display_name,
-					},
-				),
-			),
+			resolveKey(interaction, "commands/twitch:removeStreamerNotSubscribed", {
+				streamer: streamer.display_name,
+			}),
 		);
 	}
 
@@ -306,16 +300,10 @@ export async function resolveSubscription(
 			"commands/twitch:showStatus",
 		);
 		return err(
-			cast<string>(
-				await resolveKey(
-					interaction,
-					"commands/twitch:removeStreamerStatusNotMatch",
-					{
-						streamer: streamer.display_name,
-						status: getSubscriptionStatus(subscriptionType, showStatuses),
-					},
-				),
-			),
+			resolveKey(interaction, "commands/twitch:removeStreamerStatusNotMatch", {
+				streamer: streamer.display_name,
+				status: getSubscriptionStatus(subscriptionType, showStatuses),
+			}),
 		);
 	}
 
@@ -328,15 +316,9 @@ export async function resolveSubscription(
 			`[twitch-subscriptions] The ${subscriptionType} subscription of streamer ${streamer.id} does not point at channel ${channel.id}`,
 		);
 		return err(
-			cast<string>(
-				await resolveKey(
-					interaction,
-					"commands/twitch:removeNotToProvidedChannel",
-					{
-						channel: channelMention(channel.id),
-					},
-				),
-			),
+			resolveKey(interaction, "commands/twitch:removeNotToProvidedChannel", {
+				channel: channelMention(channel.id),
+			}),
 		);
 	}
 

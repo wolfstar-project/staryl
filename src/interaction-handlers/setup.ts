@@ -19,7 +19,7 @@ import {
 	getStreamerById,
 	resetGuildSubscriptions,
 	testSubscriptionDelivery,
-} from "#utils/twitchSubscriptions";
+} from "#utils/twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { cast } from "@sapphire/utilities";

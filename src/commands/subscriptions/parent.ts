@@ -1,4 +1,4 @@
-import type { TwitchChannelSearchResult } from "#utils/twitchSubscriptions";
+import type { TwitchChannelSearchResult } from "#utils/twitch/subscriptions";
 import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";

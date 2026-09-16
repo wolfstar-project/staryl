@@ -1,4 +1,4 @@
-import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
+import type { TwitchSubscriptionOptions } from "#utils/twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	createChannelOption,
@@ -10,7 +10,7 @@ import {
 	resolveSubscription,
 	SubscriptionsCommandName,
 	TwitchGroupName,
-} from "#utils/twitchSubscriptions";
+} from "#utils/twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";

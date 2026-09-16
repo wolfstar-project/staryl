@@ -1,4 +1,4 @@
-import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
+import type { TwitchSubscriptionOptions } from "#utils/twitch/subscriptions";
 import {
 	createChannelOption,
 	createStreamerOption,
@@ -9,7 +9,7 @@ import {
 	SubscriptionsCommandName,
 	testSubscriptionDelivery,
 	TwitchGroupName,
-} from "#utils/twitchSubscriptions";
+} from "#utils/twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
 import { cast, isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
