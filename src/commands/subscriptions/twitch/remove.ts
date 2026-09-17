@@ -1,4 +1,4 @@
-import type { TwitchSubscriptionOptions } from "#utils/twitchSubscriptions";
+import type { TwitchSubscriptionOptions } from "#twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	createChannelOption,
@@ -10,10 +10,10 @@ import {
 	resolveSubscription,
 	SubscriptionsCommandName,
 	TwitchGroupName,
-} from "#utils/twitchSubscriptions";
+} from "#twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
-import { cast, isNullish } from "@sapphire/utilities";
+import { isNullish } from "@sapphire/utilities";
 import {
 	applyLocalizedBuilder,
 	getSupportedLanguageT as resolveKey,
@@ -82,15 +82,14 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const content = cast<string>(
-			await resolveKey(
-				interaction,
-				subscriptionType === TwitchSubscriptionType.StreamOnline
-					? "commands/twitch:removeSuccessLive"
-					: "commands/twitch:removeSuccessOffline",
-				{ name: streamer.display_name, channel: channelMention(channel.id) },
-			),
+		const content = await resolveKey(
+			interaction,
+			subscriptionType === TwitchSubscriptionType.StreamOnline
+				? "commands/twitch:removeSuccessLive"
+				: "commands/twitch:removeSuccessOffline",
+			{ name: streamer.display_name, channel: channelMention(channel.id) },
 		);
+
 		return deferred.update({ content });
 	}
 }

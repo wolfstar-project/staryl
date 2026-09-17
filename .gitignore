@@ -37,3 +37,5 @@ plans/
 
 # Stars CLI development artifacts
 .stars/
+
+src/tsconfig.tsbuildinfo

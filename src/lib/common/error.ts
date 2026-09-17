@@ -1,10 +1,13 @@
-import type { TFunction } from "@wolfstar/plugin-i18next";
+import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import { DiscordAPIError, HTTPError } from "@discordjs/rest";
 import { cast } from "@sapphire/utilities";
 import { RESTJSONErrorCodes } from "discord-api-types/v10";
 import { exists } from "i18next";
 
-export function stringifyError(t: TFunction, error: unknown): string {
+export function stringifyError(
+	t: TFunction<AnyNamespace>,
+	error: unknown,
+): string {
 	switch (typeof error) {
 		case "string":
 			return stringifyErrorString(t, error);
@@ -20,13 +23,19 @@ export function stringifyError(t: TFunction, error: unknown): string {
 	}
 }
 
-function stringifyErrorString(t: TFunction, error: string): string {
+function stringifyErrorString(
+	t: TFunction<AnyNamespace>,
+	error: string,
+): string {
 	return exists(error)
-		? String(t(cast<Parameters<TFunction>[0]>(error)))
+		? String(t(cast<Parameters<TFunction<AnyNamespace>>[0]>(error)))
 		: error;
 }
 
-function stringifyErrorObject(t: TFunction, error: object | null): string {
+function stringifyErrorObject(
+	t: TFunction<AnyNamespace>,
+	error: object | null,
+): string {
 	return error instanceof Error
 		? stringifyErrorException(t, error)
 		: String(error);
@@ -39,7 +48,10 @@ const isSuppressedError =
 		: (error: Error): error is SuppressedError =>
 				error instanceof SuppressedError;
 
-function stringifyErrorException(t: TFunction, error: Error): string {
+function stringifyErrorException(
+	t: TFunction<AnyNamespace>,
+	error: Error,
+): string {
 	if (error.name === "AbortError") return t("errors:discordAbortError");
 	if (error instanceof DiscordAPIError)
 		return stringifyDiscordAPIError(t, error);
@@ -50,7 +62,10 @@ function stringifyErrorException(t: TFunction, error: Error): string {
 	return error.message;
 }
 
-function stringifyDiscordAPIError(t: TFunction, error: DiscordAPIError) {
+function stringifyDiscordAPIError(
+	t: TFunction<AnyNamespace>,
+	error: DiscordAPIError,
+) {
 	switch (error.code) {
 		case RESTJSONErrorCodes.UnknownChannel:
 			return t("errors:genericUnknownChannel");
@@ -69,7 +84,7 @@ function stringifyDiscordAPIError(t: TFunction, error: DiscordAPIError) {
 	}
 }
 
-function stringifyHTTPError(t: TFunction, error: HTTPError) {
+function stringifyHTTPError(t: TFunction<AnyNamespace>, error: HTTPError) {
 	switch (error.status) {
 		case 500:
 			return t("errors:genericDiscordInternalServerError");

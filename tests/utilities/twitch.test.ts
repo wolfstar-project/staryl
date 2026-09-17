@@ -1,4 +1,4 @@
-import { streamNotificationDrip } from "#utils/twitch";
+import { streamNotificationDrip } from "#twitch";
 import { describe, expect, it } from "vitest";
 
 describe("streamNotificationDrip", () => {

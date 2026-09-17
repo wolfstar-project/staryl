@@ -1,4 +1,4 @@
-import type { TwitchStreamerFilterOptions } from "#utils/twitchSubscriptions";
+import type { TwitchStreamerFilterOptions } from "#twitch/subscriptions";
 import {
 	createStreamerOption,
 	fetchStreamerNames,
@@ -7,7 +7,7 @@ import {
 	getSubscriptionStatus,
 	SubscriptionsCommandName,
 	TwitchGroupName,
-} from "#utils/twitchSubscriptions";
+} from "#twitch/subscriptions";
 import { EmbedBuilder } from "@discordjs/builders";
 import { channelMention } from "@discordjs/formatters";
 import { isNullish } from "@sapphire/utilities";
@@ -92,10 +92,12 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const [statuses, unknownUser] = await Promise.all([
-			resolveKey(interaction, "commands/twitch:showStatus"),
+		const [liveStatus, offlineStatus, unknownUser] = await Promise.all([
+			resolveKey(interaction, "commands/twitch:showStatus.live"),
+			resolveKey(interaction, "commands/twitch:showStatus.offline"),
 			resolveKey(interaction, "commands/twitch:showUnknownUser"),
 		]);
+		const statuses = { live: liveStatus, offline: offlineStatus };
 
 		const names = streamerFilter
 			? new Map([[streamerFilter.id, streamerFilter.display_name]])

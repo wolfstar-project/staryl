@@ -1,0 +1,73 @@
+{
+	"name": "setup",
+	"description": "Open the interactive setup menu for this server.",
+	"menu": {
+		"placeholder": "Choose what you want to configure",
+		"close": "Close setup",
+		"options": {
+			"overview": {
+				"label": "Overview",
+				"description": "View the setup status"
+			},
+			"add": {
+				"label": "Add a notification",
+				"description": "Subscribe to a Twitch streamer"
+			},
+			"manage": {
+				"label": "Manage notifications",
+				"description": "Review, remove, or reset subscriptions"
+			},
+			"test": {
+				"label": "Test notifications",
+				"description": "Verify the real delivery path"
+			}
+		}
+	},
+	"modal": {
+		"title": "Add a Twitch notification",
+		"streamer": {
+			"label": "Streamer",
+			"placeholder": "e.g. shroud"
+		},
+		"channel": {
+			"label": "Notification channel"
+		},
+		"type": {
+			"label": "Notify when",
+			"online": "Stream goes online",
+			"offline": "Stream goes offline"
+		},
+		"message": {
+			"label": "Custom message (optional)",
+			"placeholder": "Required for offline notifications"
+		}
+	},
+	"manage": {
+		"selectPlaceholder": "Select one or more notifications",
+		"removeButton": "Remove selected",
+		"resetButton": "Reset all",
+		"resetConfirmButton": "Confirm reset all",
+		"empty": "No notifications configured yet.",
+		"removeSuccess_one": "Removed {{count}} notification.",
+		"removeSuccess_other": "Removed {{count}} notifications."
+	},
+	"test": {
+		"selectPlaceholder": "Select a notification to test",
+		"empty": "No notifications configured yet."
+	},
+	"pages": {
+		"overview": "{{notice}}## Staryl setup\nConfigure Twitch notifications for this server from one place.\n**Current notifications:** {{count}}\nUse the menu below to add, manage, or test a notification.",
+		"add": "{{notice}}## Add a Twitch notification\nPress **Add notification** below and fill in:\n- the **streamer** to follow;\n- the Discord **channel** that receives the notification;\n- whether to notify when the stream goes **online** or **offline**;\n- an optional custom message (required for offline notifications).",
+		"manage_one": "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notification.\nSelect one or more below to remove them, or reset everything.",
+		"manage_other": "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notifications.\nSelect one or more below to remove them, or reset everything.",
+		"test": "{{notice}}## Test a notification\nSelect a notification below to send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions."
+	},
+	"closed": "## Setup closed\nRun `/setup` whenever you need it again.",
+	"errors": {
+		"invalid": "This setup menu is invalid. Run `/setup` to open a new one.",
+		"ownerOnly": "Only the administrator who opened this setup menu can use it.",
+		"permissionRevoked": "You no longer have Administrator permission in this server. Run `/setup` again once it's restored.",
+		"actionUnavailable": "This setup action is no longer available. Run `/setup` again.",
+		"sectionUnavailable": "That setup section is not available."
+	}
+}

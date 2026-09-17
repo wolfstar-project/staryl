@@ -5,6 +5,9 @@ import { aliasEntries } from "./scripts/aliases.ts";
 export default defineConfig({
 	tsdown: {
 		plugins: [alias({ entries: aliasEntries })],
-		copy: [{ from: "src/locales", to: "dist" }],
+		copy: [
+			{ from: "src/locales", to: "dist" },
+			{ from: "src/generated", to: "dist" },
+		],
 	},
 });
