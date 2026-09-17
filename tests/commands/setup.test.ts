@@ -20,6 +20,7 @@ import {
 	ApplicationCommandType,
 	ComponentType,
 	InteractionResponseType,
+	MessageFlags,
 	PermissionFlagsBits,
 } from "discord-api-types/v10";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
