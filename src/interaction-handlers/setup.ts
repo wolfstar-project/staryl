@@ -163,9 +163,13 @@ export class UserInteractionHandler extends InteractionHandler {
 			});
 		}
 
+		// Acknowledge before loading Manage/Test data: the same expiry risk as the command's initial
+		// count query applies here, since a component interaction has the same short response window.
+		const deferred = await interaction.deferUpdate();
+
 		if (page === "manage" || page === "test") {
 			const { count, context } = await this.#loadManageContext(interaction, t);
-			return interaction.update(
+			return deferred.update(
 				buildSetupMenu(
 					{ page, subscriptionCount: count, userId: ownerId },
 					t,
@@ -175,7 +179,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		}
 
 		const count = await this.#getSubscriptionCount(interaction);
-		return interaction.update(
+		return deferred.update(
 			buildSetupMenu({ page, subscriptionCount: count, userId: ownerId }, t),
 		);
 	}

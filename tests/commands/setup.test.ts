@@ -99,6 +99,13 @@ beforeEach(async () => {
 	container.prisma = prismaMock as never;
 	prismaMock.guildSubscription.findMany.mockResolvedValue([]);
 	prismaMock.guildSubscription.count.mockResolvedValue(0);
+	// The command and the "navigate" action now defer before loading data (see the "expiry"
+	// fixes), so their visible response comes from editing the deferred message via REST, not
+	// from the initial HTTP response body.
+	vi.spyOn(container.rest, "patch").mockResolvedValue({
+		id: "1",
+		content: "mocked",
+	} as never);
 
 	// The handler is looked up by piece `name`, not by a decorator registry, so it must be
 	// constructed with the exact name `buildSetupCustomId` encodes in every custom_id.
@@ -152,6 +159,12 @@ const AdminMember = {
 	...MessageComponentButtonInteractionData.member,
 	permissions: String(PermissionFlagsBits.Administrator),
 };
+
+/** Reads the body of the deferred response's follow-up PATCH (see the `beforeEach` REST spy). */
+function patchedBody(): { content?: string; components?: unknown[] } {
+	const [, body] = vi.mocked(container.rest.patch).mock.calls[0]!;
+	return (body as { body: { content?: string; components?: unknown[] } }).body;
+}
 
 function buttonInteraction(action: string, userId = OwnerId) {
 	return {
@@ -257,9 +270,9 @@ describe("setup interaction handler: navigate", () => {
 		const result = await runner.run(interaction as never);
 
 		expect(result.json()).toMatchObject({
-			type: InteractionResponseType.UpdateMessage,
+			type: InteractionResponseType.DeferredMessageUpdate,
 		});
-		expect(JSON.stringify(result.json())).toContain(
+		expect(JSON.stringify(patchedBody())).toContain(
 			"Current notifications:** 3",
 		);
 	});
@@ -275,9 +288,9 @@ describe("setup interaction handler: navigate", () => {
 		);
 		const interaction = selectInteraction("navigate", ["manage"]);
 
-		const result = await runner.run(interaction as never);
+		await runner.run(interaction as never);
 
-		const serialized = JSON.stringify(result.json());
+		const serialized = JSON.stringify(patchedBody());
 		expect(serialized).toContain(buildSetupCustomId(OwnerId, "manage:select"));
 		expect(serialized).toContain(StreamerDisplayName);
 	});
@@ -293,9 +306,9 @@ describe("setup interaction handler: navigate", () => {
 		);
 		const interaction = selectInteraction("navigate", ["test"]);
 
-		const result = await runner.run(interaction as never);
+		await runner.run(interaction as never);
 
-		const serialized = JSON.stringify(result.json());
+		const serialized = JSON.stringify(patchedBody());
 		expect(serialized).toContain(buildSetupCustomId(OwnerId, "test:select"));
 		expect(serialized).toContain(StreamerDisplayName);
 	});
@@ -632,9 +645,10 @@ describe("setup command chatInputRun (overview, unchanged)", () => {
 		const result = await runner.run(buildChatInputInteraction() as never);
 
 		expect(result.json()).toMatchObject({
-			type: InteractionResponseType.ChannelMessageWithSource,
+			type: InteractionResponseType.DeferredChannelMessageWithSource,
+			data: { flags: MessageFlags.Ephemeral },
 		});
-		const serialized = JSON.stringify(result.json());
+		const serialized = JSON.stringify(patchedBody());
 		expect(serialized).toContain("Current notifications:** 2");
 		expect(serialized).toContain(buildSetupCustomId(OwnerId, "navigate"));
 	});
