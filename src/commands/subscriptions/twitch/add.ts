@@ -10,7 +10,6 @@ import {
 	TwitchGroupName,
 } from "#twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
-import { cast } from "@sapphire/utilities";
 import {
 	applyLocalizedBuilder,
 	getSupportedLanguageT as resolveKey,
@@ -68,14 +67,13 @@ export class UserCommand extends Command {
 		}
 
 		const { streamer } = result.unwrap();
-		const content = cast<string>(
-			await resolveKey(
-				interaction,
-				type === TwitchSubscriptionType.StreamOnline
-					? "commands/twitch:addSuccessLive"
-					: "commands/twitch:addSuccessOffline",
-				{ name: streamer.display_name, channel: channelMention(channel.id) },
-			),
+		const content = await resolveKey(
+			interaction,
+			type === TwitchSubscriptionType.StreamOnline
+				? "commands/twitch:addSuccessLive"
+				: "commands/twitch:addSuccessOffline",
+			undefined,
+			{ name: streamer.display_name, channel: channelMention(channel.id) },
 		);
 
 		return deferred.update({ content });

@@ -80,7 +80,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		interaction: InteractionHandler.Interaction,
 		customIdValue: unknown,
 	) {
-		const t = getSupportedLanguageT(interaction);
+		const t = cast<TFunction<AnyNamespace>>(getSupportedLanguageT(interaction));
 		const customIdParts = Array.isArray(customIdValue) ? customIdValue : [];
 		const [ownerId, action] = customIdParts;
 		if (typeof ownerId !== "string" || typeof action !== "string") {
@@ -147,15 +147,16 @@ export class UserInteractionHandler extends InteractionHandler {
 		ownerId: string,
 		t: TFunction<AnyNamespace>,
 	) {
-		if (interaction.data.component_type !== ComponentType.StringSelect) {
+		const selectInteraction =
+			cast<InteractionHandler.SelectMenuInteraction>(interaction);
+		if (selectInteraction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
 				content: t("commands/setup:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		const page =
-			cast<InteractionHandler.SelectMenuInteraction>(interaction).values[0];
+		const page = cast<string[]>(selectInteraction.values)[0];
 		if (page === undefined || !isSetupPage(page)) {
 			return interaction.reply({
 				content: t("commands/setup:errors.sectionUnavailable"),
@@ -245,13 +246,12 @@ export class UserInteractionHandler extends InteractionHandler {
 		}
 
 		const { streamer } = result.unwrap();
-		const notice = cast<string>(
-			t(
-				type === TwitchSubscriptionType.StreamOnline
-					? "commands/twitch:addSuccessLive"
-					: "commands/twitch:addSuccessOffline",
-				{ name: streamer.display_name, channel: channelMention(channelId) },
-			),
+		const notice = t(
+			type === TwitchSubscriptionType.StreamOnline
+				? "commands/twitch:addSuccessLive"
+				: "commands/twitch:addSuccessOffline",
+			undefined,
+			{ name: streamer.display_name, channel: channelMention(channelId) },
 		);
 		const count = await this.#getSubscriptionCount(interaction);
 		return modalInteraction.update(
@@ -267,15 +267,16 @@ export class UserInteractionHandler extends InteractionHandler {
 		ownerId: string,
 		t: TFunction<AnyNamespace>,
 	) {
-		if (interaction.data.component_type !== ComponentType.StringSelect) {
+		const selectInteraction =
+			cast<InteractionHandler.SelectMenuInteraction>(interaction);
+		if (selectInteraction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
 				content: t("commands/setup:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		const values =
-			cast<InteractionHandler.SelectMenuInteraction>(interaction).values;
+		const values = cast<string[]>(selectInteraction.values);
 		const loaded = await this.#loadManageContext(interaction, t);
 		if (loaded.loadFailed) {
 			return interaction.update(
@@ -382,11 +383,9 @@ export class UserInteractionHandler extends InteractionHandler {
 		}
 
 		const refreshed = await this.#loadManageContext(interaction, t);
-		const notice = cast<string>(
-			resetResult.isErr()
-				? t("commands/twitch:resetFailed")
-				: t("commands/twitch:resetSuccess", { count }),
-		);
+		const notice = resetResult.isErr()
+			? t("commands/twitch:resetFailed")
+			: t("commands/twitch:resetSuccess", undefined, { count });
 		return interaction.update(
 			buildSetupMenu(
 				{
@@ -406,15 +405,16 @@ export class UserInteractionHandler extends InteractionHandler {
 		ownerId: string,
 		t: TFunction<AnyNamespace>,
 	) {
-		if (interaction.data.component_type !== ComponentType.StringSelect) {
+		const selectInteraction =
+			cast<InteractionHandler.SelectMenuInteraction>(interaction);
+		if (selectInteraction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
 				content: t("commands/setup:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		const value =
-			cast<InteractionHandler.SelectMenuInteraction>(interaction).values[0];
+		const value = cast<string[]>(selectInteraction.values)[0];
 		const { count, context, loadFailed } = await this.#loadManageContext(
 			interaction,
 			t,
@@ -430,27 +430,26 @@ export class UserInteractionHandler extends InteractionHandler {
 
 		let notice: string;
 		if (loadFailed) {
-			notice = cast<string>(t("commands/twitch:testFailed"));
+			notice = t("commands/twitch:testFailed");
 		} else if (!subscription) {
-			notice = cast<string>(t("commands/setup:errors.sectionUnavailable"));
+			notice = t("commands/setup:errors.sectionUnavailable");
 		} else {
 			const streamer = await getStreamerById(
 				subscription.twitchSubscription.streamerId,
 			);
 			if (!streamer) {
-				notice = cast<string>(t("commands/twitch:streamerNotFound"));
+				notice = t("commands/twitch:streamerNotFound");
 			} else {
 				const deliveryResult = await testSubscriptionDelivery(
 					subscription,
 					streamer,
 				);
-				notice = cast<string>(
-					t(
-						deliveryResult.isErr()
-							? DeliveryErrorKeys[deliveryResult.unwrapErr()]
-							: "commands/twitch:testSuccess",
-						{ channel: channelMention(subscription.channelId.toString()) },
-					),
+				notice = t(
+					deliveryResult.isErr()
+						? DeliveryErrorKeys[deliveryResult.unwrapErr()]
+						: "commands/twitch:testSuccess",
+					undefined,
+					{ channel: channelMention(subscription.channelId.toString()) },
 				);
 			}
 		}
@@ -528,9 +527,10 @@ export class UserInteractionHandler extends InteractionHandler {
 				(subscription) => subscription.twitchSubscription.streamerId,
 			),
 		);
-		const statuses = cast<{ live: string; offline: string }>(
-			t("commands/twitch:showStatus"),
-		);
+		const statuses = {
+			live: cast<string>(t("commands/twitch:showStatus.live")),
+			offline: cast<string>(t("commands/twitch:showStatus.offline")),
+		};
 
 		return {
 			count: subscriptions.length,

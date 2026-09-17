@@ -280,9 +280,12 @@ export async function resolveSubscription(
 			`[twitch-subscriptions] Guild ${interaction.guildId} is not subscribed to streamer ${streamer.id}`,
 		);
 		return err(
-			resolveKey(interaction, "commands/twitch:removeStreamerNotSubscribed", {
-				streamer: streamer.display_name,
-			}),
+			resolveKey(
+				interaction,
+				"commands/twitch:removeStreamerNotSubscribed",
+				undefined,
+				{ streamer: streamer.display_name },
+			),
 		);
 	}
 
@@ -295,15 +298,19 @@ export async function resolveSubscription(
 		container.logger.debug(
 			`[twitch-subscriptions] Streamer ${streamer.id} has no ${subscriptionType} subscription in guild ${interaction.guildId}`,
 		);
-		const showStatuses = await resolveKey(
+		const status = await resolveKey(
 			interaction,
-			"commands/twitch:showStatus",
+			subscriptionType === TwitchSubscriptionType.StreamOnline
+				? "commands/twitch:showStatus.live"
+				: "commands/twitch:showStatus.offline",
 		);
 		return err(
-			resolveKey(interaction, "commands/twitch:removeStreamerStatusNotMatch", {
-				streamer: streamer.display_name,
-				status: getSubscriptionStatus(subscriptionType, showStatuses),
-			}),
+			resolveKey(
+				interaction,
+				"commands/twitch:removeStreamerStatusNotMatch",
+				undefined,
+				{ streamer: streamer.display_name, status },
+			),
 		);
 	}
 
@@ -316,9 +323,12 @@ export async function resolveSubscription(
 			`[twitch-subscriptions] The ${subscriptionType} subscription of streamer ${streamer.id} does not point at channel ${channel.id}`,
 		);
 		return err(
-			resolveKey(interaction, "commands/twitch:removeNotToProvidedChannel", {
-				channel: channelMention(channel.id),
-			}),
+			resolveKey(
+				interaction,
+				"commands/twitch:removeNotToProvidedChannel",
+				undefined,
+				{ channel: channelMention(channel.id) },
+			),
 		);
 	}
 
@@ -691,7 +701,7 @@ export async function testSubscriptionDelivery(
 	// leave nothing to send.
 	if (isNullishOrEmpty(subscription.message)) {
 		container.logger.debug(
-			`[twitch-subscriptions] Aborted: the offline subscription ${subscription.id} has no message`,
+			`[twitch-subscriptions] Aborted: the offline subscription ${subscription.subscriptionId} has no message`,
 		);
 		return err("missingMessage");
 	}

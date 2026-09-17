@@ -7,7 +7,7 @@ import {
 	SubscriptionsCommandName,
 	TwitchGroupName,
 } from "#twitch/subscriptions";
-import { cast, isNullish } from "@sapphire/utilities";
+import { isNullish } from "@sapphire/utilities";
 import {
 	applyLocalizedBuilder,
 	getSupportedLanguageT as resolveKey,
@@ -95,9 +95,13 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const content = cast<string>(
-			await resolveKey(interaction, "commands/twitch:resetSuccess", { count }),
+		const content = await resolveKey(
+			interaction,
+			"commands/twitch:resetSuccess",
+			undefined,
+			{ count },
 		);
+
 		return deferred.update({ content });
 	}
 }

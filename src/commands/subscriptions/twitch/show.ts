@@ -92,10 +92,12 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const [statuses, unknownUser] = await Promise.all([
-			resolveKey(interaction, "commands/twitch:showStatus"),
+		const [liveStatus, offlineStatus, unknownUser] = await Promise.all([
+			resolveKey(interaction, "commands/twitch:showStatus.live"),
+			resolveKey(interaction, "commands/twitch:showStatus.offline"),
 			resolveKey(interaction, "commands/twitch:showUnknownUser"),
 		]);
+		const statuses = { live: liveStatus, offline: offlineStatus };
 
 		const names = streamerFilter
 			? new Map([[streamerFilter.id, streamerFilter.display_name]])

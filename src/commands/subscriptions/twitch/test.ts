@@ -11,7 +11,7 @@ import {
 	TwitchGroupName,
 } from "#twitch/subscriptions";
 import { channelMention } from "@discordjs/formatters";
-import { cast, isNullish } from "@sapphire/utilities";
+import { isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
@@ -80,7 +80,7 @@ export class UserCommand extends Command {
 
 		const guildSubscription = subscriptionResult.unwrap();
 		container.logger.debug(
-			`[twitch-test] Resolved guild subscription ${guildSubscription.id}, message ${guildSubscription.message === null ? "unset" : `of ${guildSubscription.message.length} characters`}`,
+			`[twitch-test] Resolved guild subscription ${guildSubscription.subscriptionId}, message ${guildSubscription.message === null ? "unset" : `of ${guildSubscription.message.length} characters`}`,
 		);
 
 		// The notification is sent through the very same helpers the listeners use, so a success here
@@ -99,14 +99,13 @@ export class UserCommand extends Command {
 			}`,
 		);
 
-		const content = cast<string>(
-			await resolveKey(
-				interaction,
-				deliveryResult.isErr()
-					? DeliveryErrorKeys[deliveryResult.unwrapErr()]
-					: "commands/twitch:testSuccess",
-				{ channel: channelMention(channel.id) },
-			),
+		const content = await resolveKey(
+			interaction,
+			deliveryResult.isErr()
+				? DeliveryErrorKeys[deliveryResult.unwrapErr()]
+				: "commands/twitch:testSuccess",
+			undefined,
+			{ channel: channelMention(channel.id) },
 		);
 		return deferred.update({ content });
 	}
