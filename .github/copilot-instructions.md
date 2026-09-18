@@ -252,7 +252,6 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@sapphire/time-utilities` - Time constants (`Time.Minute`, etc.)
 - `@discordjs/builders` - Discord embed and component builders
 - `@prisma/client` - Database ORM
-- `ioredis` - Redis client
 - `@wolfstar/plugin-api` - Standalone REST API server (`Route`/`Middleware`
   pieces) for health checks and Twitch EventSub webhooks
 - `@wolfstar/plugin-subcommands-advanced` - Parent/child subcommand group
