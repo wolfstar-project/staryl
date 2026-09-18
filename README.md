@@ -91,7 +91,6 @@ WebSocket connection.
 - **Node.js**: Starly is built on Node.js (v22+), so you will need to have
   Node.js installed.
 - **PostgreSQL**: Starly uses PostgreSQL as its database via Prisma ORM.
-- **Redis**: Starly uses Redis for caching.
 - **Twitch Application**: A Twitch application with client ID and secret for
   EventSub integration.
 - **Discord Bot Application**: A Discord bot application configured for HTTP
@@ -116,7 +115,6 @@ These include, but are not limited to:
 
 - **PostgreSQL**: As database for guild subscriptions and Twitch subscription
   mappings.
-- **Redis**: For caching and state management.
 - **Twitch EventSub**: Requires a publicly accessible HTTPS endpoint for webhook
   delivery.
 - Other external APIs, each requiring their own individual API keys.

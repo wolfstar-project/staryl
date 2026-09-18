@@ -59,9 +59,9 @@ pnpm exec prisma db push
 ```
 
 `compose.dev.yml` no longer defines a Redis service (removed); the stray
-`REDIS_HOST` env var on the `staryl` service and the `ioredis` dependency are
-unreferenced in `src/` today. Postgres is the only required backing service for
-local dev.
+`REDIS_HOST` env var on the `staryl` service is unreferenced in `src/` today.
+The unused `ioredis` dependency has been removed. Postgres is the only required
+backing service for local dev.
 
 ### Environment variables
 
