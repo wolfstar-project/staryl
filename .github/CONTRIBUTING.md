@@ -53,7 +53,6 @@ stream notifications in their servers.
 - [Node.js](https://nodejs.org/) 22+ (LTS)
 - [pnpm](https://pnpm.io/) 10+ (required -- not npm or yarn)
 - [PostgreSQL](https://www.postgresql.org/) 14+
-- [Redis](https://redis.io/)
 - [Discord Application](https://discord.com/developers/applications/) (for bot
   token)
 - [Twitch Application](https://dev.twitch.tv/console/apps) (for EventSub)
@@ -79,7 +78,6 @@ stream notifications in their servers.
 
    Required variables:
    - `DATABASE_URL` -- PostgreSQL connection string
-   - `REDIS_HOST` -- Redis server host
    - `TWITCH_CLIENT_ID` -- Twitch application client ID
    - `TWITCH_CLIENT_SECRET` -- Twitch application secret
    - `HTTP_ADDRESS` -- Server bind address (default: `0.0.0.0`)
