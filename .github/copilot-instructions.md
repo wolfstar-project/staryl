@@ -37,7 +37,7 @@
 | Directories      | kebab-case      | `feature-name/`                                        |
 | TypeScript files | camelCase       | `twitchStreamOnline.ts`                                |
 | Variables        | camelCase       | `guildId`, `streamerId`                                |
-| Constants        | PascalCase enum | `Colors.Amber`, `Events.TwitchStreamOnline`            |
+| Constants        | PascalCase enum | `Colors.Amber`, `StarylEvents.TwitchStreamOnline`      |
 | Path constants   | PascalCase      | `PathRoot`, `PathSrc`                                  |
 | Types/Interfaces | PascalCase      | `GuildSubscription`, `DetailedMentionExtractionResult` |
 | Classes          | PascalCase      | `UserCommand`, `UserRoute`                             |
@@ -47,7 +47,8 @@
 ## Import Conventions
 
 - Use TypeScript path mapping aliases for internal imports: `#lib/*`,
-  `#utils/*`, `#common/*`
+  `#utils/*`, `#common/*`, `#types/*`, `#twitch/*` (Twitch-specific utilities,
+  `src/lib/utilities/twitch/`), and `#generated/prisma` (the generated client)
 - Use `type` imports for type-only values: `import type { ... } from "..."`
 - Group imports: type imports first, then internal aliases, then external
   packages
@@ -59,28 +60,44 @@
 
 - **HTTP Framework**: Built on `@wolfstar/http-framework`, handling Discord
   interactions via HTTP endpoints instead of WebSocket gateway
+- **Automatic Plugin Registration**: `@wolfstar/plugin-api`,
+  `@wolfstar/plugin-i18next`, `@wolfstar/plugin-subcommands-advanced`, and
+  `@wolfstar/plugin-logger` no longer need a side-effect `import
+  "@wolfstar/plugin-x/register"` in `src/main.ts` / `src/lib/setup/all.ts` —
+  the Stars CLI activates any plugin it finds declared in `dependencies`
+  automatically. `@wolfstar/shared-http-pieces/register` is the one remaining
+  explicit side-effect import, since command/route registration isn't part of
+  this auto-activation.
 - **Database**: PostgreSQL with Prisma ORM. Models use `@@map()` for snake_case
   table names, `@map()` for snake_case column names
 - **Event System**: Twitch EventSub webhooks trigger internal events
-  (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
-  handle
+  (`StarylEvents.TwitchStreamOnline`, `StarylEvents.TwitchStreamOffline`) that
+  listeners handle
 - **i18n**: Multi-language support via `@wolfstar/plugin-i18next`, with keys
   type-checked through the augmentation generated in `src/@types/i18next.d.ts`.
-  The Stars CLI activates the plugin automatically from `dependencies`; it
-  installs an `InternationalizationHandler` on `container.i18n` and loads the
-  locales before the stores, so command builders are localized at registration
-  time. Locale discovery is configured through the `i18n` key of the `Client`
-  options.
+  It installs an `InternationalizationHandler` on `container.i18n` and loads
+  the locales before the stores, so command builders are localized at
+  registration time. Locale discovery is configured through the `i18n` key of
+  the `Client` options.
 - **Rate Limiting**: Use `@sapphire/ratelimits` `RateLimitManager` for
   notification drip control
 - **Testable Listener Logic**: `Listener` pieces have no test harness, so
   business logic that needs coverage (building/sending a notification, resolving
-  a target channel, etc.) lives in a `#utils/*` module returning `Result<T, E>`
-  instead of a private listener method; the listener becomes a thin loop that
-  calls the module and logs on `isErr()`. This also lets a command (e.g.
-  `/subscriptions twitch test`) reuse the exact same delivery path as the
-  listeners. See `src/lib/utilities/twitchNotifications.ts` /
-  `tests/utilities/twitchNotifications.test.ts`.
+  a target channel, etc.) lives in a `#utils/*` or `#twitch/*` module returning
+  `Result<T, E>` instead of a private listener method; the listener becomes a
+  thin loop that calls the module and logs on `isErr()`. This also lets a
+  command (e.g. `/subscriptions twitch test`, `/setup`) reuse the exact same
+  delivery path as the listeners. See `src/lib/utilities/twitch/notifications.ts`
+  (imported as `#twitch/notifications`) / `tests/utilities/twitchNotifications.test.ts`.
+- **Interaction Handlers**: Message-component and modal-submit interactions
+  (buttons, select menus, modals) triggered by a command's own UI — as opposed
+  to a fresh slash-command invocation — are routed to `InteractionHandler`
+  pieces loaded from `src/interaction-handlers/`. Encode routing state in the
+  component's `custom_id` (e.g. `[ownerId, action]`) rather than server-side
+  session storage, and re-check permissions on every action instead of trusting
+  the id captured at the initial command invocation, since the component can
+  outlive that check. See `src/interaction-handlers/setup.ts`, which backs the
+  `/setup` menu built by `src/lib/utilities/setupMenu.ts`.
 
 ### Directory Structure
 
@@ -90,9 +107,14 @@
 - `src/middlewares/` - HTTP API middlewares (`@wolfstar/plugin-api` `Middleware`
   pieces)
 - `src/commands/` - Discord slash commands using decorator pattern
+- `src/interaction-handlers/` - `InteractionHandler` pieces that route a
+  command's own message-component/modal interactions (e.g. `/setup`'s menu)
 - `src/listeners/` - Event listeners for Twitch stream events
-- `src/lib/setup/` - Application initialization (env, Prisma, logger)
-- `src/lib/utilities/` - Helper functions (Discord API, Twitch, mention parsing)
+- `src/lib/setup/` - Application initialization (env, Prisma, the shared
+  `@discordjs/core` REST `api()` client, logger)
+- `src/lib/utilities/` - Helper functions (Discord API, mention parsing); Twitch
+  helpers live under `src/lib/utilities/twitch/` (`index.ts`, `notifications.ts`,
+  `subscriptions.ts`), aliased as `#twitch` / `#twitch/*`
 - `src/lib/common/` - Shared constants, error handling, promise utilities
 - `src/lib/types/` - TypeScript type definitions and enums
 - `src/@types/` - Ambient type declarations, including the i18next resource
@@ -103,7 +125,7 @@
 - `tests/` - Vitest test suite, organized by area
   (`tests/commands/subscriptions.test.ts` tests `src/commands/subscriptions/`;
   `tests/utilities/twitchNotifications.test.ts` tests
-  `src/lib/utilities/twitchNotifications.ts`); `tests/setup.ts` registers the
+  `src/lib/utilities/twitch/notifications.ts`); `tests/setup.ts` registers the
   `@wolfstar/http-framework-test-utils` matchers and boots i18n
 
 ### Command Structure
@@ -129,8 +151,8 @@ Commands with many subcommands split them into one class per file with
 `@wolfstar/plugin-subcommands-advanced`, as `/subscriptions` does. The parent
 declares the subcommand groups and keeps the autocomplete (which the plugin does
 not route to children); each child registers itself onto the parent and
-implements `chatInputRun`. Shared helpers live in a `#utils/*` module — see
-`src/lib/utilities/twitchSubscriptions.ts` — and the parent/group names come
+implements `chatInputRun`. Shared helpers live in a `#twitch/*` module — see
+`src/lib/utilities/twitch/subscriptions.ts` — and the parent/group names come
 from the constants exported there, so the parent's builder and the children's
 decorators cannot drift apart.
 
@@ -144,6 +166,37 @@ src/commands/subscriptions/
 The Stars CLI injects the register entrypoint before `src/main.ts`, and
 `subcommandsAdvanced.nameCommandsAutogenerated` keeps same-named files in
 different groups from colliding in the command store.
+
+A command that doesn't need subcommands at all — typically an
+Administrator-gated command whose flow is an interactive menu rather than a
+set of arguments, e.g. `/setup` (`src/commands/subscriptions/setup.ts`) —
+skips the subcommand pattern entirely: it's a single `Command` class with
+`@RegisterCommand`, deferring the reply and handing off to a
+`buildXMenu(...)`-style helper (see `src/lib/utilities/setupMenu.ts`) whose
+result is then driven by an `InteractionHandler` (see Interaction Handlers
+above and Interaction Handler Structure below).
+
+### Interaction Handler Structure
+
+`InteractionHandler` pieces extend `InteractionHandler` from
+`@wolfstar/http-framework` and are loaded from `src/interaction-handlers/`.
+They receive the raw interaction plus the parsed `custom_id` value and decide
+how to route it themselves — there is no per-action decorator, unlike
+commands:
+
+```typescript
+import { InteractionHandler } from "@wolfstar/http-framework";
+
+export class UserInteractionHandler extends InteractionHandler {
+	public override async run(
+		interaction: InteractionHandler.Interaction,
+		customIdValue: unknown,
+	) {
+		// Re-check permissions here; the component can outlive the check the
+		// invoking command made. Then branch on the decoded custom_id.
+	}
+}
+```
 
 ### Listener Structure
 
@@ -184,15 +237,15 @@ export class UserRoute extends Route {
 ```
 
 Cross-cutting concerns run as `Middleware` pieces loaded from
-`src/middlewares/`, in ascending `position` order, configured declaratively with
-the local `@ApplyOptions` decorator (`#utils/applyOptions` — a minimal
-equivalent of `@sapphire/decorators`'s `ApplyOptions`; that package can't be
-used here since its bundled entrypoint requires `discord.js`, which this
+`src/middlewares/`, in ascending `position` order, configured declaratively
+with the `@ApplyOptions` decorator now shipped by `@wolfstar/http-framework`
+itself (previously a local `#utils/applyOptions` shim, needed because
+`@sapphire/decorators`'s `ApplyOptions` requires `discord.js`, which this
 http-interactions-only project doesn't depend on):
 
 ```typescript
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
-import { ApplyOptions } from "#utils/applyOptions";
+import { ApplyOptions } from "@wolfstar/http-framework";
 import { Middleware } from "@wolfstar/plugin-api";
 
 @ApplyOptions<Middleware.Options>({ position: 30 })
@@ -251,6 +304,7 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@sapphire/ratelimits` - Rate limiting
 - `@sapphire/time-utilities` - Time constants (`Time.Minute`, etc.)
 - `@discordjs/builders` - Discord embed and component builders
+- `@wolfstar/plugin-logger` - Logger plugin providing `container.logger`
 - `@prisma/client` - Database ORM
 - `@wolfstar/plugin-api` - Standalone REST API server (`Route`/`Middleware`
   pieces) for health checks and Twitch EventSub webhooks
@@ -280,6 +334,9 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - **New or changed listener logic:** There is no listener test harness — extract
   the logic into a `#utils/*` module and add/update its test under
   `tests/utilities/`
+- **New or changed interaction handler:** Extract the branching logic it calls
+  into a testable `#utils/*` / `#twitch/*` module, same as listeners — see
+  `src/lib/utilities/setupMenu.ts` / `tests/utilities/setupMenu.test.ts`
 
 **When in doubt:** Copy existing patterns from similar files (e.g.,
 `src/listeners/twitch/`, `src/commands/`) before inventing new ones.
