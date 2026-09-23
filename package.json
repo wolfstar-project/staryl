@@ -44,16 +44,16 @@
 		"@sapphire/result": "^2.8.0",
 		"@sapphire/time-utilities": "^1.7.14",
 		"@sapphire/utilities": "^3.18.2",
-		"@wolfstar/env-utilities": "^2.0.8",
-		"@wolfstar/http-framework": "^4.0.1",
+		"@wolfstar/env-utilities": "^2.1.1",
+		"@wolfstar/http-framework": "^4.0.2",
 		"@wolfstar/plugin-api": "^1.1.5",
 		"@wolfstar/plugin-i18next": "2.0.3",
 		"@wolfstar/plugin-logger": "^0.2.0",
 		"@wolfstar/plugin-subcommands-advanced": "^2.0.3",
-		"@wolfstar/safe-fetch": "^1.1.9",
-		"@wolfstar/shared-http-pieces": "2.0.2",
-		"@wolfstar/start-banner": "^2.1.0",
-		"@wolfstar/twitch-helpers": "^2.0.7",
+		"@wolfstar/safe-fetch": "^1.1.10",
+		"@wolfstar/shared-http-pieces": "2.0.4",
+		"@wolfstar/start-banner": "^2.1.1",
+		"@wolfstar/twitch-helpers": "^2.0.8",
 		"discord-api-types": "^0.38.55",
 		"gradient-string": "^3.0.0",
 		"husky": "^9.1.7",
@@ -66,20 +66,20 @@
 		"@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
 		"@rollup/plugin-alias": "^6.0.0",
 		"@sapphire/ts-config": "^5.0.3",
-		"@types/node": "^24.13.4",
-		"@wolfstar/cli": "^0.6.0",
-		"@wolfstar/http-framework-test-utils": "^3.0.6",
-		"@wolfstar/i18next-type-generator": "3.1.2",
+		"@types/node": "^24.13.5",
+		"@wolfstar/cli": "^0.6.1",
+		"@wolfstar/http-framework-test-utils": "^3.0.8",
+		"@wolfstar/i18next-type-generator": "3.1.3",
 		"cz-conventional-changelog": "^3.3.0",
 		"eslint": "^10.10.0",
 		"eslint-plugin-regexp": "^3.3.0",
-		"oxfmt": "^0.67.0",
-		"oxlint": "^1.82.0",
+		"oxfmt": "^0.68.0",
+		"oxlint": "^1.83.0",
 		"prisma": "^7.10.0",
 		"taze": "^21.1.0",
 		"tsdown": "^0.23.0",
 		"typescript": "~5.9.3",
-		"vitest": "^5.0.0"
+		"vitest": "^5.0.1"
 	},
 	"nano-staged": {
 		"*.{js,ts,mjs,cjs}": [
@@ -103,5 +103,5 @@
 		"node": ">=24.0.0",
 		"pnpm": ">=10"
 	},
-	"packageManager": "pnpm@12.4.1"
+	"packageManager": "pnpm@12.4.2"
 }
