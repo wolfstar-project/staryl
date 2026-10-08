@@ -21,7 +21,6 @@ minimumReleaseAgeExclude:
   - "@wolfstar/i18next-type-generator@3.1.6"
   - "@wolfstar/kit@0.2.0"
   - "@wolfstar/nitro-server@0.2.9"
-  - "@wolfstar/plugin-i18next@2.2.0"
   - "@wolfstar/schema@0.9.0"
   - "@wolfstar/start-banner@2.1.3"
   - "@wolfstar/vite-server@0.4.4"
