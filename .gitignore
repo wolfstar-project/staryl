@@ -39,3 +39,4 @@ plans/
 .stars/
 
 src/tsconfig.tsbuildinfo
+tsconfig.base.tsbuildinfo
