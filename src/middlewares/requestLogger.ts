@@ -1,5 +1,5 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
-import { ApplyOptions } from "@wolfstar/http-framework";
+import { ApplyOptions } from "@wolfstar/decorators";
 import { Middleware } from "@wolfstar/plugin-api";
 
 @ApplyOptions<Middleware.Options>({ position: 30 })
