@@ -1,5 +1,5 @@
 overrides:
-  ansi-regex: ^6.3.0
+  ansi-regex: ^6.4.0
   minimist: ^1.2.8
   "@wolfstar/http-framework": ^6.2.2
 
