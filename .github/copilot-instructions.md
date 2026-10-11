@@ -238,14 +238,15 @@ export class UserRoute extends Route {
 
 Cross-cutting concerns run as `Middleware` pieces loaded from
 `src/middlewares/`, in ascending `position` order, configured declaratively with
-the `@ApplyOptions` decorator now shipped by `@wolfstar/http-framework` itself
-(previously a local `#utils/applyOptions` shim, needed because
-`@sapphire/decorators`'s `ApplyOptions` requires `discord.js`, which this
-http-interactions-only project doesn't depend on):
+the `@ApplyOptions` decorator from `@wolfstar/decorators` (moved out of
+`@wolfstar/http-framework` itself in http-framework 6; previously a local
+`#utils/applyOptions` shim, needed because `@sapphire/decorators`'s
+`ApplyOptions` requires `discord.js`, which this http-interactions-only
+project doesn't depend on):
 
 ```typescript
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
-import { ApplyOptions } from "@wolfstar/http-framework";
+import { ApplyOptions } from "@wolfstar/decorators";
 import { Middleware } from "@wolfstar/plugin-api";
 
 @ApplyOptions<Middleware.Options>({ position: 30 })
@@ -292,6 +293,9 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 ## Key Dependencies
 
 - `@wolfstar/http-framework` - Discord HTTP interaction framework
+- `@wolfstar/decorators` - Utility decorators (`ApplyOptions`, `Requires*`)
+  split out of `@wolfstar/http-framework` as of http-framework 6; only
+  `ApplyOptions` is used here (`src/middlewares/requestLogger.ts`)
 - `@wolfstar/plugin-i18next` - i18next-powered internationalization plugin for
   the HTTP framework
 - `@wolfstar/twitch-helpers` - Twitch EventSub types, helpers, and signature
