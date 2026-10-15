@@ -241,8 +241,8 @@ Cross-cutting concerns run as `Middleware` pieces loaded from
 the `@ApplyOptions` decorator from `@wolfstar/decorators` (moved out of
 `@wolfstar/http-framework` itself in http-framework 6; previously a local
 `#utils/applyOptions` shim, needed because `@sapphire/decorators`'s
-`ApplyOptions` requires `discord.js`, which this http-interactions-only
-project doesn't depend on):
+`ApplyOptions` requires `discord.js`, which this http-interactions-only project
+doesn't depend on):
 
 ```typescript
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
