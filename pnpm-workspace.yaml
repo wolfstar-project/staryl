@@ -1,7 +1,7 @@
 overrides:
-  ansi-regex: ^6.3.0
+  ansi-regex: ^6.4.0
   minimist: ^1.2.8
-  "@wolfstar/http-framework": ^6.2.2
+  "@wolfstar/http-framework": ^6.3.0
 
 allowBuilds:
   "@prisma/client": true
@@ -15,9 +15,7 @@ shellEmulator: true
 minimumReleaseAge: 2880
 
 minimumReleaseAgeExclude:
-  - "@wolfstar/cli@2.6.0"
   - "@wolfstar/env-utilities@2.3.1"
-  - "@wolfstar/http-framework@6.2.2"
   - "@wolfstar/i18next-type-generator@3.1.6"
   - "@wolfstar/kit@0.2.0"
   - "@wolfstar/nitro-server@0.2.9"
