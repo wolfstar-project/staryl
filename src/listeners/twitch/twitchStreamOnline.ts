@@ -2,6 +2,7 @@
 import type { TwitchEventSubOnlineEvent } from "@wolfstar/twitch-helpers";
 import { streamNotificationDrip } from "#twitch";
 import { sendOnlineNotification } from "#twitch/notifications";
+import { getStreamerById } from "#twitch/subscriptions";
 import { Listener } from "@wolfstar/http-framework";
 import { fetchStream, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
@@ -27,7 +28,11 @@ export default class extends Listener {
 			return;
 		}
 
-		const streamData = await fetchStream(data.broadcaster_user_id);
+		// One profile look-up serves every guild below; a failed one only costs the avatar.
+		const [streamData, streamer] = await Promise.all([
+			fetchStream(data.broadcaster_user_id),
+			getStreamerById(data.broadcaster_user_id),
+		]);
 		this.container.logger.debug(
 			`[twitch-stream-online] Streamer ${data.broadcaster_user_id} has ${twitchSubscription.guildSubscription.length} guild subscription(s), stream data: ${JSON.stringify(streamData)}`,
 		);
@@ -55,6 +60,7 @@ export default class extends Listener {
 				message: guildSubscription.message,
 				event: data,
 				streamData,
+				avatarUrl: streamer?.profile_image_url,
 			});
 
 			if (result.isErr()) {

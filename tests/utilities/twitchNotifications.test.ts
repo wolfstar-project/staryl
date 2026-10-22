@@ -206,6 +206,51 @@ describe("sendOnlineNotification", () => {
 		});
 	});
 
+	it("shows the streamer's avatar beside the header", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+			avatarUrl: "https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
+		});
+
+		const [headerSection, detailsSection] = container().components!.filter(
+			(component) => component.type === ComponentType.Section,
+		);
+		expect(headerSection?.accessory?.media.url).toBe(
+			"https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
+		);
+		expect(headerSection?.components?.[0]?.content).toBe(
+			`**${StreamerName} is now live on Twitch!**`,
+		);
+		// The box art keeps its own thumbnail on the title and game block.
+		expect(detailsSection?.accessory?.media.url).toBe(
+			"https://cdn.twitch.tv/box-128x128.png",
+		);
+	});
+
+	it("falls back to a plain header when the avatar is unknown", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+			avatarUrl: null,
+		});
+
+		const sections = container().components!.filter(
+			(component) => component.type === ComponentType.Section,
+		);
+		expect(sections).toHaveLength(1);
+		expect(container().components?.[0]).toMatchObject({
+			type: ComponentType.TextDisplay,
+			content: `**${StreamerName} is now live on Twitch!**`,
+		});
+	});
+
 	it("leads with the container when there is no custom message", async () => {
 		await sendOnlineNotification({
 			guildId: GuildId,

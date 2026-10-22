@@ -54,6 +54,8 @@ export interface OnlineNotificationOptions {
 	message: string | null;
 	event: TwitchEventSubOnlineEvent;
 	streamData: TwitchHelixStreamsResult | null;
+	/** The streamer's profile picture, shown beside the header. Omitted when it is unknown. */
+	avatarUrl?: string | null;
 	/**
 	 * Prepends the localized test notice to the content so the members of the
 	 * channel do not read a manually triggered preview as the streamer actually going live, and
@@ -76,6 +78,7 @@ export interface OfflineNotificationOptions {
 export interface OnlineNotificationData extends TwitchOnlineEmbedData {
 	/** The lowercase login name, which is what Twitch's URLs are keyed on. */
 	userLogin: string;
+	avatarUrl?: string;
 }
 
 type GuildChannel = Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>;
@@ -107,7 +110,11 @@ export async function sendOnlineNotification(
 	}
 
 	const { channel, t } = targetResult.unwrap();
-	const data = buildOnlineEmbedData(options.event, options.streamData);
+	const data = buildOnlineEmbedData(
+		options.event,
+		options.streamData,
+		options.avatarUrl,
+	);
 	container.logger.debug(
 		`[twitch-notifications] Online embed data for channel ${channel.id}: ${JSON.stringify(data)}`,
 	);
@@ -157,10 +164,12 @@ export async function sendOfflineNotification(
 export function buildOnlineEmbedData(
 	notification: TwitchEventSubOnlineEvent,
 	streamData: TwitchHelixStreamsResult | null,
+	avatarUrl?: string | null,
 ): OnlineNotificationData {
 	const userLogin = notification.broadcaster_user_login.toLowerCase();
 
 	return {
+		avatarUrl: avatarUrl ?? undefined,
 		embedThumbnailUrl: streamData?.game_box_art_url?.replace(
 			kTwitchImageReplacerRegex,
 			"128",
@@ -189,15 +198,16 @@ export function buildOnlineComponents(
 
 	// An empty title (Twitch has not published the stream yet — a routine race at go-live) would
 	// render as a bare link, so the streamer's name stands in for it.
-	const heading = new TextDisplayBuilder().setContent(
-		`### [${data.title || escapeText(data.userName)}](${url})`,
-	);
 	const header = new TextDisplayBuilder().setContent(
 		`**${t("events/twitch:embedHeader", { userName: escapeText(data.userName) })}**`,
 	);
-	const intro = [header, heading];
+	const details = [
+		new TextDisplayBuilder().setContent(
+			`### [${data.title || escapeText(data.userName)}](${url})`,
+		),
+	];
 	if (data.gameName) {
-		intro.push(
+		details.push(
 			new TextDisplayBuilder().setContent(
 				`**${t("events/twitch:embedGame")}**\n${escapeText(data.gameName)}`,
 			),
@@ -205,16 +215,29 @@ export function buildOnlineComponents(
 	}
 
 	const card = new ContainerBuilder().setAccentColor(TwitchBrandingColor);
+
+	// A section needs a thumbnail accessory, so each block falls back to plain text displays when
+	// it has no picture.
+	if (data.avatarUrl) {
+		card.addSectionComponents(
+			new SectionBuilder()
+				.addTextDisplayComponents(header)
+				.setThumbnailAccessory(new ThumbnailBuilder().setURL(data.avatarUrl)),
+		);
+	} else {
+		card.addTextDisplayComponents(header);
+	}
+
 	if (data.embedThumbnailUrl) {
 		card.addSectionComponents(
 			new SectionBuilder()
-				.addTextDisplayComponents(...intro)
+				.addTextDisplayComponents(...details)
 				.setThumbnailAccessory(
 					new ThumbnailBuilder().setURL(data.embedThumbnailUrl),
 				),
 		);
 	} else {
-		card.addTextDisplayComponents(...intro);
+		card.addTextDisplayComponents(...details);
 	}
 
 	const previewUrl = data.embedImageUrl;
