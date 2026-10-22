@@ -251,6 +251,20 @@ describe("sendOnlineNotification", () => {
 		});
 	});
 
+	it("cannot let a stream title retarget the heading link", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData({ title: "a](https://evil.example) [b" }),
+		});
+
+		expect(sentText()).toContain(
+			"### [a\\](https://evil.example) \\[b](https://twitch.tv/coolstreamer)",
+		);
+	});
+
 	it("leads with the container when there is no custom message", async () => {
 		await sendOnlineNotification({
 			guildId: GuildId,
@@ -437,9 +451,9 @@ describe("sendOnlineNotification", () => {
 		).toBe(false);
 	});
 
-	it("keeps the empty title for a real notification without stream data", async () => {
-		// Only the test path substitutes the placeholder; a real notification racing ahead of Twitch's
-		// stream data must behave exactly as before.
+	it("falls back to the streamer's name for a real notification without stream data", async () => {
+		// Only the test path substitutes the placeholder title; a real notification racing ahead of
+		// Twitch's stream data has no title to show.
 		await sendOnlineNotification({
 			guildId: GuildId,
 			channelId: ChannelId,

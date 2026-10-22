@@ -119,9 +119,9 @@ export async function sendOnlineNotification(
 		`[twitch-notifications] Online embed data for channel ${channel.id}: ${JSON.stringify(data)}`,
 	);
 
-	// A `test` on a streamer that is not live has no stream to describe, and `setTitle("")` renders
-	// as a bare link. Only the test path substitutes it: a real notification that raced ahead of
-	// Twitch's stream data must keep the original behaviour.
+	// A `test` on a streamer that is not live has no stream to describe. Only the test path
+	// substitutes a placeholder title: a real notification that raced ahead of Twitch's stream data
+	// falls back to the streamer's name in the heading instead.
 	if (options.testNotice && isNullish(options.streamData)) {
 		data.title = t("events/twitch:testPlaceholderTitle");
 		container.logger.debug(
@@ -276,7 +276,12 @@ export function escapeText(text?: string) {
 		return "";
 	}
 
-	return escapeMarkdown(text.replace(/\\/g, "\\\\").replace(/"/g, '\\"'));
+	// `escapeMarkdown` leaves `[` and `]` alone, and `maskedLink` only matches a whole `[..](..)`
+	// pair. The title is streamer-controlled and ends up inside the link text of the heading, so a
+	// stray `](` would otherwise retarget the link.
+	return escapeMarkdown(
+		text.replace(/\\/g, "\\\\").replace(/"/g, '\\"'),
+	).replace(/[[\]]/g, "\\$&");
 }
 
 /**
