@@ -8,8 +8,8 @@ import type {
 	AllowedMentionsTypes,
 	APIChannel,
 	APIDMChannel,
-	APIEmbed,
 	APIGroupDMChannel,
+	APIMessageTopLevelComponent,
 	APIRole,
 	Locale,
 } from "discord-api-types/v10";
@@ -17,8 +17,14 @@ import { api } from "#utils/discordApi";
 import { canSendEmbeds, canSendMessages } from "#utils/discordUtilities";
 import { extractDetailedMentions } from "#utils/util";
 import {
-	EmbedBuilder,
+	ActionRowBuilder,
+	ButtonBuilder,
+	ContainerBuilder,
 	escapeMarkdown,
+	MediaGalleryBuilder,
+	SectionBuilder,
+	TextDisplayBuilder,
+	ThumbnailBuilder,
 	time,
 	TimestampStyles,
 } from "@discordjs/builders";
@@ -26,6 +32,7 @@ import { err, ok, Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
+import { ButtonStyle, MessageFlags } from "discord-api-types/v10";
 
 /**
  * The reason a notification could not be delivered.
@@ -63,6 +70,12 @@ export interface OfflineNotificationOptions {
 	date: Date;
 	/** See {@link OnlineNotificationOptions.testNotice}. */
 	testNotice?: boolean;
+}
+
+/** The data an online notification is rendered from. */
+export interface OnlineNotificationData extends TwitchOnlineEmbedData {
+	/** The lowercase login name, which is what Twitch's URLs are keyed on. */
+	userLogin: string;
 }
 
 type GuildChannel = Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>;
@@ -109,10 +122,10 @@ export async function sendOnlineNotification(
 		);
 	}
 
-	// The custom message is optional for online subscriptions, the embed alone is already the
+	// The custom message is optional for online subscriptions, the container alone is already the
 	// notification.
 	return send(channel.id, options.message, options.testNotice, t, [
-		buildOnlineEmbed(data, t),
+		...buildOnlineComponents(data, t),
 	]);
 }
 
@@ -144,7 +157,9 @@ export async function sendOfflineNotification(
 export function buildOnlineEmbedData(
 	notification: TwitchEventSubOnlineEvent,
 	streamData: TwitchHelixStreamsResult | null,
-): TwitchOnlineEmbedData {
+): OnlineNotificationData {
+	const userLogin = notification.broadcaster_user_login.toLowerCase();
+
 	return {
 		embedThumbnailUrl: streamData?.game_box_art_url?.replace(
 			kTwitchImageReplacerRegex,
@@ -154,56 +169,75 @@ export function buildOnlineEmbedData(
 		language: streamData?.language,
 		startedAt: new Date(notification.started_at),
 		title: escapeText(streamData?.title),
+		userLogin,
 		userName: notification.broadcaster_user_name,
 		viewerCount: streamData?.viewer_count,
-		embedImageUrl: streamData?.thumbnail_url.replace(
-			kTwitchImageReplacerRegex,
-			"128",
-		),
+		// The `thumbnail_url` of the Helix stream is a cached snapshot that is often minutes old and
+		// downscaled; the live preview endpoint always serves the current frame at full size. A
+		// preview only exists while the streamer is live, so it is skipped without stream data.
+		embedImageUrl: isNullish(streamData)
+			? undefined
+			: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${userLogin}-0x0.jpg?t=${Date.now()}`,
 	};
 }
 
-export function buildOnlineEmbed(
-	data: TwitchOnlineEmbedData,
+export function buildOnlineComponents(
+	data: OnlineNotificationData,
 	t: TFunction<AnyNamespace>,
-): APIEmbed {
-	const embed = new EmbedBuilder()
-		.setURL(`https://twitch.tv/${data.userName}`)
-		.setFooter({ text: t("events/twitch:offlinePostfix") })
-		.setColor(TwitchBrandingColor)
-		.setTimestamp(data.startedAt);
+): APIMessageTopLevelComponent[] {
+	const url = `https://twitch.tv/${data.userLogin}`;
 
-	// `setTitle("")` throws: the builder rejects an empty string. `fetchStream` answers `null` when
-	// Twitch has not published the stream yet — a routine race at go-live — which used to make the
-	// whole notification blow up instead of arriving without a title.
-	if (data.title) {
-		embed.setTitle(data.title);
+	// An empty title (Twitch has not published the stream yet — a routine race at go-live) would
+	// render as a bare link, so the streamer's name stands in for it.
+	const heading = new TextDisplayBuilder().setContent(
+		`### [${data.title || escapeText(data.userName)}](${url})`,
+	);
+	const header = new TextDisplayBuilder().setContent(
+		`**${t("events/twitch:embedHeader", { userName: escapeText(data.userName) })}**`,
+	);
+	const intro = [header, heading];
+	if (data.gameName) {
+		intro.push(
+			new TextDisplayBuilder().setContent(
+				`**${t("events/twitch:embedGame")}**\n${escapeText(data.gameName)}`,
+			),
+		);
 	}
 
-	if (data.gameName) {
-		embed.setDescription(
-			t("events/twitch:embedDescriptionWithGame", {
-				userName: data.userName,
-				gameName: data.gameName,
-			}),
+	const card = new ContainerBuilder().setAccentColor(TwitchBrandingColor);
+	if (data.embedThumbnailUrl) {
+		card.addSectionComponents(
+			new SectionBuilder()
+				.addTextDisplayComponents(...intro)
+				.setThumbnailAccessory(
+					new ThumbnailBuilder().setURL(data.embedThumbnailUrl),
+				),
 		);
 	} else {
-		embed.setDescription(
-			t("events/twitch:embedDescription", {
-				userName: data.userName,
-			}),
+		card.addTextDisplayComponents(...intro);
+	}
+
+	const previewUrl = data.embedImageUrl;
+	if (previewUrl) {
+		card.addMediaGalleryComponents(
+			new MediaGalleryBuilder().addItems((item) => item.setURL(previewUrl)),
 		);
 	}
 
-	if (data.embedImageUrl) {
-		embed.setImage(data.embedImageUrl);
-	}
+	card.addTextDisplayComponents(
+		new TextDisplayBuilder().setContent(
+			`-# ${t("events/twitch:offlinePostfix")} • ${time(data.startedAt, TimestampStyles.ShortDateTime)}`,
+		),
+	);
 
-	if (data.embedThumbnailUrl) {
-		embed.setThumbnail(data.embedThumbnailUrl);
-	}
+	const watch = new ActionRowBuilder<ButtonBuilder>().addComponents(
+		new ButtonBuilder()
+			.setStyle(ButtonStyle.Link)
+			.setLabel(t("events/twitch:watchStream"))
+			.setURL(url),
+	);
 
-	return embed.toJSON();
+	return [card.toJSON(), watch.toJSON()];
 }
 
 export function buildOfflineMessage(
@@ -299,7 +333,7 @@ async function send(
 	message: string | null,
 	testNotice: boolean | undefined,
 	t: TFunction<AnyNamespace>,
-	embeds?: APIEmbed[],
+	components?: APIMessageTopLevelComponent[],
 ): Promise<Result<void, NotificationDeliveryError>> {
 	// The mentions are extracted from the stored message alone; the test notice is a plain literal
 	// and must not be able to widen `allowed_mentions`.
@@ -309,7 +343,7 @@ async function send(
 		: message;
 
 	container.logger.debug(
-		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} embeds=${embeds?.length ?? 0} mentions=${JSON.stringify(
+		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} components=${components?.length ?? 0} mentions=${JSON.stringify(
 			{
 				parse: detailedMentions.parse,
 				users: [...detailedMentions.users],
@@ -319,10 +353,20 @@ async function send(
 		)}`,
 	);
 
+	// Components V2 messages cannot carry `content`, so the text moves into a leading text display.
 	const result = await Result.fromAsync(() =>
 		api().channels.createMessage(channelId, {
-			content: content || undefined,
-			embeds,
+			...(components
+				? {
+						components: [
+							...(content
+								? [new TextDisplayBuilder().setContent(content).toJSON()]
+								: []),
+							...components,
+						],
+						flags: MessageFlags.IsComponentsV2,
+					}
+				: { content: content || undefined }),
 			allowed_mentions: {
 				// `extractDetailedMentions` yields the raw string union, which is the same set of values
 				// as the enum but not assignable to it.

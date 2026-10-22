@@ -1035,8 +1035,27 @@ describe("subscriptions twitch test", () => {
 		const [, body] = apiMock.channels.createMessage.mock.calls[0]!;
 		return body as {
 			content?: string;
-			embeds?: { title?: string; description?: string }[];
+			embeds?: unknown[];
+			components?: { type: number; content?: string; components?: unknown[] }[];
 		};
+	}
+
+	/** Every text display of the sent notification, joined. */
+	function sentText() {
+		const texts: string[] = [];
+		const visit = (components: unknown[] = []) => {
+			for (const entry of components) {
+				const component = entry as {
+					type: number;
+					content?: string;
+					components?: unknown[];
+				};
+				if (component.type === 10) texts.push(component.content!);
+				visit(component.components);
+			}
+		};
+		visit(sentBody().components);
+		return texts.join("\n");
 	}
 
 	function buildTestInteraction(type: string) {
@@ -1083,10 +1102,10 @@ describe("subscriptions twitch test", () => {
 		await runner.run(buildTestInteraction("StreamOnline"));
 
 		expect(apiMock.channels.createMessage).toHaveBeenCalledOnce();
-		const body = sentBody();
-		expect(body.content).toContain("Test notification");
-		expect(body.content).toContain(SubscriptionMessage);
-		expect(body.embeds?.[0]?.title).toBe("A great stream");
+		expect(sentBody().embeds).toBeUndefined();
+		expect(sentText()).toContain("Test notification");
+		expect(sentText()).toContain(SubscriptionMessage);
+		expect(sentText()).toContain("### [A great stream](");
 		expect(patchedContent()).toContain("Sent! Check");
 	});
 
@@ -1096,7 +1115,7 @@ describe("subscriptions twitch test", () => {
 
 		await runner.run(buildTestInteraction("StreamOnline"));
 
-		expect(sentBody().embeds?.[0]?.title).toBe("Test notification");
+		expect(sentText()).toContain("### [Test notification](");
 		expect(patchedContent()).toContain("Sent! Check");
 	});
 
