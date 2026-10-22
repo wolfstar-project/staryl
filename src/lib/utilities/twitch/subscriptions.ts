@@ -652,7 +652,11 @@ export function resetGuildSubscriptions(
  */
 export async function testSubscriptionDelivery(
 	subscription: GuildSubscriptionWithTwitch,
-	streamer: Pick<TwitchHelixUsersSearchResult, "id" | "login" | "display_name">,
+	streamer: Pick<
+		TwitchHelixUsersSearchResult,
+		"id" | "login" | "display_name"
+	> &
+		Partial<Pick<TwitchHelixUsersSearchResult, "profile_image_url">>,
 ): Promise<Result<void, NotificationDeliveryError | "missingMessage">> {
 	const target = {
 		guildId: subscription.guildId,
@@ -693,6 +697,7 @@ export async function testSubscriptionDelivery(
 				).toISOString(),
 			},
 			streamData,
+			avatarUrl: streamer.profile_image_url,
 			testNotice: true,
 		});
 	}

@@ -158,11 +158,12 @@ declare module "i18next" {
         discordAbortError: "The request was aborted. Please try again later.";
       };
       "events/twitch": {
-        embedDescription: "{{userName}} is now live!";
-        embedDescriptionWithGame: "{{userName}} is now live - Streaming {{gameName}}!";
+        embedGame: "Game";
+        embedHeader: "{{userName}} is now live on Twitch!";
         offlinePostfix: "Staryl Twitch Notifications";
         testNotice: "🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.";
         testPlaceholderTitle: "Test notification";
+        watchStream: "Watch Stream";
       };
       globals: {
         default: "{{key}} has not been localized for en-US yet.";

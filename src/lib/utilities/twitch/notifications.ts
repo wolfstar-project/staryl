@@ -8,8 +8,8 @@ import type {
 	AllowedMentionsTypes,
 	APIChannel,
 	APIDMChannel,
-	APIEmbed,
 	APIGroupDMChannel,
+	APIMessageTopLevelComponent,
 	APIRole,
 	Locale,
 } from "discord-api-types/v10";
@@ -17,8 +17,14 @@ import { api } from "#utils/discordApi";
 import { canSendEmbeds, canSendMessages } from "#utils/discordUtilities";
 import { extractDetailedMentions } from "#utils/util";
 import {
-	EmbedBuilder,
+	ActionRowBuilder,
+	ButtonBuilder,
+	ContainerBuilder,
 	escapeMarkdown,
+	MediaGalleryBuilder,
+	SectionBuilder,
+	TextDisplayBuilder,
+	ThumbnailBuilder,
 	time,
 	TimestampStyles,
 } from "@discordjs/builders";
@@ -26,6 +32,7 @@ import { err, ok, Result } from "@sapphire/result";
 import { cast, isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
+import { ButtonStyle, MessageFlags } from "discord-api-types/v10";
 
 /**
  * The reason a notification could not be delivered.
@@ -47,6 +54,8 @@ export interface OnlineNotificationOptions {
 	message: string | null;
 	event: TwitchEventSubOnlineEvent;
 	streamData: TwitchHelixStreamsResult | null;
+	/** The streamer's profile picture, shown beside the header. Omitted when it is unknown. */
+	avatarUrl?: string | null;
 	/**
 	 * Prepends the localized test notice to the content so the members of the
 	 * channel do not read a manually triggered preview as the streamer actually going live, and
@@ -63,6 +72,13 @@ export interface OfflineNotificationOptions {
 	date: Date;
 	/** See {@link OnlineNotificationOptions.testNotice}. */
 	testNotice?: boolean;
+}
+
+/** The data an online notification is rendered from. */
+export interface OnlineNotificationData extends TwitchOnlineEmbedData {
+	/** The lowercase login name, which is what Twitch's URLs are keyed on. */
+	userLogin: string;
+	avatarUrl?: string;
 }
 
 type GuildChannel = Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>;
@@ -94,14 +110,18 @@ export async function sendOnlineNotification(
 	}
 
 	const { channel, t } = targetResult.unwrap();
-	const data = buildOnlineEmbedData(options.event, options.streamData);
+	const data = buildOnlineEmbedData(
+		options.event,
+		options.streamData,
+		options.avatarUrl,
+	);
 	container.logger.debug(
 		`[twitch-notifications] Online embed data for channel ${channel.id}: ${JSON.stringify(data)}`,
 	);
 
-	// A `test` on a streamer that is not live has no stream to describe, and `setTitle("")` renders
-	// as a bare link. Only the test path substitutes it: a real notification that raced ahead of
-	// Twitch's stream data must keep the original behaviour.
+	// A `test` on a streamer that is not live has no stream to describe. Only the test path
+	// substitutes a placeholder title: a real notification that raced ahead of Twitch's stream data
+	// falls back to the streamer's name in the heading instead.
 	if (options.testNotice && isNullish(options.streamData)) {
 		data.title = t("events/twitch:testPlaceholderTitle");
 		container.logger.debug(
@@ -109,10 +129,10 @@ export async function sendOnlineNotification(
 		);
 	}
 
-	// The custom message is optional for online subscriptions, the embed alone is already the
+	// The custom message is optional for online subscriptions, the container alone is already the
 	// notification.
 	return send(channel.id, options.message, options.testNotice, t, [
-		buildOnlineEmbed(data, t),
+		...buildOnlineComponents(data, t),
 	]);
 }
 
@@ -144,8 +164,12 @@ export async function sendOfflineNotification(
 export function buildOnlineEmbedData(
 	notification: TwitchEventSubOnlineEvent,
 	streamData: TwitchHelixStreamsResult | null,
-): TwitchOnlineEmbedData {
+	avatarUrl?: string | null,
+): OnlineNotificationData {
+	const userLogin = notification.broadcaster_user_login.toLowerCase();
+
 	return {
+		avatarUrl: avatarUrl ?? undefined,
 		embedThumbnailUrl: streamData?.game_box_art_url?.replace(
 			kTwitchImageReplacerRegex,
 			"128",
@@ -154,56 +178,89 @@ export function buildOnlineEmbedData(
 		language: streamData?.language,
 		startedAt: new Date(notification.started_at),
 		title: escapeText(streamData?.title),
+		userLogin,
 		userName: notification.broadcaster_user_name,
 		viewerCount: streamData?.viewer_count,
-		embedImageUrl: streamData?.thumbnail_url.replace(
-			kTwitchImageReplacerRegex,
-			"128",
-		),
+		// The `thumbnail_url` of the Helix stream is a cached snapshot that is often minutes old and
+		// downscaled; the live preview endpoint always serves the current frame at full size. A
+		// preview only exists while the streamer is live, so it is skipped without stream data.
+		embedImageUrl: isNullish(streamData)
+			? undefined
+			: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${userLogin}-0x0.jpg?t=${Date.now()}`,
 	};
 }
 
-export function buildOnlineEmbed(
-	data: TwitchOnlineEmbedData,
+export function buildOnlineComponents(
+	data: OnlineNotificationData,
 	t: TFunction<AnyNamespace>,
-): APIEmbed {
-	const embed = new EmbedBuilder()
-		.setURL(`https://twitch.tv/${data.userName}`)
-		.setFooter({ text: t("events/twitch:offlinePostfix") })
-		.setColor(TwitchBrandingColor)
-		.setTimestamp(data.startedAt);
+): APIMessageTopLevelComponent[] {
+	const url = `https://twitch.tv/${data.userLogin}`;
 
-	// `setTitle("")` throws: the builder rejects an empty string. `fetchStream` answers `null` when
-	// Twitch has not published the stream yet — a routine race at go-live — which used to make the
-	// whole notification blow up instead of arriving without a title.
-	if (data.title) {
-		embed.setTitle(data.title);
+	// An empty title (Twitch has not published the stream yet — a routine race at go-live) would
+	// render as a bare link, so the streamer's name stands in for it.
+	const header = new TextDisplayBuilder().setContent(
+		`**${t("events/twitch:embedHeader", { userName: escapeText(data.userName) })}**`,
+	);
+	const details = [
+		new TextDisplayBuilder().setContent(
+			`### [${data.title || escapeText(data.userName)}](${url})`,
+		),
+	];
+	if (data.gameName) {
+		details.push(
+			new TextDisplayBuilder().setContent(
+				`**${t("events/twitch:embedGame")}**\n${escapeText(data.gameName)}`,
+			),
+		);
 	}
 
-	if (data.gameName) {
-		embed.setDescription(
-			t("events/twitch:embedDescriptionWithGame", {
-				userName: data.userName,
-				gameName: data.gameName,
-			}),
+	const card = new ContainerBuilder().setAccentColor(TwitchBrandingColor);
+
+	// A section needs a thumbnail accessory, so each block falls back to plain text displays when
+	// it has no picture.
+	if (data.avatarUrl) {
+		card.addSectionComponents(
+			new SectionBuilder()
+				.addTextDisplayComponents(header)
+				.setThumbnailAccessory(new ThumbnailBuilder().setURL(data.avatarUrl)),
 		);
 	} else {
-		embed.setDescription(
-			t("events/twitch:embedDescription", {
-				userName: data.userName,
-			}),
-		);
-	}
-
-	if (data.embedImageUrl) {
-		embed.setImage(data.embedImageUrl);
+		card.addTextDisplayComponents(header);
 	}
 
 	if (data.embedThumbnailUrl) {
-		embed.setThumbnail(data.embedThumbnailUrl);
+		card.addSectionComponents(
+			new SectionBuilder()
+				.addTextDisplayComponents(...details)
+				.setThumbnailAccessory(
+					new ThumbnailBuilder().setURL(data.embedThumbnailUrl),
+				),
+		);
+	} else {
+		card.addTextDisplayComponents(...details);
 	}
 
-	return embed.toJSON();
+	const previewUrl = data.embedImageUrl;
+	if (previewUrl) {
+		card.addMediaGalleryComponents(
+			new MediaGalleryBuilder().addItems((item) => item.setURL(previewUrl)),
+		);
+	}
+
+	card.addTextDisplayComponents(
+		new TextDisplayBuilder().setContent(
+			`-# ${t("events/twitch:offlinePostfix")} • ${time(data.startedAt, TimestampStyles.ShortDateTime)}`,
+		),
+	);
+
+	const watch = new ActionRowBuilder<ButtonBuilder>().addComponents(
+		new ButtonBuilder()
+			.setStyle(ButtonStyle.Link)
+			.setLabel(t("events/twitch:watchStream"))
+			.setURL(url),
+	);
+
+	return [card.toJSON(), watch.toJSON()];
 }
 
 export function buildOfflineMessage(
@@ -219,7 +276,12 @@ export function escapeText(text?: string) {
 		return "";
 	}
 
-	return escapeMarkdown(text.replace(/\\/g, "\\\\").replace(/"/g, '\\"'));
+	// `escapeMarkdown` leaves `[` and `]` alone, and `maskedLink` only matches a whole `[..](..)`
+	// pair. The title is streamer-controlled and ends up inside the link text of the heading, so a
+	// stray `](` would otherwise retarget the link.
+	return escapeMarkdown(
+		text.replace(/\\/g, "\\\\").replace(/"/g, '\\"'),
+	).replace(/[[\]]/g, "\\$&");
 }
 
 /**
@@ -299,7 +361,7 @@ async function send(
 	message: string | null,
 	testNotice: boolean | undefined,
 	t: TFunction<AnyNamespace>,
-	embeds?: APIEmbed[],
+	components?: APIMessageTopLevelComponent[],
 ): Promise<Result<void, NotificationDeliveryError>> {
 	// The mentions are extracted from the stored message alone; the test notice is a plain literal
 	// and must not be able to widen `allowed_mentions`.
@@ -309,7 +371,7 @@ async function send(
 		: message;
 
 	container.logger.debug(
-		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} embeds=${embeds?.length ?? 0} mentions=${JSON.stringify(
+		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} components=${components?.length ?? 0} mentions=${JSON.stringify(
 			{
 				parse: detailedMentions.parse,
 				users: [...detailedMentions.users],
@@ -319,10 +381,20 @@ async function send(
 		)}`,
 	);
 
+	// Components V2 messages cannot carry `content`, so the text moves into a leading text display.
 	const result = await Result.fromAsync(() =>
 		api().channels.createMessage(channelId, {
-			content: content || undefined,
-			embeds,
+			...(components
+				? {
+						components: [
+							...(content
+								? [new TextDisplayBuilder().setContent(content).toJSON()]
+								: []),
+							...components,
+						],
+						flags: MessageFlags.IsComponentsV2,
+					}
+				: { content: content || undefined }),
 			allowed_mentions: {
 				// `extractDetailedMentions` yields the raw string union, which is the same set of values
 				// as the enum but not assignable to it.

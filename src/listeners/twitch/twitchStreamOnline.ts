@@ -1,9 +1,16 @@
 // oxlint-disable no-await-in-loop -- sequential per-guild processing is intentional
 import type { TwitchEventSubOnlineEvent } from "@wolfstar/twitch-helpers";
+import { setTimeout as sleep } from "node:timers/promises";
 import { streamNotificationDrip } from "#twitch";
 import { sendOnlineNotification } from "#twitch/notifications";
+import { getStreamerById } from "#twitch/subscriptions";
+import { Time } from "@sapphire/time-utilities";
+import { isNullish } from "@sapphire/utilities";
 import { Listener } from "@wolfstar/http-framework";
 import { fetchStream, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
+
+/** How long the notification waits for the optional avatar before it goes out without one. */
+const AvatarLookupDeadline = Time.Second * 2;
 
 export default class extends Listener {
 	public async run(data: TwitchEventSubOnlineEvent) {
@@ -27,7 +34,11 @@ export default class extends Listener {
 			return;
 		}
 
-		const streamData = await fetchStream(data.broadcaster_user_id);
+		// One profile look-up serves every guild below; a failed or slow one only costs the avatar.
+		const [streamData, avatarUrl] = await Promise.all([
+			fetchStream(data.broadcaster_user_id),
+			this.#fetchAvatarUrl(data.broadcaster_user_id),
+		]);
 		this.container.logger.debug(
 			`[twitch-stream-online] Streamer ${data.broadcaster_user_id} has ${twitchSubscription.guildSubscription.length} guild subscription(s), stream data: ${JSON.stringify(streamData)}`,
 		);
@@ -55,6 +66,7 @@ export default class extends Listener {
 				message: guildSubscription.message,
 				event: data,
 				streamData,
+				avatarUrl,
 			});
 
 			if (result.isErr()) {
@@ -67,5 +79,29 @@ export default class extends Listener {
 				);
 			}
 		}
+	}
+
+	async #fetchAvatarUrl(streamerId: string) {
+		// `getStreamerById` has no deadline of its own, and the avatar must never hold up an alert
+		// that is otherwise ready to send.
+		const timer = new AbortController();
+		const timeout = sleep(AvatarLookupDeadline, undefined, {
+			signal: timer.signal,
+		}).catch(() => undefined);
+
+		const avatarUrl = await Promise.race([
+			getStreamerById(streamerId).then(
+				(streamer) => streamer?.profile_image_url,
+			),
+			timeout,
+		]);
+		timer.abort();
+
+		if (isNullish(avatarUrl)) {
+			this.container.logger.debug(
+				`[twitch-stream-online] No avatar for streamer ${streamerId}, sending without one`,
+			);
+		}
+		return avatarUrl;
 	}
 }

@@ -4,8 +4,13 @@ import {
 	sendOfflineNotification,
 	sendOnlineNotification,
 } from "#twitch/notifications";
-import { container } from "@wolfstar/http-framework";
-import { PermissionFlagsBits } from "discord-api-types/v10";
+import { container as piece } from "@wolfstar/http-framework";
+import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
+import {
+	ButtonStyle,
+	MessageFlags,
+	PermissionFlagsBits,
+} from "discord-api-types/v10";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiMock = vi.hoisted(() => ({
@@ -81,22 +86,61 @@ function grantPermissions(
 	apiMock.channels.createMessage.mockResolvedValue({ id: "1" });
 }
 
+interface SentComponent {
+	type: number;
+	content?: string;
+	accent_color?: number;
+	components?: SentComponent[];
+	accessory?: { media: { url: string } };
+	items?: { media: { url: string } }[];
+	url?: string;
+	label?: string;
+	style?: number;
+}
+
+const ComponentType = {
+	ActionRow: 1,
+	Button: 2,
+	Section: 9,
+	TextDisplay: 10,
+	MediaGallery: 12,
+	Container: 17,
+} as const;
+
 function sentBody() {
 	const [, body] = apiMock.channels.createMessage.mock.calls[0]!;
 	return body as {
 		content?: string;
-		embeds?: {
-			title?: string;
-			description?: string;
-			image?: { url: string };
-		}[];
+		flags?: number;
+		components?: SentComponent[];
 		allowed_mentions: { parse: string[]; users: string[]; roles: string[] };
 	};
 }
 
+function container() {
+	return sentBody().components!.find(
+		(component) => component.type === ComponentType.Container,
+	)!;
+}
+
+/** Every text display of the notification, joined, wherever it is nested. */
+function sentText() {
+	const texts: string[] = [];
+	const visit = (components: SentComponent[] = []) => {
+		for (const component of components) {
+			if (component.type === ComponentType.TextDisplay) {
+				texts.push(component.content!);
+			}
+			visit(component.components);
+		}
+	};
+	visit(sentBody().components);
+	return texts.join("\n");
+}
+
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.spyOn(container.logger, "error").mockImplementation(() => {
+	vi.spyOn(piece.logger, "error").mockImplementation(() => {
 		// noop
 	});
 	grantPermissions(FullPermissions);
@@ -119,15 +163,118 @@ describe("sendOnlineNotification", () => {
 		);
 
 		const body = sentBody();
-		expect(body.content).toBe("Hey @everyone!");
-		expect(body.embeds?.[0]?.title).toBe("A great stream");
-		expect(body.embeds?.[0]?.description).toBe(
-			`${StreamerName} is now live - Streaming Just Chatting!`,
+		// Components V2 messages cannot carry `content`: the stored message leads as a text display.
+		expect(body.flags).toBe(MessageFlags.IsComponentsV2);
+		expect(body.content).toBeUndefined();
+		expect(body.components?.[0]).toMatchObject({
+			type: ComponentType.TextDisplay,
+			content: "Hey @everyone!",
+		});
+
+		expect(container().accent_color).toBe(TwitchBrandingColor);
+		const text = sentText();
+		expect(text).toContain(`**${StreamerName} is now live on Twitch!**`);
+		expect(text).toContain(
+			`### [A great stream](https://twitch.tv/${StreamerName.toLowerCase()})`,
 		);
+		expect(text).toContain("**Game**\nJust Chatting");
+		expect(text).toContain("Staryl Twitch Notifications");
+
 		// `{width}`/`{height}` must be substituted or Discord rejects the URL.
-		expect(body.embeds?.[0]?.image?.url).toBe(
-			"https://cdn.twitch.tv/thumb-128x128.png",
+		const section = container().components!.find(
+			(component) => component.type === ComponentType.Section,
 		);
+		expect(section?.accessory?.media.url).toBe(
+			"https://cdn.twitch.tv/box-128x128.png",
+		);
+
+		const gallery = container().components!.find(
+			(component) => component.type === ComponentType.MediaGallery,
+		);
+		expect(gallery?.items?.[0]?.media.url).toMatch(
+			/^https:\/\/static-cdn\.jtvnw\.net\/previews-ttv\/live_user_coolstreamer-0x0\.jpg\?t=\d+$/,
+		);
+
+		const row = body.components?.find(
+			(component) => component.type === ComponentType.ActionRow,
+		);
+		expect(row?.components?.[0]).toMatchObject({
+			type: ComponentType.Button,
+			style: ButtonStyle.Link,
+			label: "Watch Stream",
+			url: "https://twitch.tv/coolstreamer",
+		});
+	});
+
+	it("shows the streamer's avatar beside the header", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+			avatarUrl: "https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
+		});
+
+		const [headerSection, detailsSection] = container().components!.filter(
+			(component) => component.type === ComponentType.Section,
+		);
+		expect(headerSection?.accessory?.media.url).toBe(
+			"https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
+		);
+		expect(headerSection?.components?.[0]?.content).toBe(
+			`**${StreamerName} is now live on Twitch!**`,
+		);
+		// The box art keeps its own thumbnail on the title and game block.
+		expect(detailsSection?.accessory?.media.url).toBe(
+			"https://cdn.twitch.tv/box-128x128.png",
+		);
+	});
+
+	it("falls back to a plain header when the avatar is unknown", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+			avatarUrl: null,
+		});
+
+		const sections = container().components!.filter(
+			(component) => component.type === ComponentType.Section,
+		);
+		expect(sections).toHaveLength(1);
+		expect(container().components?.[0]).toMatchObject({
+			type: ComponentType.TextDisplay,
+			content: `**${StreamerName} is now live on Twitch!**`,
+		});
+	});
+
+	it("cannot let a stream title retarget the heading link", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData({ title: "a](https://evil.example) [b" }),
+		});
+
+		expect(sentText()).toContain(
+			"### [a\\](https://evil.example) \\[b](https://twitch.tv/coolstreamer)",
+		);
+	});
+
+	it("leads with the container when there is no custom message", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+		});
+
+		expect(sentBody().components?.[0]?.type).toBe(ComponentType.Container);
 	});
 
 	it("refuses to deliver when the bot cannot embed links", async () => {
@@ -233,9 +380,7 @@ describe("sendOnlineNotification", () => {
 		});
 
 		expect(result.isOk()).toBe(true);
-		expect(sentBody().embeds?.[0]?.description).toBe(
-			`${StreamerName} is now live - Streaming Just Chatting!`,
-		);
+		expect(sentText()).toContain("**Game**\nJust Chatting");
 	});
 
 	it("reports an unreachable guild", async () => {
@@ -276,10 +421,11 @@ describe("sendOnlineNotification", () => {
 			testNotice: true,
 		});
 
-		const body = sentBody();
-		expect(body.content).toBe(
-			"🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.\nHey!",
-		);
+		expect(sentBody().components?.[0]).toMatchObject({
+			type: ComponentType.TextDisplay,
+			content:
+				"🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.\nHey!",
+		});
 	});
 
 	it("uses a placeholder title when testing a streamer that is not live", async () => {
@@ -292,14 +438,22 @@ describe("sendOnlineNotification", () => {
 			testNotice: true,
 		});
 
-		const body = sentBody();
-		expect(body.embeds?.[0]?.title).toBe("Test notification");
-		expect(body.embeds?.[0]?.description).toBe(`${StreamerName} is now live!`);
+		const text = sentText();
+		expect(text).toContain("### [Test notification](");
+		expect(text).not.toContain("**Game**");
+		// No stream means no preview frame and no box art to show.
+		expect(
+			container().components?.some(
+				(component) =>
+					component.type === ComponentType.MediaGallery ||
+					component.type === ComponentType.Section,
+			),
+		).toBe(false);
 	});
 
-	it("keeps the empty title for a real notification without stream data", async () => {
-		// Only the test path substitutes the placeholder; a real notification racing ahead of Twitch's
-		// stream data must behave exactly as before.
+	it("falls back to the streamer's name for a real notification without stream data", async () => {
+		// Only the test path substitutes the placeholder title; a real notification racing ahead of
+		// Twitch's stream data has no title to show.
 		await sendOnlineNotification({
 			guildId: GuildId,
 			channelId: ChannelId,
@@ -308,7 +462,10 @@ describe("sendOnlineNotification", () => {
 			streamData: null,
 		});
 
-		expect(sentBody().embeds?.[0]?.title).toBeUndefined();
+		// The streamer's name stands in for the missing title instead of rendering a bare link.
+		expect(sentText()).toContain(
+			`### [${StreamerName}](https://twitch.tv/coolstreamer)`,
+		);
 	});
 
 	it("does not let the test notice widen allowed_mentions", async () => {
