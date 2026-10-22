@@ -54,7 +54,7 @@ export interface OnlineNotificationOptions {
 	message: string | null;
 	event: TwitchEventSubOnlineEvent;
 	streamData: TwitchHelixStreamsResult | null;
-	/** The streamer's profile picture, shown beside the header. Omitted when it is unknown. */
+	/** The streamer's profile picture, shown when the stream has no game art. Omitted when it is unknown. */
 	avatarUrl?: string | null;
 	/**
 	 * Prepends the localized test notice to the content so the members of the
@@ -198,43 +198,30 @@ export function buildOnlineComponents(
 
 	// An empty title (Twitch has not published the stream yet — a routine race at go-live) would
 	// render as a bare link, so the streamer's name stands in for it.
-	const header = new TextDisplayBuilder().setContent(
+	const lines = [
 		`**${t("events/twitch:embedHeader", { userName: escapeText(data.userName) })}**`,
-	);
-	const details = [
-		new TextDisplayBuilder().setContent(
-			`### [${data.title || escapeText(data.userName)}](${url})`,
-		),
+		`### [${data.title || escapeText(data.userName)}](${url})`,
 	];
 	if (data.gameName) {
-		details.push(
-			new TextDisplayBuilder().setContent(
-				`**${t("events/twitch:embedGame")}**\n${escapeText(data.gameName)}`,
-			),
+		lines.push(
+			`**${t("events/twitch:embedGame")}**\n${escapeText(data.gameName)}`,
 		);
 	}
+	const details = lines.map((line) =>
+		new TextDisplayBuilder().setContent(line),
+	);
 
 	const card = new ContainerBuilder().setAccentColor(TwitchBrandingColor);
 
-	// A section needs a thumbnail accessory, so each block falls back to plain text displays when
-	// it has no picture.
-	if (data.avatarUrl) {
-		card.addSectionComponents(
-			new SectionBuilder()
-				.addTextDisplayComponents(header)
-				.setThumbnailAccessory(new ThumbnailBuilder().setURL(data.avatarUrl)),
-		);
-	} else {
-		card.addTextDisplayComponents(header);
-	}
-
-	if (data.embedThumbnailUrl) {
+	// One picture beside the text, as the embed this replaced had: the game's box art, or the
+	// streamer's avatar when the stream has no game. A section needs a thumbnail accessory, so the
+	// text falls back to plain displays when there is neither.
+	const thumbnailUrl = data.embedThumbnailUrl || data.avatarUrl;
+	if (thumbnailUrl) {
 		card.addSectionComponents(
 			new SectionBuilder()
 				.addTextDisplayComponents(...details)
-				.setThumbnailAccessory(
-					new ThumbnailBuilder().setURL(data.embedThumbnailUrl),
-				),
+				.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl)),
 		);
 	} else {
 		card.addTextDisplayComponents(...details);
@@ -280,7 +267,7 @@ export function escapeText(text?: string) {
 	// pair. The title is streamer-controlled and ends up inside the link text of the heading, so a
 	// stray `](` would otherwise retarget the link.
 	return escapeMarkdown(
-		text.replace(/\\/g, "\\\\").replace(/"/g, '\\"'),
+		text.trim().replace(/\\/g, "\\\\").replace(/"/g, '\\"'),
 	).replace(/[[\]]/g, "\\$&");
 }
 

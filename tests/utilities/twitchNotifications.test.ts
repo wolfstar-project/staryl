@@ -206,7 +206,7 @@ describe("sendOnlineNotification", () => {
 		});
 	});
 
-	it("shows the streamer's avatar beside the header", async () => {
+	it("keeps the header, title and game in one section with a single thumbnail", async () => {
 		await sendOnlineNotification({
 			guildId: GuildId,
 			channelId: ChannelId,
@@ -216,39 +216,76 @@ describe("sendOnlineNotification", () => {
 			avatarUrl: "https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
 		});
 
-		const [headerSection, detailsSection] = container().components!.filter(
+		const sections = container().components!.filter(
 			(component) => component.type === ComponentType.Section,
 		);
-		expect(headerSection?.accessory?.media.url).toBe(
-			"https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
-		);
-		expect(headerSection?.components?.[0]?.content).toBe(
+		expect(sections).toHaveLength(1);
+		expect(
+			sections[0]?.components?.map((component) => component.content),
+		).toEqual([
 			`**${StreamerName} is now live on Twitch!**`,
-		);
-		// The box art keeps its own thumbnail on the title and game block.
-		expect(detailsSection?.accessory?.media.url).toBe(
+			"### [A great stream](https://twitch.tv/coolstreamer)",
+			"**Game**\nJust Chatting",
+		]);
+		// The box art wins over the avatar, as the embed this replaced did.
+		expect(sections[0]?.accessory?.media.url).toBe(
 			"https://cdn.twitch.tv/box-128x128.png",
 		);
 	});
 
-	it("falls back to a plain header when the avatar is unknown", async () => {
+	it("shows the streamer's avatar when the stream has no game art", async () => {
 		await sendOnlineNotification({
 			guildId: GuildId,
 			channelId: ChannelId,
 			message: null,
 			event: onlineEvent,
-			streamData: streamData(),
+			streamData: streamData({ game_name: "", game_box_art_url: "" }),
+			avatarUrl: "https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
+		});
+
+		const section = container().components!.find(
+			(component) => component.type === ComponentType.Section,
+		);
+		expect(section?.accessory?.media.url).toBe(
+			"https://static-cdn.jtvnw.net/jtv_user_pictures/avatar.png",
+		);
+	});
+
+	it("falls back to plain text when there is neither game art nor an avatar", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData({ game_box_art_url: "" }),
 			avatarUrl: null,
 		});
 
-		const sections = container().components!.filter(
-			(component) => component.type === ComponentType.Section,
-		);
-		expect(sections).toHaveLength(1);
+		expect(
+			container().components?.some(
+				(component) => component.type === ComponentType.Section,
+			),
+		).toBe(false);
 		expect(container().components?.[0]).toMatchObject({
 			type: ComponentType.TextDisplay,
 			content: `**${StreamerName} is now live on Twitch!**`,
 		});
+	});
+
+	it("trims the title so the link text never carries stray whitespace", async () => {
+		// Regression: Twitch titles often end in a space, and Discord left the masked link unrendered
+		// (`[title ](url)` shown literally) instead of showing a clickable title.
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData({ title: "  A great stream 🎉 " }),
+		});
+
+		expect(sentText()).toContain(
+			"### [A great stream 🎉](https://twitch.tv/coolstreamer)",
+		);
 	});
 
 	it("cannot let a stream title retarget the heading link", async () => {
