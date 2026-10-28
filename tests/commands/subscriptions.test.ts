@@ -1076,6 +1076,12 @@ describe("subscriptions twitch test", () => {
 				PermissionFlagsBits.SendMessages |
 				PermissionFlagsBits.EmbedLinks,
 		);
+		// A notification with stream data asks Twitch whether the preview is ready: answered
+		// here, so no test reaches Twitch's CDN.
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockResolvedValue(new Response(null, { status: 200 })),
+		);
 		vi.mocked(fetchUsers).mockResolvedValue(
 			ok({
 				data: [
