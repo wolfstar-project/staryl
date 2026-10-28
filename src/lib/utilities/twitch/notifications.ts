@@ -115,6 +115,12 @@ export async function sendOnlineNotification(
 		options.streamData,
 		options.avatarUrl,
 	);
+	if (data.embedImageUrl && !(await isLivePreviewReady(data.embedImageUrl))) {
+		container.logger.debug(
+			`[twitch-notifications] No preview frame yet for ${data.userLogin}, leaving the gallery out`,
+		);
+		data.embedImageUrl = undefined;
+	}
 	container.logger.debug(
 		`[twitch-notifications] Online embed data for channel ${channel.id}: ${JSON.stringify(data)}`,
 	);
@@ -248,6 +254,25 @@ export function buildOnlineComponents(
 	);
 
 	return [card.toJSON(), watch.toJSON()];
+}
+
+/**
+ * Whether Twitch has a frame of the stream at `url`. Right after going live it has none yet and
+ * redirects to its grey "no preview" image; Discord keeps whatever it first fetched in the
+ * message, so that image would stay for good. A failed check counts as no frame: the notification
+ * goes out without the picture rather than late.
+ */
+export async function isLivePreviewReady(url: string): Promise<boolean> {
+	try {
+		const response = await fetch(url, {
+			method: "HEAD",
+			redirect: "manual",
+			signal: AbortSignal.timeout(3_000),
+		});
+		return response.status === 200;
+	} catch {
+		return false;
+	}
 }
 
 export function buildOfflineMessage(

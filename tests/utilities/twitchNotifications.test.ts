@@ -138,13 +138,24 @@ function sentText() {
 	return texts.join("\n");
 }
 
+/** Twitch's answer for a live preview: the frame (200), or a redirect to its "no preview" image. */
+const fetchMock = vi.fn();
+
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.spyOn(piece.logger, "error").mockImplementation(() => {
 		// noop
 	});
 	grantPermissions(FullPermissions);
+	fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+	vi.stubGlobal("fetch", fetchMock);
 });
+
+function gallery() {
+	return container().components!.find(
+		(component) => component.type === ComponentType.MediaGallery,
+	);
+}
 
 describe("sendOnlineNotification", () => {
 	it("posts the embed and the custom message", async () => {
@@ -204,6 +215,67 @@ describe("sendOnlineNotification", () => {
 			label: "Watch Stream",
 			url: "https://twitch.tv/coolstreamer",
 		});
+	});
+
+	it("leaves the preview out while Twitch has no frame of the stream yet", async () => {
+		// At go-live Twitch redirects the preview to its grey "no preview" image, which Discord
+		// would keep in the message for good.
+		fetchMock.mockResolvedValue(
+			new Response(null, {
+				status: 302,
+				headers: {
+					location:
+						"https://static-cdn.jtvnw.net/ttv-static/404_preview-0x0.jpg",
+				},
+			}),
+		);
+
+		const result = await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+		});
+
+		expect(result.isOk()).toBe(true);
+		expect(gallery()).toBeUndefined();
+		const [url, init] = fetchMock.mock.calls[0]!;
+		expect(String(url)).toMatch(
+			/previews-ttv\/live_user_coolstreamer-0x0\.jpg/,
+		);
+		expect(init).toMatchObject({ method: "HEAD", redirect: "manual" });
+		// The rest of the notification is untouched.
+		expect(sentText()).toContain(
+			"### [A great stream](https://twitch.tv/coolstreamer)",
+		);
+	});
+
+	it("still sends the notification when Twitch cannot be asked about the preview", async () => {
+		fetchMock.mockRejectedValue(new TypeError("fetch failed"));
+
+		const result = await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: streamData(),
+		});
+
+		expect(result.isOk()).toBe(true);
+		expect(gallery()).toBeUndefined();
+	});
+
+	it("does not ask Twitch for a preview without stream data", async () => {
+		await sendOnlineNotification({
+			guildId: GuildId,
+			channelId: ChannelId,
+			message: null,
+			event: onlineEvent,
+			streamData: null,
+		});
+
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
 	it("keeps the header, title and game in one section with a single thumbnail", async () => {
