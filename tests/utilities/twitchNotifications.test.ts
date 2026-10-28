@@ -138,7 +138,7 @@ function sentText() {
 	return texts.join("\n");
 }
 
-/** Twitch's answer for a live preview: the frame (200), or a redirect to its "no preview" image. */
+/** Stands in for `fetch`, which `sendOnlineNotification` calls to ask Twitch whether the preview is ready. */
 const fetchMock = vi.fn();
 
 beforeEach(() => {
@@ -147,6 +147,8 @@ beforeEach(() => {
 		// noop
 	});
 	grantPermissions(FullPermissions);
+	// Twitch has a frame of the stream (200); a test that needs the redirect to its grey "no
+	// preview" image answers 302 instead.
 	fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 	vi.stubGlobal("fetch", fetchMock);
 });
