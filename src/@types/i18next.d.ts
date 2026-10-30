@@ -77,8 +77,8 @@ declare module "i18next" {
         closed: "## Setup closed\nRun `/setup` whenever you need it again.";
         errors: {
           invalid: "This setup menu is invalid. Run `/setup` to open a new one.";
-          ownerOnly: "Only the administrator who opened this setup menu can use it.";
-          permissionRevoked: "You no longer have Administrator permission in this server. Run `/setup` again once it's restored.";
+          ownerOnly: "Only the member who opened this setup menu can use it.";
+          permissionRevoked: "You no longer have the Manage Server permission in this server. Run `/setup` again once it's restored.";
           actionUnavailable: "This setup action is no longer available. Run `/setup` again.";
           sectionUnavailable: "That setup section is not available.";
         };
@@ -161,7 +161,7 @@ declare module "i18next" {
         embedGame: "Game";
         embedHeader: "{{userName}} is now live on Twitch!";
         offlinePostfix: "Staryl Twitch Notifications";
-        testNotice: "🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.";
+        testNotice: "🧪 **Test notification** — this is a preview requested by a server manager, not a real stream update.";
         testPlaceholderTitle: "Test notification";
         watchStream: "Watch Stream";
       };

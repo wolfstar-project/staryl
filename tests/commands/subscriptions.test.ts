@@ -1227,7 +1227,7 @@ describe("subscriptions registration", () => {
 	it("registers a single command named subscriptions", () => {
 		expect(registeredCommand()).toMatchObject({
 			name: CommandName,
-			default_member_permissions: String(PermissionFlagsBits.Administrator),
+			default_member_permissions: String(PermissionFlagsBits.ManageGuild),
 		});
 	});
 

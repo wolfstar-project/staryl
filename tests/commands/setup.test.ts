@@ -153,12 +153,12 @@ function buildSubscription(
 	} as GuildSubscriptionWithTwitch;
 }
 
-// The interaction handler re-checks Administrator on every privileged action (a still-open menu
+// The interaction handler re-checks Manage Server on every privileged action (a still-open menu
 // must not outlive a permission revoked after `/setup` was opened), so every fixture below grants
-// it by default; `rejects a member who lost Administrator after opening the menu` overrides it.
-const AdminMember = {
+// it by default; `rejects a member who lost Manage Server after opening the menu` overrides it.
+const ManagerMember = {
 	...MessageComponentButtonInteractionData.member,
-	permissions: String(PermissionFlagsBits.Administrator),
+	permissions: String(PermissionFlagsBits.ManageGuild),
 };
 
 /** Reads the body of the deferred response's follow-up PATCH (see the `beforeEach` REST spy). */
@@ -170,7 +170,7 @@ function patchedBody(): { content?: string; components?: unknown[] } {
 function buttonInteraction(action: string, userId = OwnerId) {
 	return {
 		...MessageComponentButtonInteractionData,
-		member: AdminMember,
+		member: ManagerMember,
 		data: {
 			...MessageComponentButtonInteractionData.data,
 			custom_id: buildSetupCustomId(userId, action),
@@ -181,7 +181,7 @@ function buttonInteraction(action: string, userId = OwnerId) {
 function selectInteraction(action: string, values: string[], userId = OwnerId) {
 	return {
 		...MessageComponentStringSelectInteractionData,
-		member: AdminMember,
+		member: ManagerMember,
 		data: {
 			...MessageComponentStringSelectInteractionData.data,
 			custom_id: buildSetupCustomId(userId, action),
@@ -196,7 +196,7 @@ function modalInteraction(
 ) {
 	return {
 		...ModalSubmitInteractionData,
-		member: AdminMember,
+		member: ManagerMember,
 		data: {
 			...ModalSubmitInteractionData.data,
 			custom_id: buildSetupCustomId(userId, "add:submit"),
@@ -225,13 +225,29 @@ describe("setup interaction handler: owner check", () => {
 		expect(result.json()).toMatchObject({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content:
-					"Only the administrator who opened this setup menu can use it.",
+				content: "Only the member who opened this setup menu can use it.",
 			},
 		});
 	});
 
-	it("rejects a member who lost Administrator after opening the menu", async () => {
+	it("accepts a member who only holds Administrator", async () => {
+		const interaction = buttonInteraction("close", OwnerId);
+		const adminInteraction = {
+			...interaction,
+			member: {
+				...interaction.member,
+				permissions: String(PermissionFlagsBits.Administrator),
+			},
+		};
+
+		const result = await runner.run(adminInteraction as never);
+
+		expect(result.json()).toMatchObject({
+			type: InteractionResponseType.UpdateMessage,
+		});
+	});
+
+	it("rejects a member who lost Manage Server after opening the menu", async () => {
 		const interaction = buttonInteraction("close", OwnerId);
 		const nonAdminInteraction = {
 			...interaction,
@@ -244,7 +260,7 @@ describe("setup interaction handler: owner check", () => {
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
 				content:
-					"You no longer have Administrator permission in this server. Run `/setup` again once it's restored.",
+					"You no longer have the Manage Server permission in this server. Run `/setup` again once it's restored.",
 			},
 		});
 	});
@@ -427,8 +443,7 @@ describe("setup interaction handler: add:submit", () => {
 		expect(result.json()).toMatchObject({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content:
-					"Only the administrator who opened this setup menu can use it.",
+				content: "Only the member who opened this setup menu can use it.",
 			},
 		});
 	});
@@ -596,7 +611,7 @@ describe("setup interaction handler: unhandled component types", () => {
 	it("replies with actionUnavailable for a modal submit action it does not recognise", async () => {
 		const interaction = {
 			...ModalSubmitInteractionData,
-			member: AdminMember,
+			member: ManagerMember,
 			data: {
 				...ModalSubmitInteractionData.data,
 				custom_id: buildSetupCustomId(OwnerId, "close"),

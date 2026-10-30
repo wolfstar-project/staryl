@@ -535,7 +535,7 @@ describe("sendOnlineNotification", () => {
 		expect(sentBody().components?.[0]).toMatchObject({
 			type: ComponentType.TextDisplay,
 			content:
-				"🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.\nHey!",
+				"🧪 **Test notification** — this is a preview requested by a server manager, not a real stream update.\nHey!",
 		});
 	});
 
