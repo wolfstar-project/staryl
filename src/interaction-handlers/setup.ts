@@ -33,10 +33,14 @@ import {
 } from "discord-api-types/v10";
 
 /**
- * Whether the interacting member currently holds Manage Server, re-checked on every privileged
- * action instead of trusting the owner id alone: `/setup` is Manage Server-gated at invocation,
- * but a still-open menu outlives that single check, so a member who loses the role afterwards
- * must not keep the ability to add, remove, reset, or test subscriptions through it.
+ * Whether the interacting member currently holds Manage Server (or Administrator, which implies
+ * it), re-checked on every privileged action instead of trusting the owner id alone: `/setup` is
+ * Manage Server-gated at invocation, but a still-open menu outlives that single check, so a member
+ * who loses the role afterwards must not keep the ability to add, remove, reset, or test
+ * subscriptions through it.
+ *
+ * Discord already expands Administrator into every permission bit in `member.permissions`; testing
+ * the bit explicitly keeps that from being an assumption this check silently depends on.
  */
 function hasManageGuildPermission(
 	interaction: InteractionHandler.Interaction,
@@ -44,9 +48,12 @@ function hasManageGuildPermission(
 	const permissions = interaction.member?.permissions;
 	if (typeof permissions !== "string") return false;
 
+	const bits = BigInt(permissions);
 	return (
-		(BigInt(permissions) & PermissionFlagsBits.ManageGuild) ===
-		PermissionFlagsBits.ManageGuild
+		(bits & PermissionFlagsBits.ManageGuild) ===
+			PermissionFlagsBits.ManageGuild ||
+		(bits & PermissionFlagsBits.Administrator) ===
+			PermissionFlagsBits.Administrator
 	);
 }
 
