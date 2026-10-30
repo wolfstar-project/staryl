@@ -1,7 +1,7 @@
 overrides:
   ansi-regex: ^6.4.0
   minimist: ^1.2.8
-  "@wolfstar/http-framework": ^6.3.0
+  "@wolfstar/http-framework": ^6.5.1
 
 allowBuilds:
   "@prisma/client": true
