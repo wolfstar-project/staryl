@@ -2,7 +2,7 @@
 	"embedGame": "Game",
 	"embedHeader": "{{userName}} is now live on Twitch!",
 	"offlinePostfix": "Staryl Twitch Notifications",
-	"testNotice": "🧪 **Test notification** — this is a preview requested by a server administrator, not a real stream update.",
+	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, not a real stream update.",
 	"testPlaceholderTitle": "Test notification",
 	"watchStream": "Watch Stream"
 }

@@ -24,7 +24,7 @@ import {
 		"commands/subscriptions:name",
 		"commands/subscriptions:description",
 	)
-		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
 		.setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
 		.setContexts(InteractionContextType.Guild)
 		.addSubcommandGroup((group) =>

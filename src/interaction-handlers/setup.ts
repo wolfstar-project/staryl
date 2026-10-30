@@ -33,20 +33,20 @@ import {
 } from "discord-api-types/v10";
 
 /**
- * Whether the interacting member currently holds Administrator, re-checked on every privileged
- * action instead of trusting the owner id alone: `/setup` is Administrator-gated at invocation,
+ * Whether the interacting member currently holds Manage Server, re-checked on every privileged
+ * action instead of trusting the owner id alone: `/setup` is Manage Server-gated at invocation,
  * but a still-open menu outlives that single check, so a member who loses the role afterwards
  * must not keep the ability to add, remove, reset, or test subscriptions through it.
  */
-function hasAdministratorPermission(
+function hasManageGuildPermission(
 	interaction: InteractionHandler.Interaction,
 ): boolean {
 	const permissions = interaction.member?.permissions;
 	if (typeof permissions !== "string") return false;
 
 	return (
-		(BigInt(permissions) & PermissionFlagsBits.Administrator) ===
-		PermissionFlagsBits.Administrator
+		(BigInt(permissions) & PermissionFlagsBits.ManageGuild) ===
+		PermissionFlagsBits.ManageGuild
 	);
 }
 
@@ -97,7 +97,7 @@ export class UserInteractionHandler extends InteractionHandler {
 			});
 		}
 
-		if (!hasAdministratorPermission(interaction)) {
+		if (!hasManageGuildPermission(interaction)) {
 			return interaction.reply({
 				content: t("commands/setup:errors.permissionRevoked"),
 				flags: MessageFlags.Ephemeral,

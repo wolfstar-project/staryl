@@ -19,7 +19,7 @@ import {
 		"commands/setup:name",
 		"commands/setup:description",
 	)
-		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
 		.setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
 		.setContexts(InteractionContextType.Guild),
 )
