@@ -11,7 +11,11 @@ const MaximumPushBytes = 64 * 1024;
 export function isWebSubConfigured(
 	env: Record<string, string | undefined> = process.env,
 ) {
-	return Boolean(env.YOUTUBE_WEBSUB_CALLBACK && env.YOUTUBE_WEBSUB_SECRET);
+	// A typo in the callback has to cost the pushes, not every check of every channel.
+	return (
+		Boolean(env.YOUTUBE_WEBSUB_SECRET) &&
+		URL.canParse(env.YOUTUBE_WEBSUB_CALLBACK ?? "")
+	);
 }
 
 export function getChannelTopic(channelId: string) {

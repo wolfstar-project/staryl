@@ -128,6 +128,18 @@ describe("fetchLatest", () => {
 		});
 	});
 
+	it("carries on without pushes when the callback is not a URL", async () => {
+		fetchMock.mockResolvedValueOnce(new Response(Feed));
+
+		const result = await makeProvider({
+			...WebSubEnv,
+			YOUTUBE_WEBSUB_CALLBACK: "staryl.example/youtube/websub",
+		}).fetchLatest(ChannelId, null);
+
+		expect(result.isOk()).toBe(true);
+		expect(fetchMock).toHaveBeenCalledOnce();
+	});
+
 	it("does not talk to the hub without WebSub configured", async () => {
 		fetchMock.mockResolvedValueOnce(new Response(Feed));
 
