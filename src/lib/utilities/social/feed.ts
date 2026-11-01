@@ -41,6 +41,9 @@ const parser = new XMLParser({
 	parseAttributeValue: false,
 	parseTagValue: false,
 	processEntities: false,
+	// Atom is usually the default namespace, but a valid feed can spell every tag `atom:title`. The
+	// other prefixes stay, since `media:content` and Atom's own `content` are different things.
+	transformTagName: (name) => name.replace(/^atom:/, ""),
 	trimValues: true,
 });
 

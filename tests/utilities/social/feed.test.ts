@@ -53,6 +53,36 @@ describe("parseFeed", () => {
 		});
 	});
 
+	it("reads an Atom feed that spells out its namespace prefix", () => {
+		const feed = parseFeed(`<atom:feed xmlns:atom="http://www.w3.org/2005/Atom">
+			<atom:title>Prefixed</atom:title>
+			<atom:entry>
+				<atom:id>1</atom:id>
+				<atom:title>One</atom:title>
+				<atom:link href="https://example.net/1"/>
+			</atom:entry>
+		</atom:feed>`)!;
+
+		expect(feed.title).toBe("Prefixed");
+		expect(feed.entries[0]).toMatchObject({
+			id: "1",
+			title: "One",
+			url: "https://example.net/1",
+		});
+	});
+
+	it("keeps Atom's content apart from the media namespace", () => {
+		const feed =
+			parseFeed(`<feed><entry><id>1</id><link href="https://a.example/1"/>
+			<content>Body</content><media:content url="https://a.example/1.png" medium="image"/>
+		</entry></feed>`)!;
+
+		expect(feed.entries[0]).toMatchObject({
+			text: "Body",
+			imageUrl: "https://a.example/1.png",
+		});
+	});
+
 	it("reads an RSS 1.0 document, whose items sit beside the channel", () => {
 		const feed = parseFeed(`<rdf:RDF xmlns:rdf="x">
 			<channel><title>RDF</title></channel>
