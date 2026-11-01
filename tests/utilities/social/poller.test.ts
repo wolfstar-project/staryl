@@ -393,6 +393,24 @@ describe("SocialPoller", () => {
 		expect(checks.at(-1)!.record.state).toEqual({ etag: "next" });
 	});
 
+	it("clears an old delivery error even when nothing ends up posted", async () => {
+		const source = makeSource(
+			{},
+			{
+				deliveryError: "MissingPermissions",
+				filters: { includeKeywords: ["nothing"] },
+			},
+		);
+		const { store, updates } = makeStore([source]);
+		const { delivery, posted } = makeDelivery();
+		const provider = makeProvider(async () => items(makeItem("a")));
+
+		await makePoller([provider], store, delivery).tick();
+
+		expect(posted).toEqual([]);
+		expect(updates[0].update.deliveryError).toBeNull();
+	});
+
 	it("retries an item Discord refuses, and gives up on it after a day", async () => {
 		const { delivery, posted } = makeDelivery();
 		delivery.send.mockResolvedValue(err(NotificationDeliveryError.SendFailed));

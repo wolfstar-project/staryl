@@ -349,7 +349,8 @@ export class SocialPoller {
 
 		let seenItemIds = mergeSeenIds(subscription.seenItemIds, settled);
 		if (settled.length > 0) {
-			await store.updateSubscription(key, { seenItemIds });
+			// Getting here proves the channel works, even if every item was filtered out.
+			await store.updateSubscription(key, { seenItemIds, deliveryError: null });
 		}
 
 		let pending = waiting.length > 0;
