@@ -1,9 +1,14 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
-import type { TwitchEventSubVerificationMessage } from "@wolfstar/twitch-helpers";
+import type {
+	TwitchEventSubResult,
+	TwitchEventSubVerificationMessage,
+} from "@wolfstar/twitch-helpers";
 import { StarylEvents, TwitchStreamStatus } from "#types";
 import { cast, isObject } from "@sapphire/utilities";
 import { Route } from "@wolfstar/plugin-api";
 import { checkSignature, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
+
+const RevocationMessageType = "revocation";
 
 export class UserRoute extends Route {
 	private lastNotificationId: string | null = null;
@@ -81,6 +86,16 @@ export class UserRoute extends Route {
 
 		// Tell the Twitch API this response was OK
 		response.text(challenge);
+
+		// A revocation carries no event, and without this it would pass for a verification request
+		if (
+			request.headers["twitch-eventsub-message-type"] === RevocationMessageType
+		) {
+			this.container.client.emit(
+				StarylEvents.TwitchSubscriptionRevoked,
+				subscription as TwitchEventSubResult,
+			);
+		}
 
 		// If there is an event then this is an online or offline notification
 		// If there is no event this is an endpoint verification request

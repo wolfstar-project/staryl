@@ -6,6 +6,10 @@ import { createBlueskyProvider } from "#social/providers/bluesky";
 import { createMastodonProvider } from "#social/providers/mastodon";
 import { createRedditProvider } from "#social/providers/reddit";
 import { createRssProvider } from "#social/providers/rss";
+import {
+	createTwitchClipsProvider,
+	createTwitchVideosProvider,
+} from "#social/providers/twitch";
 import { createYouTubeProvider } from "#social/providers/youtube";
 import { createSocialStore } from "#social/store";
 import { container } from "@wolfstar/http-framework";
@@ -17,6 +21,8 @@ export const SocialProviders: readonly SocialProvider[] = [
 	createBlueskyProvider(),
 	createMastodonProvider(),
 	createYouTubeProvider(),
+	createTwitchVideosProvider(),
+	createTwitchClipsProvider(),
 ];
 
 export function getSocialProvider(name: SocialProviderName) {

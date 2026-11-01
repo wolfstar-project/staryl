@@ -15,6 +15,7 @@ import {
 	sendOfflineNotification,
 	sendOnlineNotification,
 } from "#twitch/notifications";
+import { handleSubscriptionRevoked } from "#twitch/revocations";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import {
 	SlashCommandChannelOption,
@@ -432,7 +433,11 @@ export async function removeSubscription(
 		});
 	if (!twitchSubscription) return;
 	if (twitchSubscription.guildSubscription.length === 0) {
-		await removeEventSubscription(twitchSubscription.subscriptionId);
+		// Twitch already dropped a revoked subscription, so deleting it again would only fail.
+		if (!twitchSubscription.revokedReason) {
+			await removeEventSubscription(twitchSubscription.subscriptionId);
+		}
+
 		await container.prisma.twitchSubscription.delete({
 			where: { id: subscriptionId },
 			select: null,
@@ -503,6 +508,20 @@ export async function addSubscription(
 	}
 
 	if (streamerForType) {
+		// A revoked row points at nothing on Twitch: connecting to it would report success and never
+		// deliver a notification.
+		if (streamerForType.revokedReason) {
+			const renewal = await Result.fromAsync(() =>
+				handleSubscriptionRevoked({
+					id: streamerForType.subscriptionId,
+					status: streamerForType.revokedReason!,
+				}),
+			);
+			if (renewal.unwrapOr("recorded") !== "renewed") {
+				return err("commands/twitch:addFailedTwitch");
+			}
+		}
+
 		const createdResult = await Result.fromAsync(() =>
 			createGuildSubscription(guildId, channelId, message, {
 				connect: { id: streamerForType.id },

@@ -53,5 +53,6 @@
 		"offline": "Offline"
 	},
 	"showUnknownUser": "Unknown",
+	"showRevoked": "⚠️ Twitch ended this subscription and I could not renew it. Remove it and add it again.",
 	"showEmbedTitle": "Twitch Subscriptions"
 }
