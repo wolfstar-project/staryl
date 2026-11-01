@@ -112,9 +112,9 @@
   `YOUTUBE_*`) and Twitch videos and clips. Going live stays on EventSub in
   `src/listeners/twitch/`, because that is a push the poller would only delay.
 - **YouTube Push**: `src/routes/youtube/websub.{get,post}.ts` receive WebSub
-  pushes, but a push never posts anything: it only makes the channel due, and
-  the regular check reads the feed. Leases renew during those checks, and a
-  forged push can do no more than cost one extra request. The callback carries a
+  pushes, but a push never posts anything: it only requests a check, and the
+  regular check reads the feed. Leases renew during those checks, and a forged
+  push can do no more than cost one extra request. The callback carries a
   per-channel token, so a stranger cannot confirm a subscription of their own.
 - **EventSub Revocations**: Twitch can end a subscription, usually after the
   callback failed for a while. `#twitch/revocations` asks for it again, and

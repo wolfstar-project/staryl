@@ -190,6 +190,37 @@ describe("clips", () => {
 		);
 	});
 
+	it("follows the pages, since Helix ranks a new clip by its few views", async () => {
+		const newest = {
+			...Clip,
+			id: "newest",
+			created_at: "2026-11-01T11:00:00Z",
+		};
+		vi.mocked(getRequest)
+			.mockResolvedValueOnce(
+				ok({ data: [Clip], pagination: { cursor: "next" } }) as never,
+			)
+			.mockResolvedValueOnce(ok({ data: [newest], pagination: {} }) as never);
+
+		const result = await clips.fetchLatest(Target, null);
+
+		expect(vi.mocked(getRequest).mock.calls[1][0]).toContain("after=next");
+		expect(result.unwrap()).toMatchObject({
+			items: [{ id: "newest" }, { id: "CleverClip" }],
+		});
+	});
+
+	it("stops at a bounded number of pages", async () => {
+		vi.mocked(getRequest).mockResolvedValue(
+			ok({ data: [Clip], pagination: { cursor: "more" } }) as never,
+		);
+
+		await clips.fetchLatest(Target, null);
+
+		expect(getRequest).toHaveBeenCalledTimes(3);
+		vi.mocked(getRequest).mockReset();
+	});
+
 	it("sorts by date, which Helix does not", async () => {
 		const older = { ...Clip, id: "older", created_at: "2026-11-01T09:00:00Z" };
 		respond(older, Clip);

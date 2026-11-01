@@ -31,6 +31,8 @@ const PageSize = 20;
  */
 const ClipWindow = Time.Hour * 2;
 const ClipPageSize = 100;
+/** Enough for any channel but the very largest, and a bound on what one check can cost. */
+const MaximumClipPages = 3;
 /** Twitch serves this while a video is being processed, or while its stream is still live. */
 const ProcessingThumbnailMarker = "/_404/";
 
@@ -85,7 +87,7 @@ export function createTwitchVideosProvider(): SocialProvider {
 
 			return ok({
 				_tag: "Items",
-				items: result.unwrap().flatMap(toVideoItem),
+				items: result.unwrap().data.flatMap(toVideoItem),
 				state: null,
 			});
 		},
@@ -114,16 +116,24 @@ export function createTwitchClipsProvider(
 
 		async fetchLatest(target) {
 			const since = new Date(now() - ClipWindow).toISOString();
-			const result = await get<TwitchClip>(
-				`clips?broadcaster_id=${target}&first=${ClipPageSize}&started_at=${encodeURIComponent(since)}`,
-			);
-			if (result.isErr()) return err(result.unwrapErr());
-
-			const newestFirst = result
-				.unwrap()
-				.toSorted(
-					(a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
+			const clips: TwitchClip[] = [];
+			let cursor: string | undefined;
+			for (let page = 0; page < MaximumClipPages; page += 1) {
+				const after = cursor ? `&after=${encodeURIComponent(cursor)}` : "";
+				// oxlint-disable-next-line no-await-in-loop -- each cursor comes from the previous page
+				const result = await get<TwitchClip>(
+					`clips?broadcaster_id=${target}&first=${ClipPageSize}&started_at=${encodeURIComponent(since)}${after}`,
 				);
+				if (result.isErr()) return err(result.unwrapErr());
+
+				clips.push(...result.unwrap().data);
+				({ cursor } = result.unwrap());
+				if (!cursor) break;
+			}
+
+			const newestFirst = clips.toSorted(
+				(a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
+			);
 			return ok({
 				_tag: "Items",
 				items: newestFirst.flatMap(toClipItem),
@@ -162,14 +172,18 @@ async function validateTarget(input: string) {
 
 async function get<T extends object>(
 	path: string,
-): Promise<Result<T[], ProviderFailure>> {
+): Promise<Result<{ data: T[]; cursor?: string }, ProviderFailure>> {
 	const result = await ResultNamespace.fromAsync(() =>
-		getRequest<TwitchHelixResponse<T>>(path),
+		getRequest<TwitchHelixResponse<T> & { pagination?: { cursor?: string } }>(
+			path,
+		),
 	);
 	if (result.isErr()) return err(toFailure(result.unwrapErr()));
 
-	const { data } = result.unwrap();
-	return Array.isArray(data) ? ok(data) : err({ _tag: "InvalidResponse" });
+	const { data, pagination } = result.unwrap();
+	return Array.isArray(data)
+		? ok({ data, cursor: pagination?.cursor })
+		: err({ _tag: "InvalidResponse" });
 }
 
 function toFailure(error: unknown): ProviderFailure {
