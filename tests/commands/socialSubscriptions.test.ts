@@ -489,7 +489,7 @@ describe("subscriptions social show", () => {
 });
 
 describe("subscriptions social show limits", () => {
-	it("fits a full server with long names in one embed", async () => {
+	it("shows every subscription of a full server, within Discord's limits", async () => {
 		prismaMock.guildSocialSubscription.findMany.mockResolvedValue(
 			Array.from({ length: MaximumSocialSubscriptionsPerGuild }, (_, index) =>
 				makeSubscription({
@@ -497,6 +497,8 @@ describe("subscriptions social show limits", () => {
 					deliveryError: "MissingPermissions",
 					source: {
 						...makeSubscription().source,
+						lastFailure: "AuthFailed",
+						failureCount: 1,
 						displayName: "*".repeat(200),
 					},
 				}),
@@ -505,7 +507,14 @@ describe("subscriptions social show limits", () => {
 
 		await runner.run(buildInteraction("show"));
 
-		expect(reply().embeds![0].description.length).toBeLessThanOrEqual(4096);
+		const descriptions = reply().embeds!.map(({ description }) => description);
+		expect(descriptions.join("\n").match(/\(RSS or Atom feed\)/g)).toHaveLength(
+			MaximumSocialSubscriptionsPerGuild,
+		);
+		expect(
+			Math.max(...descriptions.map(({ length }) => length)),
+		).toBeLessThanOrEqual(4096);
+		expect(descriptions.join("").length).toBeLessThanOrEqual(5900);
 	});
 });
 

@@ -83,6 +83,15 @@ describe("parseFeed", () => {
 		});
 	});
 
+	it("reads the nested text of Atom's xhtml content", () => {
+		const feed =
+			parseFeed(`<feed><entry><id>1</id><link href="https://a.example/1"/>
+			<content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml"><p>Hello</p></div></content>
+		</entry></feed>`)!;
+
+		expect(feed.entries[0].text).toBe("Hello");
+	});
+
 	it("reads an RSS 1.0 document, whose items sit beside the channel", () => {
 		const feed = parseFeed(`<rdf:RDF xmlns:rdf="x">
 			<channel><title>RDF</title></channel>
@@ -197,6 +206,26 @@ describe("findFeedLink", () => {
 
 		expect(findFeedLink(html, "https://example.com/")).toBe(
 			"https://example.com/atom",
+		);
+	});
+
+	it("reads the unquoted attributes of a minified page", () => {
+		const html = page(
+			"<link rel=alternate type=application/rss+xml href=/feed.xml>",
+		);
+
+		expect(findFeedLink(html, "https://example.com/")).toBe(
+			"https://example.com/feed.xml",
+		);
+	});
+
+	it("allows spaces around the equals sign and an apostrophe in a URL", () => {
+		const html = page(
+			`<link rel = "alternate" type = "application/rss+xml" href = "/it's/feed.xml">`,
+		);
+
+		expect(findFeedLink(html, "https://example.com/")).toBe(
+			"https://example.com/it's/feed.xml",
 		);
 	});
 

@@ -21,6 +21,7 @@ export interface ParsedFeed {
 export const MaximumFeedEntries = 50;
 
 const MaximumCodePoint = 1_114_111;
+const MaximumXhtmlDepth = 16;
 const HiddenBlockMarkers = /<!--|-->|<\/?(?:script|style)\b[^<>]*>/gi;
 const ListTags = new Set(["item", "entry", "link", "author", "media:content"]);
 const NamedEntities: Record<string, string> = {
@@ -174,9 +175,9 @@ function toEntry(node: FeedNode): FeedEntry | null {
 	const media = node["media:group"] as FeedNode | undefined;
 	const html =
 		readText(node["content:encoded"]) ??
-		readText(node.content) ??
+		readRichText(node.content) ??
 		readText(node.description) ??
-		readText(node.summary) ??
+		readRichText(node.summary) ??
 		readText(media?.["media:description"]);
 
 	const title = readText(node.title);
@@ -202,6 +203,28 @@ function readText(value: unknown): string | null {
 	// XML cannot carry a NUL byte, but this parser is lenient and Postgres refuses to store one.
 	const trimmed = String(text).replaceAll("\0", "").trim();
 	return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Atom's `type="xhtml"` nests real elements, where every other format has one string. */
+function readRichText(value: unknown): string | null {
+	const text = readText(value);
+	if (text !== null || !isObject(value)) return text;
+
+	const collected = collectText(value, MaximumXhtmlDepth).join(" ").trim();
+	return collected.length > 0 ? collected : null;
+}
+
+function collectText(node: unknown, depth: number): string[] {
+	if (typeof node === "string") return [node];
+	if (depth === 0) return [];
+	if (Array.isArray(node)) {
+		return node.flatMap((entry) => collectText(entry, depth - 1));
+	}
+	if (!isObject(node)) return [];
+
+	return Object.entries(node)
+		.filter(([key]) => !key.startsWith("@_"))
+		.flatMap(([, value]) => collectText(value, depth - 1));
 }
 
 function readLink(value: unknown): string | null {
@@ -286,9 +309,14 @@ function readDate(value: unknown) {
 	return Number.isNaN(date.getTime()) ? null : date;
 }
 
+/** Reads an HTML attribute. Minified pages drop the quotes, so all three spellings are allowed. */
 function readAttribute(tag: string, name: string) {
-	const expression = new RegExp(`\\s${name}=["']([^"']*)["']`, "i");
-	return expression.exec(tag)?.[1];
+	const expression = new RegExp(
+		`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>\`]+))`,
+		"i",
+	);
+	const match = expression.exec(tag);
+	return match?.[1] ?? match?.[2] ?? match?.[3];
 }
 
 function decodeEntities(text: string) {
