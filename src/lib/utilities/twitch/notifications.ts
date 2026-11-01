@@ -1,21 +1,17 @@
+import type { Result } from "@sapphire/result";
 import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import type {
 	TwitchEventSubOnlineEvent,
 	TwitchHelixStreamsResult,
 	TwitchOnlineEmbedData,
 } from "@wolfstar/twitch-helpers";
-import type {
-	AllowedMentionsTypes,
-	APIChannel,
-	APIDMChannel,
-	APIGroupDMChannel,
-	APIMessageTopLevelComponent,
-	APIRole,
-	Locale,
-} from "discord-api-types/v10";
-import { api } from "#utils/discordApi";
+import type { APIMessageTopLevelComponent } from "discord-api-types/v10";
 import { canSendEmbeds, canSendMessages } from "#utils/discordUtilities";
-import { extractDetailedMentions } from "#utils/util";
+import {
+	NotificationDeliveryError,
+	resolveNotificationTarget,
+	sendNotificationMessage,
+} from "#utils/notificationDelivery";
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -28,25 +24,11 @@ import {
 	time,
 	TimestampStyles,
 } from "@discordjs/builders";
-import { err, ok, Result } from "@sapphire/result";
-import { cast, isNullish } from "@sapphire/utilities";
+import { err } from "@sapphire/result";
+import { isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
-import { ButtonStyle, MessageFlags } from "discord-api-types/v10";
-
-/**
- * The reason a notification could not be delivered.
- *
- * The `test` subcommand maps each of these onto a distinct message, which is the whole point of
- * returning a reason instead of a boolean: "the bot cannot post there" and "Discord rejected the
- * message" need different fixes from whoever ran the command.
- */
-export enum NotificationDeliveryError {
-	GuildUnavailable,
-	ChannelNotFound,
-	MissingPermissions,
-	SendFailed,
-}
+import { ButtonStyle } from "discord-api-types/v10";
 
 export interface OnlineNotificationOptions {
 	guildId: bigint;
@@ -81,13 +63,6 @@ export interface OnlineNotificationData extends TwitchOnlineEmbedData {
 	avatarUrl?: string;
 }
 
-type GuildChannel = Exclude<APIChannel, APIDMChannel | APIGroupDMChannel>;
-
-interface NotificationTarget {
-	channel: GuildChannel;
-	t: TFunction<AnyNamespace>;
-}
-
 const kTwitchImageReplacerRegex = /(\{width\}|\{height\})/gi;
 
 export async function sendOnlineNotification(
@@ -97,7 +72,7 @@ export async function sendOnlineNotification(
 		`[twitch-notifications] sendOnlineNotification guild=${options.guildId} channel=${options.channelId} streamer=${options.event.broadcaster_user_login} startedAt=${options.event.started_at} hasStreamData=${!isNullish(options.streamData)} hasMessage=${!isNullish(options.message)} testNotice=${options.testNotice ?? false}`,
 	);
 
-	const targetResult = await resolveTarget(
+	const targetResult = await resolveNotificationTarget(
 		options.guildId,
 		options.channelId,
 		canSendEmbeds,
@@ -137,9 +112,12 @@ export async function sendOnlineNotification(
 
 	// The custom message is optional for online subscriptions, the container alone is already the
 	// notification.
-	return send(channel.id, options.message, options.testNotice, t, [
-		...buildOnlineComponents(data, t),
-	]);
+	return sendNotificationMessage(
+		channel.id,
+		options.message,
+		resolveTestNotice(options, t),
+		[...buildOnlineComponents(data, t)],
+	);
 }
 
 export async function sendOfflineNotification(
@@ -149,7 +127,7 @@ export async function sendOfflineNotification(
 		`[twitch-notifications] sendOfflineNotification guild=${options.guildId} channel=${options.channelId} date=${options.date.toISOString()} testNotice=${options.testNotice ?? false}`,
 	);
 
-	const targetResult = await resolveTarget(
+	const targetResult = await resolveNotificationTarget(
 		options.guildId,
 		options.channelId,
 		canSendMessages,
@@ -164,7 +142,11 @@ export async function sendOfflineNotification(
 	const { channel, t } = targetResult.unwrap();
 	const content = buildOfflineMessage(options.message, options.date, t);
 
-	return send(channel.id, content, options.testNotice, t);
+	return sendNotificationMessage(
+		channel.id,
+		content,
+		resolveTestNotice(options, t),
+	);
 }
 
 export function buildOnlineEmbedData(
@@ -296,137 +278,9 @@ export function escapeText(text?: string) {
 	).replace(/[[\]]/g, "\\$&");
 }
 
-/**
- * Resolves the guild's language and the channel to post in, refusing the delivery when the bot
- * cannot post there.
- *
- * `canSend` is awaited: both listeners used to negate the returned promise, which is always truthy,
- * so the permission gate never rejected anything and the send failed against Discord instead.
- */
-async function resolveTarget(
-	guildId: bigint,
-	channelId: bigint,
-	canSend: (channel: GuildChannel, roles: APIRole[]) => Promise<boolean>,
-): Promise<Result<NotificationTarget, NotificationDeliveryError>> {
-	const guildResult = await Result.fromAsync(() =>
-		api().guilds.get(String(guildId)),
-	);
-	if (guildResult.isErr() || isNullish(guildResult.unwrap())) {
-		container.logger.debug(
-			`[twitch-notifications] Guild ${guildId} is unavailable`,
-			guildResult.isErr() ? guildResult.unwrapErr() : undefined,
-		);
-		return err(NotificationDeliveryError.GuildUnavailable);
-	}
-
-	// `container.i18n.getT` throws when Discord reports a locale the bot has not loaded (e.g. `de`
-	// while only `en-US` is bundled). An unsupported guild locale must degrade to the default
-	// language, not escape `resolveTarget` and abort the delivery outside the `Result` error path.
-	const preferredLocale = (guildResult.unwrap().preferred_locale ??
-		"en-US") as Locale;
-	const resolvedLocale = container.i18n.languages.has(preferredLocale)
-		? preferredLocale
-		: "en-US";
-	container.logger.debug(
-		`[twitch-notifications] Guild ${guildId} preferred locale ${preferredLocale}, resolved to ${resolvedLocale}`,
-	);
-	const t = cast<TFunction<AnyNamespace>>(container.i18n.getT(resolvedLocale));
-
-	const channelsResult = await Result.fromAsync(() =>
-		api().guilds.getChannels(String(guildId)),
-	);
-	if (channelsResult.isErr()) {
-		container.logger.debug(
-			`[twitch-notifications] Could not list the channels of guild ${guildId}`,
-			channelsResult.unwrapErr(),
-		);
-		return err(NotificationDeliveryError.ChannelNotFound);
-	}
-
-	const channel = channelsResult
-		.unwrap()
-		.find((entry) => entry.id === String(channelId)) as
-		| GuildChannel
-		| undefined;
-	if (isNullish(channel)) {
-		container.logger.debug(
-			`[twitch-notifications] Channel ${channelId} was not found in guild ${guildId}`,
-		);
-		return err(NotificationDeliveryError.ChannelNotFound);
-	}
-
-	if (!(await canSend(channel, guildResult.unwrap().roles))) {
-		container.logger.debug(
-			`[twitch-notifications] Missing permissions to post in channel ${channelId} of guild ${guildId}`,
-		);
-		return err(NotificationDeliveryError.MissingPermissions);
-	}
-
-	container.logger.debug(
-		`[twitch-notifications] Resolved channel ${channelId} (type ${channel.type}) of guild ${guildId}`,
-	);
-	return ok({ channel, t });
-}
-
-async function send(
-	channelId: string,
-	message: string | null,
-	testNotice: boolean | undefined,
+function resolveTestNotice(
+	options: Pick<OnlineNotificationOptions, "testNotice">,
 	t: TFunction<AnyNamespace>,
-	components?: APIMessageTopLevelComponent[],
-): Promise<Result<void, NotificationDeliveryError>> {
-	// The mentions are extracted from the stored message alone; the test notice is a plain literal
-	// and must not be able to widen `allowed_mentions`.
-	const detailedMentions = extractDetailedMentions(message);
-	const content = testNotice
-		? [t("events/twitch:testNotice"), message].filter(Boolean).join("\n")
-		: message;
-
-	container.logger.debug(
-		`[twitch-notifications] Sending to channel ${channelId}: contentLength=${content?.length ?? 0} components=${components?.length ?? 0} mentions=${JSON.stringify(
-			{
-				parse: detailedMentions.parse,
-				users: [...detailedMentions.users],
-				roles: [...detailedMentions.roles],
-				channels: [...detailedMentions.channels],
-			},
-		)}`,
-	);
-
-	// Components V2 messages cannot carry `content`, so the text moves into a leading text display.
-	const result = await Result.fromAsync(() =>
-		api().channels.createMessage(channelId, {
-			...(components
-				? {
-						components: [
-							...(content
-								? [new TextDisplayBuilder().setContent(content).toJSON()]
-								: []),
-							...components,
-						],
-						flags: MessageFlags.IsComponentsV2,
-					}
-				: { content: content || undefined }),
-			allowed_mentions: {
-				// `extractDetailedMentions` yields the raw string union, which is the same set of values
-				// as the enum but not assignable to it.
-				parse: cast<AllowedMentionsTypes[]>(detailedMentions.parse),
-				users: [...detailedMentions.users],
-				roles: [...detailedMentions.roles],
-			},
-		}),
-	);
-
-	if (result.isErr()) {
-		container.logger.error(
-			`[twitch-notifications] Discord rejected the notification for channel ${channelId}`,
-			result.unwrapErr(),
-		);
-		return err(NotificationDeliveryError.SendFailed);
-	}
-
-	container.logger.debug(
-		`[twitch-notifications] Notification delivered to channel ${channelId}`,
-	);
-	return ok();
+) {
+	return options.testNotice ? t("events/twitch:testNotice") : undefined;
 }

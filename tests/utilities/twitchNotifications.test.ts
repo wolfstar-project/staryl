@@ -1,9 +1,9 @@
 import type { TwitchEventSubOnlineEvent } from "@wolfstar/twitch-helpers";
 import {
-	NotificationDeliveryError,
 	sendOfflineNotification,
 	sendOnlineNotification,
 } from "#twitch/notifications";
+import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import { container as piece } from "@wolfstar/http-framework";
 import { TwitchBrandingColor } from "@wolfstar/twitch-helpers";
 import {
