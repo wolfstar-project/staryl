@@ -7,11 +7,14 @@ import {
 	parseItemUrl,
 	socialDelivery,
 } from "#social/notifications";
+import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import { ok } from "@sapphire/result";
+import { container } from "@wolfstar/http-framework";
 import { ComponentType } from "discord-api-types/v10";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("#utils/notificationDelivery", () => ({
+vi.mock("#utils/notificationDelivery", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#utils/notificationDelivery")>()),
 	resolveNotificationTarget: vi.fn(),
 	sendNotificationMessage: vi.fn(async () => ok()),
 }));
@@ -79,6 +82,14 @@ describe("escapeInlineText", () => {
 	it("keeps source text from forming a link or styling the card", () => {
 		expect(escapeInlineText("*a* [b](c)")).toBe("\\*a\\* \\[b\\](c)");
 	});
+
+	it.each([
+		["# Heading", "\\# Heading"],
+		["- item", "\\- item"],
+		["1. item", "1\\. item"],
+	])("keeps %j from becoming a heading or a list", (text, escaped) => {
+		expect(escapeInlineText(text)).toBe(escaped);
+	});
 });
 
 describe("createSocialCard", () => {
@@ -88,6 +99,25 @@ describe("createSocialCard", () => {
 			"\\*bold\\* \\[link\\](https://evil\\.example)".replace("\\.", "."),
 		);
 		expect(card.body!.length).toBeLessThanOrEqual(500);
+	});
+
+	it("keeps a title on the line of its heading", () => {
+		const card = createSocialCard({ ...Item, title: "One\n\ntwo" }, Card);
+
+		expect(card.title).toBe("One two");
+	});
+
+	it("drops a picture Discord would refuse", () => {
+		const card = createSocialCard(
+			{
+				...Item,
+				authorAvatarUrl: "/avatar.png",
+				imageUrl: "http://example.com/image.png",
+			},
+			Card,
+		);
+
+		expect(card).toMatchObject({ thumbnailUrl: null, imageUrl: null });
 	});
 
 	it("leaves out a date the source got wrong", () => {
@@ -127,6 +157,28 @@ describe("socialDelivery", () => {
 		expect(item.authorName).toMatch(/^\\\[a\\\]/);
 		expect(item.authorName!.length).toBeLessThan(120);
 		expect(source.displayName).toBe("\\*Name\\*");
+	});
+
+	it("reports a card the builders refuse, instead of throwing", async () => {
+		const error = vi
+			.spyOn(container.logger, "error")
+			.mockImplementation(() => undefined);
+		const provider = {
+			formatNotification: () => ({ ...Card, url: "/relative" }),
+		} as unknown as SocialProvider;
+
+		const result = await socialDelivery.send(
+			{ channel: { id: "1" }, t: vi.fn() } as never,
+			{
+				provider,
+				item: Item,
+				source: { target: "t", displayName: "Name" },
+				message: null,
+			},
+		);
+
+		expect(result.unwrapErr()).toBe(NotificationDeliveryError.SendFailed);
+		expect(error).toHaveBeenCalledOnce();
 	});
 });
 

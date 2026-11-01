@@ -359,6 +359,36 @@ describe("SocialPoller", () => {
 		expect(updates.at(-1)!.update.deliveryError).toBeNull();
 	});
 
+	it("gives up on an undated item too, so conditional requests can resume", async () => {
+		const { delivery } = makeDelivery();
+		delivery.prepare.mockResolvedValue(
+			err(NotificationDeliveryError.ChannelNotFound) as never,
+		);
+		const provider = makeProvider(async () =>
+			items(makeItem("undated", { publishedAt: null })),
+		);
+		let now = Now;
+		const { store, updates, checks } = makeStore([]);
+		const poller = new SocialPoller({
+			providers: [provider],
+			store,
+			delivery,
+			logger,
+			now: () => now,
+		});
+
+		vi.mocked(store.findDueSources).mockResolvedValueOnce([makeSource()]);
+		await poller.tick();
+		expect(checks.at(-1)!.record.state).toBeNull();
+
+		now += RetryWindow;
+		vi.mocked(store.findDueSources).mockResolvedValueOnce([makeSource()]);
+		await poller.tick();
+
+		expect(updates.at(-1)!.update.seenItemIds).toEqual(["undated"]);
+		expect(checks.at(-1)!.record.state).toEqual({ etag: "next" });
+	});
+
 	it("retries an item Discord refuses, and gives up on it after a day", async () => {
 		const { delivery, posted } = makeDelivery();
 		delivery.send.mockResolvedValue(err(NotificationDeliveryError.SendFailed));

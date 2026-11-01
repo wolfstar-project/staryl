@@ -4,14 +4,11 @@ import type {
 	SocialItem,
 	SocialProvider,
 } from "#social/provider";
-import type {
-	NotificationDeliveryError,
-	NotificationTarget,
-} from "#utils/notificationDelivery";
-import type { Result } from "@sapphire/result";
+import type { NotificationTarget } from "#utils/notificationDelivery";
 import type { APIMessageTopLevelComponent } from "discord-api-types/v10";
 import { canSendEmbeds } from "#utils/discordUtilities";
 import {
+	NotificationDeliveryError,
 	resolveNotificationTarget,
 	sendNotificationMessage,
 } from "#utils/notificationDelivery";
@@ -27,7 +24,9 @@ import {
 	time,
 	TimestampStyles,
 } from "@discordjs/builders";
+import { err, Result } from "@sapphire/result";
 import { cutText, isNullishOrEmpty } from "@sapphire/utilities";
+import { container } from "@wolfstar/http-framework";
 import { ButtonStyle } from "discord-api-types/v10";
 
 const MaximumTitleLength = 200;
@@ -59,21 +58,35 @@ export const socialDelivery: SocialDelivery = {
 	prepare(guildId, channelId) {
 		return resolveNotificationTarget(guildId, channelId, canSendEmbeds);
 	},
-	send({ channel, t }, { provider, item, source, message, notice }) {
-		// These two end up in a heading a provider writes, past the escaping of `createSocialCard`.
-		const card = provider.formatNotification(
-			{
-				...item,
-				authorName: item.authorName && escapeName(item.authorName),
-			},
-			{ ...source, displayName: escapeName(source.displayName) },
-			t,
+	async send({ channel, t }, { provider, item, source, message, notice }) {
+		// The builders throw on a URL they do not like. That has to stay a failed delivery of this one
+		// item, so it runs out in the retry window instead of stopping the items behind it.
+		const components = Result.from(() =>
+			buildSocialComponents(
+				// These two end up in a heading a provider writes, past `createSocialCard`'s escaping.
+				provider.formatNotification(
+					{
+						...item,
+						authorName: item.authorName && escapeName(item.authorName),
+					},
+					{ ...source, displayName: escapeName(source.displayName) },
+					t,
+				),
+			),
 		);
+		if (components.isErr()) {
+			container.logger.error(
+				`[social-notifications] Could not build the card of ${item.url}`,
+				components.unwrapErr(),
+			);
+			return err(NotificationDeliveryError.SendFailed);
+		}
+
 		return sendNotificationMessage(
 			channel.id,
 			message,
 			notice,
-			buildSocialComponents(card),
+			components.unwrap(),
 		);
 	},
 };
@@ -87,7 +100,11 @@ export function isNsfwChannel({ channel }: NotificationTarget) {
  * from pinging anyone; this keeps it from restyling the card or retargeting the link around it.
  */
 export function escapeInlineText(text: string) {
-	return escapeMarkdown(text).replace(/[[\]]/g, "\\$&");
+	return escapeMarkdown(text, {
+		bulletedList: true,
+		heading: true,
+		numberedList: true,
+	}).replace(/[[\]]/g, "\\$&");
 }
 
 function escapeName(name: string) {
@@ -119,13 +136,16 @@ export function createSocialCard(
 		...options,
 		title: isNullishOrEmpty(item.title)
 			? null
-			: escapeInlineText(cutText(item.title, MaximumTitleLength)),
+			: // A line break would end the heading the title is rendered in, with its link half open.
+				escapeInlineText(
+					cutText(item.title.replace(/\s+/g, " "), MaximumTitleLength),
+				),
 		url: item.url,
 		body: isNullishOrEmpty(item.text)
 			? null
 			: escapeInlineText(cutText(item.text, MaximumBodyLength)),
-		thumbnailUrl: item.authorAvatarUrl,
-		imageUrl: item.imageUrl,
+		thumbnailUrl: parseImageUrl(item.authorAvatarUrl),
+		imageUrl: parseImageUrl(item.imageUrl),
 		// A source can send anything as a date, and an invalid one would print as `<t:NaN:f>`.
 		publishedAt: Number.isNaN(item.publishedAt?.getTime())
 			? null

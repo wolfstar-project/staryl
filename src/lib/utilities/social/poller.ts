@@ -66,7 +66,7 @@ export class SocialPoller {
 	/** Keyed by limit and window, so providers declaring the same one share its scopes. */
 	readonly #budgets = new Map<string, RateLimitManager>();
 	readonly #pausedScopes = new Map<string, number>();
-	/** When Discord first refused an item, so it can be retried without being retried forever. */
+	/** When an item first failed to go out, so it can be retried without being retried forever. */
 	readonly #refusals = new Map<string, number>();
 	#timer: NodeJS.Timeout | null = null;
 
@@ -287,7 +287,11 @@ export class SocialPoller {
 		if (target.isErr()) {
 			// Discord being down looks exactly like a broken channel from here, so the items stay
 			// pending for a while. `/subscriptions social show` reports the reason in the meantime.
-			const expired = fresh.filter((item) => isPastRetryWindow(item, now));
+			const expired = fresh.filter(
+				(item) =>
+					isPastRetryWindow(item, now) ||
+					!this.#shouldRetry(getAttemptKey(source, key, item), now),
+			);
 			await store.updateSubscription(key, {
 				seenItemIds: mergeSeenIds(subscription.seenItemIds, expired),
 				deliveryError: toStoredError(target.unwrapErr()),
@@ -341,7 +345,7 @@ export class SocialPoller {
 				? toStoredError(sent.unwrapErr())
 				: null;
 
-			const attempt = `${source.id}:${key.channelId}:${toSeenId(item)}`;
+			const attempt = getAttemptKey(source, key, item);
 			if (sent.isErr() && this.#shouldRetry(attempt, now)) {
 				pending = true;
 				await store.updateSubscription(key, { deliveryError });
@@ -369,6 +373,14 @@ export class SocialPoller {
 			if (firstRefusedAt < cutoff) this.#refusals.delete(attempt);
 		}
 	}
+}
+
+function getAttemptKey(
+	source: SocialSourceWithSubscriptions,
+	{ channelId }: { channelId: bigint },
+	item: SocialItem,
+) {
+	return `${source.id}:${channelId}:${toSeenId(item)}`;
 }
 
 function isPastRetryWindow(item: SocialItem, now: number) {
