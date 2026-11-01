@@ -44,6 +44,8 @@ interface TwitchVideo {
 	user_name: string;
 	thumbnail_url: string;
 	published_at: string;
+	/** Such as `3h8m33s`. */
+	duration: string;
 }
 
 interface TwitchClip {
@@ -220,9 +222,23 @@ function toVideoItem(video: TwitchVideo): SocialItem[] {
 					.replace("%{width}", "1280")
 					.replace("%{height}", "720"),
 			),
-			publishedAt: new Date(video.published_at),
+			publishedAt: getVideoEnd(video),
 		},
 	];
+}
+
+/**
+ * Helix dates a past broadcast by when the stream started. What counts here is when it became a
+ * video, or one finished after a server subscribed would read as older than the subscription.
+ */
+function getVideoEnd({ published_at: start, duration }: TwitchVideo) {
+	const [, hours, minutes, seconds] =
+		/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(duration) ?? [];
+	const length =
+		Number(hours ?? 0) * Time.Hour +
+		Number(minutes ?? 0) * Time.Minute +
+		Number(seconds ?? 0) * Time.Second;
+	return new Date(Date.parse(start) + length);
 }
 
 function toClipItem(clip: TwitchClip): SocialItem[] {

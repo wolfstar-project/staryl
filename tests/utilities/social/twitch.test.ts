@@ -32,6 +32,7 @@ const Video = {
 	thumbnail_url:
 		"https://static-cdn.jtvnw.net/cf_vods/x/thumb0-%{width}x%{height}.jpg",
 	published_at: "2026-11-01T10:00:00Z",
+	duration: "1h30m5s",
 };
 
 const Clip = {
@@ -123,7 +124,7 @@ describe("videos", () => {
 					text: null,
 					imageUrl:
 						"https://static-cdn.jtvnw.net/cf_vods/x/thumb0-1280x720.jpg",
-					publishedAt: new Date(Video.published_at),
+					publishedAt: new Date("2026-11-01T11:30:05Z"),
 				},
 			],
 		});
