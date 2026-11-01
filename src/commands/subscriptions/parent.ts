@@ -1,5 +1,7 @@
 import type { TwitchChannelSearchResult } from "#twitch/subscriptions";
 import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
+import { getGuildSocialSubscriptions } from "#social/subscriptions";
+import { cutText } from "@sapphire/utilities";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
 import { Subcommand } from "@wolfstar/plugin-subcommands-advanced";
@@ -33,13 +35,24 @@ import {
 				"commands/twitch:name",
 				"commands/twitch:description",
 			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/social:name",
+				"commands/social:description",
+			),
 		),
 )
 export class UserCommand extends Subcommand {
 	public override async autocompleteRun(
 		interaction: Command.AutocompleteInteraction,
-		args: Command.AutocompleteArguments<{ streamer: string }>,
+		args: Command.AutocompleteArguments<{ streamer: string; source: string }>,
 	) {
+		if (args.focused === "source") {
+			return this.#autocompleteSource(interaction, args.source ?? "");
+		}
+
 		if (args.focused !== "streamer") return interaction.replyEmpty();
 
 		const query = args.streamer ?? "";
@@ -55,6 +68,35 @@ export class UserCommand extends Subcommand {
 			choices: data.map((channel) => ({
 				name: channel.display_name,
 				value: channel.broadcaster_login,
+			})),
+		});
+	}
+
+	async #autocompleteSource(
+		interaction: Command.AutocompleteInteraction,
+		query: string,
+	) {
+		if (!interaction.guildId) return interaction.replyEmpty();
+
+		const result = await getGuildSocialSubscriptions(
+			BigInt(interaction.guildId),
+		);
+		if (result.isErr()) return interaction.replyEmpty();
+
+		const needle = query.toLowerCase();
+		const sources = new Map(
+			result
+				.unwrap()
+				.filter(({ source }) =>
+					source.displayName.toLowerCase().includes(needle),
+				)
+				.map(({ source }) => [source.id, source]),
+		);
+
+		return interaction.reply({
+			choices: [...sources.values()].slice(0, 25).map((source) => ({
+				name: cutText(`${source.provider}: ${source.displayName}`, 100),
+				value: String(source.id),
 			})),
 		});
 	}

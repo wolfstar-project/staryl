@@ -1232,15 +1232,15 @@ describe("subscriptions registration", () => {
 	});
 
 	it("nests every subcommand under the twitch group", () => {
-		const [group, ...rest] = registeredCommand().options!;
+		const group = registeredCommand().options!.find(
+			(option) => option.name === GroupName,
+		);
 
-		expect(rest).toHaveLength(0);
 		expect(group).toMatchObject({
 			type: ApplicationCommandOptionType.SubcommandGroup,
-			name: GroupName,
 		});
 		expect(
-			(group as { options: { name: string }[] }).options
+			(group as unknown as { options: { name: string }[] }).options
 				.map((option) => option.name)
 				.toSorted(),
 		).toEqual(["add", "remove", "reset", "show", "test"]);

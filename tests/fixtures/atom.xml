@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title type="text">Atom Example</title>
+  <link rel="self" href="https://example.org/atom.xml"/>
+  <entry>
+    <id>tag:example.org,2026:1</id>
+    <title type="html">An &lt;em&gt;Atom&lt;/em&gt; entry</title>
+    <link rel="replies" href="https://example.org/1/comments"/>
+    <link rel="alternate" href="https://example.org/1"/>
+    <published>2026-10-29T20:00:20+00:00</published>
+    <updated>2026-10-29T22:47:50+00:00</updated>
+    <author><name>Bob</name></author>
+    <media:group>
+      <media:description>A description</media:description>
+      <media:thumbnail url="https://example.org/thumb.jpg" width="480" height="360"/>
+    </media:group>
+  </entry>
+</feed>
