@@ -58,6 +58,8 @@ model SocialSource {
   failureCount  Int                       @default(0) @map("failure_count")
   lastCheckedAt DateTime?                 @map("last_checked_at") @db.Timestamptz
   nextCheckAt   DateTime                  @default(now()) @map("next_check_at") @db.Timestamptz
+  // Set while a process is checking the source. Its value is what proves a process still owns it.
+  claimedUntil  DateTime?                 @map("claimed_until") @db.Timestamptz
   subscriptions GuildSocialSubscription[]
 
   @@unique([provider, target])

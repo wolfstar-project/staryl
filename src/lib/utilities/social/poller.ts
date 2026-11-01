@@ -12,7 +12,7 @@ import type {
 } from "#social/provider";
 import type { SocialSourceWithSubscriptions, SocialStore } from "#social/store";
 import { evaluateItem, parseSocialFilters } from "#social/filters";
-import { isNsfwChannel } from "#social/notifications";
+import { isNsfwChannel, parseItemUrl } from "#social/notifications";
 import { MaximumBackoff, planNextCheck } from "#social/schedule";
 import { findFreshItems, mergeSeenIds, toSeenId } from "#social/seen";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
@@ -26,6 +26,8 @@ export const PollInterval = Time.Second * 30;
 export const PollBatchSize = 100;
 /** How long a claimed source stays out of the queue if the process dies before recording it. */
 export const ClaimLease = Time.Minute * 5;
+/** Renewed well before it runs out, since one Discord request can take a while. */
+const ClaimRenewalInterval = ClaimLease / 2;
 /** How long every source of a provider rests after its credentials are refused. */
 export const AuthFailurePause = Time.Minute * 15;
 /**
@@ -155,20 +157,29 @@ export class SocialPoller {
 		if (resumeAt !== null) {
 			// Moved out of the way instead of left due: the queue is oldest first, so sources waiting
 			// on one slow host would otherwise fill every batch and starve the whole provider.
-			await store.claimSource(
-				source.id,
-				source.nextCheckAt,
-				new Date(resumeAt),
-			);
+			await store.deferSource(source.id, new Date(resumeAt));
 			return;
 		}
 
-		const claimed = await store.claimSource(
-			source.id,
-			source.nextCheckAt,
-			new Date(now + ClaimLease),
-		);
-		if (!claimed) return;
+		let lease = new Date(now + ClaimLease);
+		if (!(await store.claimSource(source.id, source.claimedUntil, lease))) {
+			return;
+		}
+
+		// A slow delivery can outlive the lease. Once another process takes the source over, carrying
+		// on would post what that process is posting and overwrite what it stores.
+		let renewedAt = now;
+		const holdsClaim = async () => {
+			const time = this.#now();
+			if (time - renewedAt < ClaimRenewalInterval) return true;
+
+			const renewed = new Date(time + ClaimLease);
+			if (!(await store.renewClaim(source.id, lease, renewed))) return false;
+
+			lease = renewed;
+			renewedAt = time;
+			return true;
+		};
 
 		const result = await this.#fetch(provider, source);
 		const failure = result.isErr() ? result.unwrapErr() : null;
@@ -184,15 +195,20 @@ export class SocialPoller {
 		const lastCheckedAt = new Date(now);
 		const value = result.isOk() ? result.unwrap() : null;
 		if (value?._tag !== "Items") {
-			await store.recordCheck(source.id, { ...plan, lastCheckedAt });
+			await store.recordCheck(source.id, lease, { ...plan, lastCheckedAt });
 			return;
 		}
 
+		// Nothing can be posted without a link, so such an item would only fail on every check.
+		const items = value.items.filter(({ url }) => parseItemUrl(url) !== null);
+
 		let needsFullFetch = false;
 		for (const subscription of source.subscriptions) {
+			if (!(await holdsClaim())) return;
+
 			// oxlint-disable-next-line no-loop-func -- awaited before the next iteration
 			const pending = await Result.fromAsync(() =>
-				this.#notify(provider, source, subscription, value.items),
+				this.#notify(provider, source, subscription, items, holdsClaim),
 			);
 			if (pending.isErr()) {
 				this.#options.logger.error(
@@ -204,8 +220,10 @@ export class SocialPoller {
 			needsFullFetch ||= pending.unwrapOr(true);
 		}
 
+		if (!(await holdsClaim())) return;
+
 		// What is still pending is only fetched again if the next request is not conditional.
-		await store.recordCheck(source.id, {
+		await store.recordCheck(source.id, lease, {
 			...plan,
 			lastCheckedAt,
 			state: needsFullFetch ? null : value.state,
@@ -271,6 +289,7 @@ export class SocialPoller {
 		source: SocialSourceWithSubscriptions,
 		subscription: GuildSocialSubscription,
 		items: readonly SocialItem[],
+		holdsClaim: () => Promise<boolean>,
 	) {
 		const { store, delivery, logger } = this.#options;
 		const fresh = findFreshItems(items, subscription.seenItemIds);
@@ -335,6 +354,8 @@ export class SocialPoller {
 
 		let pending = waiting.length > 0;
 		for (const item of accepted) {
+			if (!(await holdsClaim())) return true;
+
 			const sent = await delivery.send(channel, {
 				provider,
 				item,

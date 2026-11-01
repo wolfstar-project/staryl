@@ -37,16 +37,20 @@ export interface SocialStore {
 		limit: number,
 	): Promise<SocialSourceWithSubscriptions[]>;
 	/**
-	 * Takes a due source for this check by moving `nextCheckAt` forward. Answers `false` when it is
-	 * no longer due, so two processes never check the same source, and a process that dies
-	 * mid-check only delays it until the lease runs out.
+	 * Takes a due source for this check. Answers `false` when another process got there first, and a
+	 * process that dies mid-check only delays the source until its lease runs out.
 	 */
 	claimSource(
 		id: bigint,
-		expectedNextCheckAt: Date,
+		expectedClaim: Date | null,
 		leaseUntil: Date,
 	): Promise<boolean>;
-	recordCheck(id: bigint, record: CheckRecord): Promise<void>;
+	/** Extends a held claim, answering `false` when the source now belongs to another process. */
+	renewClaim(id: bigint, lease: Date, leaseUntil: Date): Promise<boolean>;
+	/** Puts a source off without counting it as checked. */
+	deferSource(id: bigint, until: Date): Promise<void>;
+	/** Stores a check and releases the claim. Does nothing for a claim that was lost in the meantime. */
+	recordCheck(id: bigint, lease: Date, record: CheckRecord): Promise<void>;
 	updateSubscription(
 		key: SubscriptionKey,
 		update: SubscriptionUpdate,
@@ -61,24 +65,39 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 					provider,
 					nextCheckAt: { lte: now },
 					subscriptions: { some: {} },
+					OR: [{ claimedUntil: null }, { claimedUntil: { lte: now } }],
 				},
 				include: { subscriptions: true },
 				orderBy: { nextCheckAt: "asc" },
 				take: limit,
 			});
 		},
-		async claimSource(id, expectedNextCheckAt, leaseUntil) {
+		async claimSource(id, expectedClaim, leaseUntil) {
 			const { count } = await prisma.socialSource.updateMany({
-				where: { id, nextCheckAt: expectedNextCheckAt },
-				data: { nextCheckAt: leaseUntil },
+				where: { id, claimedUntil: expectedClaim },
+				data: { claimedUntil: leaseUntil },
 			});
 			return count === 1;
 		},
-		async recordCheck(id, { state, ...record }) {
+		async renewClaim(id, lease, leaseUntil) {
+			const { count } = await prisma.socialSource.updateMany({
+				where: { id, claimedUntil: lease },
+				data: { claimedUntil: leaseUntil },
+			});
+			return count === 1;
+		},
+		async deferSource(id, until) {
 			await prisma.socialSource.updateMany({
 				where: { id },
+				data: { nextCheckAt: until },
+			});
+		},
+		async recordCheck(id, lease, { state, ...record }) {
+			await prisma.socialSource.updateMany({
+				where: { id, claimedUntil: lease },
 				data: {
 					...record,
+					claimedUntil: null,
 					...(state === undefined
 						? {}
 						: { state: state ?? PrismaNamespace.DbNull }),

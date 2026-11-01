@@ -61,6 +61,7 @@ function makeSource(
 		failureCount: 0,
 		lastCheckedAt: null,
 		nextCheckAt: new Date(Now - 1),
+		claimedUntil: null,
 		subscriptions: [
 			{
 				guildId: 10n,
@@ -108,7 +109,9 @@ function makeStore(sources: SocialSourceWithSubscriptions[]) {
 	const store: SocialStore = {
 		findDueSources: vi.fn(async () => sources.splice(0)),
 		claimSource: vi.fn(async () => true),
-		recordCheck: vi.fn(async (id, record) => {
+		renewClaim: vi.fn(async () => true),
+		deferSource: vi.fn(async () => undefined),
+		recordCheck: vi.fn(async (id, _lease, record) => {
 			checks.push({ id, record });
 		}),
 		updateSubscription: vi.fn(async (key, update) => {
@@ -212,7 +215,8 @@ describe("SocialPoller", () => {
 	])("stores a digest for %s, and still recognizes it", async (_, id) => {
 		const first = makeStore([makeSource()]);
 		const { delivery, posted } = makeDelivery();
-		const provider = makeProvider(async () => items(makeItem(id)));
+		const url = "https://example.com/1";
+		const provider = makeProvider(async () => items(makeItem(id, { url })));
 
 		await makePoller([provider], first.store, delivery).tick();
 
@@ -481,9 +485,7 @@ describe("SocialPoller", () => {
 	});
 
 	it("claims a source for the length of the lease", async () => {
-		const source = makeSource();
-		const { nextCheckAt } = source;
-		const { store } = makeStore([source]);
+		const { store } = makeStore([makeSource()]);
 		const { delivery } = makeDelivery();
 		const provider = makeProvider(async () => items());
 
@@ -491,9 +493,78 @@ describe("SocialPoller", () => {
 
 		expect(store.claimSource).toHaveBeenCalledWith(
 			1n,
-			nextCheckAt,
+			null,
 			new Date(Now + ClaimLease),
 		);
+	});
+
+	it("releases the claim it holds when recording the check", async () => {
+		const { store } = makeStore([makeSource()]);
+		const { delivery } = makeDelivery();
+		const provider = makeProvider(async () => items());
+
+		await makePoller([provider], store, delivery).tick();
+
+		expect(vi.mocked(store.recordCheck).mock.calls[0][1]).toEqual(
+			new Date(Now + ClaimLease),
+		);
+	});
+
+	describe("during a slow delivery", () => {
+		function makeSlowPoller(
+			store: SocialStore,
+			delivery: ReturnType<typeof makeDelivery>["delivery"],
+			provider: SocialProvider,
+		) {
+			let now = Now;
+			const send = delivery.send.getMockImplementation()!;
+			delivery.send.mockImplementation(async (target, options) => {
+				now += ClaimLease;
+				return send(target, options);
+			});
+			return new SocialPoller({
+				providers: [provider],
+				store,
+				delivery,
+				logger,
+				now: () => now,
+				random: () => 0,
+			});
+		}
+
+		it("keeps extending its claim, and records with the latest one", async () => {
+			const { store } = makeStore([makeSource()]);
+			const { delivery, posted } = makeDelivery();
+			const provider = makeProvider(async () =>
+				items(makeItem("b"), makeItem("a")),
+			);
+
+			await makeSlowPoller(store, delivery, provider).tick();
+
+			expect(posted).toEqual(["a", "b"]);
+			const renewals = vi.mocked(store.renewClaim).mock.calls;
+			expect(renewals[0].slice(1)).toEqual([
+				new Date(Now + ClaimLease),
+				new Date(Now + ClaimLease * 2),
+			]);
+			expect(vi.mocked(store.recordCheck).mock.calls[0][1]).toEqual(
+				renewals.at(-1)![2],
+			);
+		});
+
+		it("stops as soon as another process has taken the source over", async () => {
+			const { store, checks } = makeStore([makeSource()]);
+			vi.mocked(store.renewClaim).mockResolvedValue(false);
+			const { delivery, posted } = makeDelivery();
+			const provider = makeProvider(async () =>
+				items(makeItem("b"), makeItem("a")),
+			);
+
+			await makeSlowPoller(store, delivery, provider).tick();
+
+			expect(posted).toEqual(["a"]);
+			expect(checks).toEqual([]);
+		});
 	});
 
 	it("keeps the stored state when nothing changed", async () => {
@@ -622,7 +693,8 @@ describe("SocialPoller", () => {
 		await makePoller([provider], store, delivery).tick();
 
 		expect(checks.map(({ id }) => id)).toEqual([1n]);
-		const [, , resumeAt] = vi.mocked(store.claimSource).mock.calls[1];
+		const [id, resumeAt] = vi.mocked(store.deferSource).mock.calls[0];
+		expect(id).toBe(2n);
 		expect(resumeAt.getTime()).toBeGreaterThan(Now + Time.Minute * 59);
 	});
 
@@ -650,16 +722,15 @@ describe("SocialPoller", () => {
 		vi.mocked(store.findDueSources).mockImplementation(async (_, now, limit) =>
 			queue.filter((source) => source.nextCheckAt <= now).slice(0, limit),
 		);
-		vi.mocked(store.claimSource).mockImplementation(
-			async (id, _, leaseUntil) => {
-				queue.find((source) => source.id === id)!.nextCheckAt = leaseUntil;
-				return true;
+		vi.mocked(store.deferSource).mockImplementation(async (id, until) => {
+			queue.find((source) => source.id === id)!.nextCheckAt = until;
+		});
+		vi.mocked(store.recordCheck).mockImplementation(
+			async (id, _lease, record) => {
+				queue.find((source) => source.id === id)!.nextCheckAt =
+					record.nextCheckAt;
 			},
 		);
-		vi.mocked(store.recordCheck).mockImplementation(async (id, record) => {
-			queue.find((source) => source.id === id)!.nextCheckAt =
-				record.nextCheckAt;
-		});
 		const { delivery } = makeDelivery();
 		const fetched: string[] = [];
 		const provider = makeProvider(
@@ -691,7 +762,7 @@ describe("SocialPoller", () => {
 		await makePoller([provider], store, delivery).tick();
 
 		expect(fetchLatest).toHaveBeenCalledOnce();
-		const [, , resumeAt] = vi.mocked(store.claimSource).mock.calls[1];
+		const [, resumeAt] = vi.mocked(store.deferSource).mock.calls[0];
 		expect(resumeAt.getTime()).toBeGreaterThanOrEqual(Now + AuthFailurePause);
 	});
 
@@ -726,6 +797,18 @@ describe("SocialPoller", () => {
 
 		expect(posted).toEqual([]);
 		expect(updates[0].update.seenItemIds).toEqual(["old"]);
+	});
+
+	it("skips an item with nothing to link to, without failing the others", async () => {
+		const { store } = makeStore([makeSource()]);
+		const { delivery, posted } = makeDelivery();
+		const provider = makeProvider(async () =>
+			items(makeItem("good"), makeItem("bad", { url: "/relative" })),
+		);
+
+		await makePoller([provider], store, delivery).tick();
+
+		expect(posted).toEqual(["good"]);
 	});
 
 	it("posts an item listed twice in one fetch only once", async () => {
