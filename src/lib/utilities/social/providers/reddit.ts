@@ -92,10 +92,12 @@ export function createRedditProvider(
 			);
 		}
 
-		const body = (await answer.json().catch(() => null)) as {
-			access_token?: string;
-			expires_in?: number;
-		} | null;
+		const body = (await answer.json().catch(() => undefined)) as
+			| { access_token?: string; expires_in?: number }
+			| undefined;
+		// A body that never arrived says nothing about the credentials, and calling it a refusal
+		// would rest every subreddit and blame the wrong thing in `show`.
+		if (body === undefined) return err({ _tag: "Unavailable" });
 		if (!body?.access_token) return err({ _tag: "AuthFailed" });
 
 		token = {

@@ -119,8 +119,16 @@ describe("authentication", () => {
 		});
 	});
 
-	it("reports a token answer that is not JSON", async () => {
+	it("does not blame the credentials for a token answer that broke off", async () => {
 		fetchMock.mockResolvedValueOnce(new Response("<html>"));
+
+		const result = await makeProvider().fetchLatest("typescript", null);
+
+		expect(result.unwrapErr()).toEqual({ _tag: "Unavailable" });
+	});
+
+	it("reports a token answer without a token", async () => {
+		fetchMock.mockResolvedValueOnce(json({ error: "invalid_grant" }));
 
 		const result = await makeProvider().fetchLatest("typescript", null);
 
