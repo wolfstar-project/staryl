@@ -215,7 +215,12 @@ export function createRedditProvider(
 		},
 
 		formatNotification(item, source, t) {
-			return createSocialCard(item, {
+			// Only the card leaves these out: the filters still have to be able to read the post.
+			const shown = item.isSpoiler
+				? { ...item, text: null, imageUrl: null }
+				: item;
+
+			return createSocialCard(shown, {
 				accentColor: SocialColors.Reddit,
 				heading: t("events/social:redditHeading", {
 					name: source.displayName,
@@ -236,17 +241,15 @@ function toItem(post: RedditPost): SocialItem[] {
 			id: post.name,
 			url,
 			title: post.title,
-			// A spoiler's text and picture would both give away what the tag is hiding.
-			text: post.spoiler ? null : post.selftext || null,
+			text: post.selftext || null,
 			authorName: post.author ? `u/${post.author}` : null,
 			authorAvatarUrl: null,
-			imageUrl: post.spoiler
-				? null
-				: parseImageUrl(post.preview?.images?.[0]?.source?.url),
+			imageUrl: parseImageUrl(post.preview?.images?.[0]?.source?.url),
 			publishedAt: post.created_utc
 				? new Date(post.created_utc * Time.Second)
 				: null,
 			isNsfw: post.over_18 === true,
+			isSpoiler: post.spoiler === true,
 			flair: post.link_flair_text ?? null,
 			score: post.score ?? 0,
 		},

@@ -1,3 +1,4 @@
+import type { SocialItem } from "#social/provider";
 import { createRedditProvider } from "#social/providers/reddit";
 import { Time } from "@sapphire/time-utilities";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -217,6 +218,7 @@ describe("fetchLatest", () => {
 					imageUrl: "https://i.redd.it/picture.png",
 					publishedAt: new Date(1_800_000_000_000),
 					isNsfw: false,
+					isSpoiler: false,
 					flair: "News",
 					score: 12,
 				},
@@ -232,14 +234,21 @@ describe("fetchLatest", () => {
 		expect(result.unwrap()).toMatchObject({ items: [{ isNsfw: true }] });
 	});
 
-	it("does not give away a spoiler", async () => {
+	it("keeps a spoiler readable for the filters, and out of the card", async () => {
 		respond(listing({ ...Post, spoiler: true }));
+		const provider = makeProvider();
 
-		const result = await makeProvider().fetchLatest("typescript", null);
+		const result = await provider.fetchLatest("typescript", null);
 
-		expect(result.unwrap()).toMatchObject({
-			items: [{ imageUrl: null, text: null }],
-		});
+		const [item] = (result.unwrap() as { items: SocialItem[] }).items;
+		expect(item).toMatchObject({ text: "Some text", isSpoiler: true });
+		expect(
+			provider.formatNotification(
+				item,
+				{ target: "typescript", displayName: "r/typescript" },
+				vi.fn() as never,
+			),
+		).toMatchObject({ body: null, imageUrl: null });
 	});
 
 	it.each([
