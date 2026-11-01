@@ -12,10 +12,10 @@ import type {
 import type { APIChannel } from "discord-api-types/v10";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
-	NotificationDeliveryError,
 	sendOfflineNotification,
 	sendOnlineNotification,
 } from "#twitch/notifications";
+import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import {
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
