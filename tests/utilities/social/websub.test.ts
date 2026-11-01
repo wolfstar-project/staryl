@@ -174,12 +174,12 @@ describe("POST /youtube/websub", () => {
 			}) as never,
 		);
 
-	it("makes a followed channel due, without posting anything itself", async () => {
+	it("asks for a check of the channel, without posting anything itself", async () => {
 		await push(Body, sign(Body));
 
 		expect(prismaMock.socialSource.updateMany).toHaveBeenCalledWith({
 			where: { provider: "YouTube", target: ChannelId },
-			data: { nextCheckAt: expect.any(Date) },
+			data: { checkRequested: true },
 		});
 	});
 

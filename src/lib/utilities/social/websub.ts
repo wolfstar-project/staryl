@@ -97,13 +97,13 @@ export async function isFollowedChannel(channelId: string) {
 }
 
 /**
- * Makes a channel due right now. A push is only ever a hint to look: what gets posted still comes
- * from the feed through the regular check, so the push path cannot post anything by itself, and a
- * video that arrives twice is deduplicated like any other item.
+ * Asks for a channel to be checked now. A push is only ever a hint to look: what gets posted still
+ * comes from the feed through the regular check, so the push path cannot post anything by itself,
+ * and a video that arrives twice is deduplicated like any other item.
  */
 export function wakeChannel(channelId: string) {
 	return container.prisma.socialSource.updateMany({
 		where: { provider: SocialProviderName.YouTube, target: channelId },
-		data: { nextCheckAt: new Date() },
+		data: { checkRequested: true },
 	});
 }
