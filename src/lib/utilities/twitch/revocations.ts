@@ -5,6 +5,7 @@ import { container } from "@wolfstar/http-framework";
 import {
 	addEventSubscription,
 	areTwitchEventSubCredentialsSet,
+	removeEventSubscription,
 	TwitchEventSubTypes,
 } from "@wolfstar/twitch-helpers";
 
@@ -41,17 +42,27 @@ export async function handleSubscriptionRevoked(
 		);
 		const renewedId = renewal.isOk() ? renewal.unwrap()?.id : null;
 		if (!isNullish(renewedId)) {
-			await markRevocation(revoked.id, {
-				subscriptionId: renewedId,
-				revokedReason: null,
-			});
-			return "renewed";
-		}
+			const stored = await Result.fromAsync(() =>
+				markRevocation(revoked.id, {
+					subscriptionId: renewedId,
+					revokedReason: null,
+				}),
+			);
+			if (stored.isOk()) return "renewed";
 
-		logger.error(
-			`[twitch-subscriptions] Could not renew the revoked subscription of ${subscription.streamerId}`,
-			renewal.isErr() ? renewal.unwrapErr() : undefined,
-		);
+			logger.error(
+				`[twitch-subscriptions] Could not store the renewed subscription of ${subscription.streamerId}`,
+				stored.unwrapErr(),
+			);
+			// Left alive it would be an orphan nothing points at, and Twitch answers 409 to the next
+			// attempt. If this fails too there is nothing more to do from here.
+			await Result.fromAsync(() => removeEventSubscription(renewedId));
+		} else {
+			logger.error(
+				`[twitch-subscriptions] Could not renew the revoked subscription of ${subscription.streamerId}`,
+				renewal.isErr() ? renewal.unwrapErr() : undefined,
+			);
+		}
 	}
 
 	await markRevocation(revoked.id, { revokedReason: revoked.status });

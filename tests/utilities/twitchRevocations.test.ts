@@ -9,11 +9,15 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 		...actual,
 		addEventSubscription: vi.fn(),
 		areTwitchEventSubCredentialsSet: vi.fn(),
+		removeEventSubscription: vi.fn(),
 	};
 });
 
-const { addEventSubscription, areTwitchEventSubCredentialsSet } =
-	await import("@wolfstar/twitch-helpers");
+const {
+	addEventSubscription,
+	areTwitchEventSubCredentialsSet,
+	removeEventSubscription,
+} = await import("@wolfstar/twitch-helpers");
 
 const prismaMock = {
 	twitchSubscription: { findFirst: vi.fn(), updateMany: vi.fn() },
@@ -46,6 +50,20 @@ describe("handleSubscriptionRevoked", () => {
 		expect(prismaMock.twitchSubscription.updateMany).toHaveBeenCalledWith({
 			where: { subscriptionId: "old" },
 			data: { subscriptionId: "new", revokedReason: null },
+		});
+	});
+
+	it("does not leave an orphan behind when the renewal cannot be stored", async () => {
+		vi.mocked(addEventSubscription).mockResolvedValue({ id: "new" } as never);
+		prismaMock.twitchSubscription.updateMany.mockRejectedValueOnce(
+			new Error("down"),
+		);
+
+		expect(await revoke()).toBe("recorded");
+		expect(removeEventSubscription).toHaveBeenCalledWith("new");
+		expect(prismaMock.twitchSubscription.updateMany).toHaveBeenLastCalledWith({
+			where: { subscriptionId: "old" },
+			data: { revokedReason: "notification_failures_exceeded" },
 		});
 	});
 
