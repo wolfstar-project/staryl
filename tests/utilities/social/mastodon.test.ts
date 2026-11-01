@@ -203,6 +203,20 @@ describe("fetchLatest", () => {
 		});
 	});
 
+	it("leaves out a public boost of a post that is not public", async () => {
+		const original = { ...Status, id: "50", visibility: "unlisted" };
+
+		expect(await fetchItems({ ...Status, reblog: original })).toEqual([]);
+	});
+
+	it("reads a boosted reply as a reply, since that is what gets shown", async () => {
+		const original = { ...Status, id: "50", in_reply_to_id: "49" };
+
+		const [item] = await fetchItems({ ...Status, reblog: original });
+
+		expect(item.isReply).toBe(true);
+	});
+
 	it("uses the first picture of a status", async () => {
 		const [item] = await fetchItems({
 			...Status,

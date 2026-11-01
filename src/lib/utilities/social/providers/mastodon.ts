@@ -167,10 +167,14 @@ function readAccount(
 }
 
 function toItem(status: MastodonStatus): SocialItem[] {
-	// Only what the author published for everyone. Unlisted posts asked to stay out of public feeds.
-	if (status.visibility !== "public") return [];
-
 	const shown = isStatus(status.reblog) ? status.reblog : status;
+
+	// Only what the author published for everyone. Unlisted posts asked to stay out of public feeds,
+	// and a public boost does not change that for the post it shows.
+	if (status.visibility !== "public" || shown.visibility !== "public") {
+		return [];
+	}
+
 	const url = parseItemUrl(shown.url ?? shown.uri);
 	if (url === null) return [];
 
@@ -188,7 +192,7 @@ function toItem(status: MastodonStatus): SocialItem[] {
 			authorAvatarUrl: parseImageUrl(shown.account.avatar),
 			imageUrl: warning || shown.sensitive ? null : readImage(shown),
 			publishedAt: new Date(status.created_at),
-			isReply: Boolean(status.in_reply_to_id),
+			isReply: Boolean(shown.in_reply_to_id),
 			isRepost: shown !== status,
 		},
 	];
