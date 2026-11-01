@@ -28,6 +28,7 @@
 			}
 		],
 		"no-async-promise-executor": "off",
+		"no-underscore-dangle": ["warn", { "allow": ["_tag"] }],
 		"no-cond-assign": ["error", "always"],
 		"no-console": "off",
 		"no-debugger": "off",

@@ -50,6 +50,14 @@ export const aliasEntries = [
 		},
 	},
 	{
+		find: "#social",
+		replacement: "#social",
+		customResolver(source: string) {
+			const subPath = source.replace("#social/", "");
+			return resolveSource("src/lib/utilities/social", subPath);
+		},
+	},
+	{
 		find: "#twitch",
 		replacement: "#twitch",
 		customResolver(source: string) {
