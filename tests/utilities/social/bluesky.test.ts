@@ -196,6 +196,17 @@ describe("fetchLatest", () => {
 		expect(item.isNsfw).toBe(true);
 	});
 
+	it("marks a post by an account labelled as adult", async () => {
+		const [item] = await fetchItems({
+			post: {
+				...Entry.post,
+				author: { ...Author, labels: [{ val: "sexual" }] },
+			},
+		});
+
+		expect(item.isNsfw).toBe(true);
+	});
+
 	it("drops a reposted author who opted out of logged-out access", async () => {
 		const optedOut = {
 			...Author,

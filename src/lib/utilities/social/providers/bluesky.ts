@@ -193,7 +193,10 @@ function toItem({ post, reason }: BlueskyFeedEntry): SocialItem[] {
 			publishedAt: date ? new Date(date) : null,
 			isReply: Boolean(record.reply),
 			isRepost,
-			isNsfw: (post.labels ?? []).some(({ val }) => AdultLabels.has(val)),
+			// Moderators can label a whole account, not only a post.
+			isNsfw: [...(post.labels ?? []), ...(author.labels ?? [])].some(
+				({ val }) => AdultLabels.has(val),
+			),
 		},
 	];
 }
