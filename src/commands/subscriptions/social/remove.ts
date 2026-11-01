@@ -1,4 +1,5 @@
 import type { SocialRemoveOptions } from "#social/subscriptions";
+import { escapeInlineText } from "#social/notifications";
 import {
 	createSourceOption,
 	getGuildSocialSubscriptions,
@@ -101,7 +102,7 @@ export class UserCommand extends Command {
 			interaction,
 			"commands/social:removeSuccess",
 			{
-				name: subscription.source.displayName,
+				name: escapeInlineText(subscription.source.displayName),
 				channel: channelMention(String(channelId)),
 			},
 		);

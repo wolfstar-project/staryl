@@ -106,6 +106,22 @@ describe("fetchLatest", () => {
 		});
 	});
 
+	it("resolves links relative to the feed", async () => {
+		const body = `<rss><channel><item><link>/posts/1</link><enclosure url="/1.png"/></item></channel></rss>`;
+		const { provider } = makeProvider(ok(respond({ body })));
+
+		const result = await provider.fetchLatest(FeedUrl, null);
+
+		expect(result.unwrap()).toMatchObject({
+			items: [
+				{
+					url: "https://example.com/posts/1",
+					imageUrl: "https://example.com/1.png",
+				},
+			],
+		});
+	});
+
 	it("drops an entry whose link is not a web URL", async () => {
 		const body = `<rss><channel><item><link>javascript:alert(1)</link><guid>x</guid></item></channel></rss>`;
 		const { provider } = makeProvider(ok(respond({ body })));

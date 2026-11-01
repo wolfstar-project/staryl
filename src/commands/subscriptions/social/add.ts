@@ -1,5 +1,6 @@
 import type { SocialAddOptions } from "#social/subscriptions";
 import { DefaultSocialFilters, parseKeywordList } from "#social/filters";
+import { escapeInlineText } from "#social/notifications";
 import {
 	addSocialSubscription,
 	createProviderOption,
@@ -93,7 +94,7 @@ export class UserCommand extends Command {
 			interaction,
 			"commands/social:addSuccess",
 			{
-				name: result.unwrap().displayName,
+				name: escapeInlineText(result.unwrap().displayName),
 				channel: channelMention(options.channel.id),
 			},
 		);

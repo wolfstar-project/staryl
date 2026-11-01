@@ -220,6 +220,21 @@ describe("subscriptions social add", () => {
 		expect(reply().content).toContain("Example & Friends");
 	});
 
+	it("does not let a feed title restyle the confirmation", async () => {
+		fetchMock.mockResolvedValue(
+			ok({
+				status: 200,
+				url: FeedUrl,
+				headers: {},
+				body: "<rss><channel><title>[a](https://example.com)</title></channel></rss>",
+			}),
+		);
+
+		await runner.run(buildInteraction("add", addOptions()));
+
+		expect(reply().content).toContain("\\[a\\](https://example.com)");
+	});
+
 	it("keeps the keywords as filters", async () => {
 		await runner.run(
 			buildInteraction(

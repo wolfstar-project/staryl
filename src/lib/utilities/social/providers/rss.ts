@@ -137,7 +137,7 @@ function toFetchOutcome(
 	if (feed === null) return err({ _tag: "InvalidResponse" });
 
 	const items = feed.entries.flatMap((entry): SocialItem[] => {
-		const url = parseItemUrl(entry.url);
+		const url = parseItemUrl(resolveUrl(entry.url, response.url));
 		if (url === null) return [];
 
 		return [
@@ -145,7 +145,7 @@ function toFetchOutcome(
 				...entry,
 				url,
 				authorAvatarUrl: null,
-				imageUrl: parseImageUrl(entry.imageUrl),
+				imageUrl: parseImageUrl(resolveUrl(entry.imageUrl, response.url)),
 			},
 		];
 	});
@@ -159,6 +159,13 @@ function toFetchOutcome(
 		items,
 		state: state.etag || state.lastModified ? { ...state } : null,
 	});
+}
+
+/** Feeds often link relative to themselves, which means nothing inside a Discord message. */
+function resolveUrl(url: string | null, feedUrl: string) {
+	return url !== null && URL.canParse(url, feedUrl)
+		? new URL(url, feedUrl).href
+		: null;
 }
 
 function toConditionalHeaders(state: Prisma.JsonValue | null) {
