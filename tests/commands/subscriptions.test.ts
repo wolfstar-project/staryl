@@ -88,6 +88,7 @@ const prismaMock = {
 		findFirst: vi.fn(),
 		create: vi.fn(),
 		delete: vi.fn(),
+		updateMany: vi.fn(),
 	},
 	guildSubscription: {
 		findMany: vi.fn(),
@@ -208,6 +209,59 @@ function patchedContent(): string {
 }
 
 describe("subscriptions twitch add", () => {
+	function addInteraction() {
+		return buildInteraction(
+			"add",
+			[
+				streamerOption(StreamerDisplayName),
+				channelOption(ChannelId),
+				typeOption("StreamOnline"),
+			],
+			channelResolved(),
+		);
+	}
+
+	function findRevokedRow() {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue({
+			id: SubscriptionId,
+			streamerId: StreamerId,
+			subscriptionId: "gone",
+			subscriptionType: TwitchSubscriptionType.StreamOnline,
+			revokedReason: "notification_failures_exceeded",
+		});
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+	}
+
+	it("renews a revoked subscription instead of connecting to a dead one", async () => {
+		findRevokedRow();
+		vi.mocked(addEventSubscription).mockResolvedValue({ id: "new" } as never);
+		prismaMock.twitchSubscription.updateMany.mockResolvedValue({ count: 1 });
+		prismaMock.guildSubscription.create.mockResolvedValue({});
+
+		await runner.run(addInteraction());
+
+		expect(prismaMock.twitchSubscription.updateMany).toHaveBeenCalledWith({
+			where: { subscriptionId: "gone" },
+			data: { subscriptionId: "new", revokedReason: null },
+		});
+		expect(prismaMock.guildSubscription.create).toHaveBeenCalled();
+	});
+
+	it("does not report success while the subscription is still revoked", async () => {
+		findRevokedRow();
+		vi.mocked(addEventSubscription).mockRejectedValue(new Error("nope"));
+
+		await runner.run(addInteraction());
+
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("could not create");
+	});
+
 	it("subscribes a new streamer and edits the deferred reply with a success message", async () => {
 		vi.mocked(fetchUsers).mockResolvedValue(
 			ok({
@@ -681,6 +735,47 @@ describe("subscriptions twitch add", () => {
 });
 
 describe("subscriptions twitch remove", () => {
+	it("does not ask Twitch to delete what it already revoked", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+		const subscription = {
+			guildId: 737141877803057244n,
+			channelId: BigInt(ChannelId),
+			subscriptionId: SubscriptionId,
+			twitchSubscription: {
+				streamerId: StreamerId,
+				subscriptionType: TwitchSubscriptionType.StreamOnline,
+			},
+		};
+		prismaMock.guildSubscription.findMany.mockResolvedValue([subscription]);
+		prismaMock.guildSubscription.delete.mockResolvedValue({});
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue({
+			id: SubscriptionId,
+			subscriptionId: "gone",
+			revokedReason: "authorization_revoked",
+			guildSubscription: [],
+		});
+		prismaMock.twitchSubscription.delete.mockResolvedValue({});
+
+		await runner.run(
+			buildInteraction(
+				"remove",
+				[
+					streamerOption(StreamerDisplayName),
+					channelOption(ChannelId),
+					typeOption("StreamOnline"),
+				],
+				channelResolved(),
+			),
+		);
+
+		expect(removeEventSubscription).not.toHaveBeenCalled();
+		expect(prismaMock.twitchSubscription.delete).toHaveBeenCalled();
+	});
+
 	it("removes a matching subscription", async () => {
 		prismaMock.guildSubscription.findMany.mockResolvedValue([
 			{
@@ -882,6 +977,33 @@ describe("subscriptions twitch reset", () => {
 });
 
 describe("subscriptions twitch show", () => {
+	it("flags a subscription Twitch ended", async () => {
+		prismaMock.guildSubscription.findMany.mockResolvedValue([
+			{
+				guildId: 1n,
+				channelId: BigInt(ChannelId),
+				subscriptionId: SubscriptionId,
+				twitchSubscription: {
+					streamerId: StreamerId,
+					subscriptionType: TwitchSubscriptionType.StreamOnline,
+					revokedReason: "notification_failures_exceeded",
+				},
+			},
+		]);
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [{ id: StreamerId, display_name: StreamerDisplayName }],
+			}) as never,
+		);
+
+		await runner.run(buildInteraction("show", []));
+
+		const { embeds } = patchedBody() as {
+			embeds?: { description?: string }[];
+		};
+		expect(embeds![0].description).toContain("Twitch ended this subscription");
+	});
+
 	it("lists the guild's subscriptions", async () => {
 		prismaMock.guildSubscription.findMany.mockResolvedValue([
 			{

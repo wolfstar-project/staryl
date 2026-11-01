@@ -10,6 +10,8 @@
 	"rssFooter": "Staryl Feed Notifications",
 	"rssHeading": "New in {{name}}",
 	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.",
+	"twitchClipHeading": "New clip of {{name}}",
+	"twitchVideoHeading": "New video from {{name}}",
 	"watchVideo": "Watch",
 	"youtubeFooter": "Staryl YouTube Notifications",
 	"youtubeHeading": "New video from {{name}}",

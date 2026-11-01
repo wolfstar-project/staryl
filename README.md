@@ -72,6 +72,9 @@ WebSocket connection.
   Discord channels when Twitch streamers go online or offline.
 - **EventSub Integration**: Uses Twitch EventSub webhooks for reliable,
   low-latency stream event delivery.
+- **Feeds and Social Accounts**: Follow any RSS or Atom feed, subreddits,
+  Bluesky and Mastodon accounts, YouTube channels and Twitch videos and clips
+  with `/subscriptions social`, with keyword filters per channel.
 - **HTTP-Based Architecture**: Built on `@wolfstar/http-framework`
   (Fastify-based), handling Discord interactions via HTTP endpoints instead of a
   WebSocket gateway.
@@ -115,6 +118,9 @@ These include, but are not limited to:
 
 - **PostgreSQL**: As database for guild subscriptions and Twitch subscription
   mappings.
+- **Reddit** (optional): Reddit's Data API Terms require an approved app, so
+  Reddit subscriptions stay off until `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`
+  and `REDDIT_USERNAME` are set.
 - **Twitch EventSub**: Requires a publicly accessible HTTPS endpoint for webhook
   delivery.
 - Other external APIs, each requiring their own individual API keys.

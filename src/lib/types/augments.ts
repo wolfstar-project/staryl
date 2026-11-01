@@ -3,6 +3,7 @@ import type { IntegerString } from "@wolfstar/env-utilities";
 import type {
 	TwitchEventSubEvent,
 	TwitchEventSubOnlineEvent,
+	TwitchEventSubResult,
 } from "@wolfstar/twitch-helpers";
 
 declare module "@wolfstar/http-framework" {
@@ -18,6 +19,10 @@ declare module "@wolfstar/http-framework" {
 		emit(
 			event: StarylEvents.TwitchStreamOffline,
 			data: TwitchEventSubEvent,
+		): boolean;
+		emit(
+			event: StarylEvents.TwitchSubscriptionRevoked,
+			subscription: TwitchEventSubResult,
 		): boolean;
 		emit(event: string | symbol, ...args: any[]): boolean;
 	}

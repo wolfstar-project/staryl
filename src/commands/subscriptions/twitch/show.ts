@@ -92,11 +92,13 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const [liveStatus, offlineStatus, unknownUser] = await Promise.all([
-			resolveKey(interaction, "commands/twitch:showStatus.live"),
-			resolveKey(interaction, "commands/twitch:showStatus.offline"),
-			resolveKey(interaction, "commands/twitch:showUnknownUser"),
-		]);
+		const [liveStatus, offlineStatus, unknownUser, revokedNotice] =
+			await Promise.all([
+				resolveKey(interaction, "commands/twitch:showStatus.live"),
+				resolveKey(interaction, "commands/twitch:showStatus.offline"),
+				resolveKey(interaction, "commands/twitch:showUnknownUser"),
+				resolveKey(interaction, "commands/twitch:showRevoked"),
+			]);
 		const statuses = { live: liveStatus, offline: offlineStatus };
 
 		const names = streamerFilter
@@ -111,7 +113,10 @@ export class UserCommand extends Command {
 				gs.twitchSubscription.subscriptionType,
 				statuses,
 			);
-			return `${name} — ${channelMention(String(gs.channelId))} → ${status}`;
+			const revoked = gs.twitchSubscription.revokedReason
+				? `\n-# ${revokedNotice}`
+				: "";
+			return `${name} — ${channelMention(String(gs.channelId))} → ${status}${revoked}`;
 		});
 
 		const embed = new EmbedBuilder()

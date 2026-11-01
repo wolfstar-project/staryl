@@ -63,6 +63,11 @@ pnpm exec prisma db push
 The unused `ioredis` dependency has been removed. Postgres is the only required
 backing service for local dev.
 
+The Docker image does not touch the schema. After a change to
+`prisma/schema.prisma`, run `pnpm exec prisma db push` against the target
+database before deploying: without the tables the bot still boots, but the
+social poller logs an error on every tick.
+
 ### Environment variables
 
 Copy `src/.env` values into `src/.env.local` for local overrides. The HTTP
@@ -77,6 +82,10 @@ NODE_OPTIONS='--unhandled-rejections=warn' pnpm start
 `registerCommands()` will log a 401 from Discord but the process stays up in
 warn mode. Real Discord/Twitch keys are needed for slash-command registration
 and EventSub webhooks.
+
+RSS, Bluesky, Mastodon and YouTube subscriptions need no credentials at all.
+Reddit stays off without `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` and
+`REDDIT_USERNAME`, and `YOUTUBE_*` is optional.
 
 ### Running the app
 

@@ -130,11 +130,13 @@ declare module "i18next" {
         providerBluesky: "Bluesky";
         providerMastodon: "Mastodon";
         providerYouTube: "YouTube";
+        providerTwitchVideos: "Twitch videos";
+        providerTwitchClips: "Twitch clips";
         addSuccess: "{{GREENTICK}} Success! Whenever **{{name}}** publishes something, I will post it in {{channel}}.";
         addProviderNotConfigured: "{{REDCROSS}} This provider is not available on this bot yet.";
         addFilterUnsupported: "{{REDCROSS}} This provider does not have the data for one of the filters you picked.";
         addLimitReached: "{{REDCROSS}} This server already follows the maximum of 25 feeds and accounts. Remove one first.";
-        addTargetInvalid: "{{REDCROSS}} That does not look right for this provider. Feeds take a URL, Reddit a subreddit name, Bluesky a handle, Mastodon a `user@server` address and YouTube a channel URL.";
+        addTargetInvalid: "{{REDCROSS}} That does not look right for this provider. Feeds take a URL, Reddit a subreddit name, Bluesky a handle, Mastodon a `user@server` address, YouTube a channel URL and Twitch a channel name.";
         addTargetNotFound: "{{REDCROSS}} I could not find that. Check the spelling and try again.";
         addTargetBlocked: "{{REDCROSS}} I cannot read that address. It has to be public and on the standard web ports.";
         addTargetUnsupported: "{{REDCROSS}} I could read that page, but found no RSS or Atom feed there.";
@@ -226,6 +228,7 @@ declare module "i18next" {
           offline: "Offline";
         };
         showUnknownUser: "Unknown";
+        showRevoked: "⚠️ Twitch ended this subscription and I could not renew it. Remove it and add it again.";
         showEmbedTitle: "Twitch Subscriptions";
       };
       errors: {
@@ -253,6 +256,8 @@ declare module "i18next" {
         rssFooter: "Staryl Feed Notifications";
         rssHeading: "New in {{name}}";
         testNotice: "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.";
+        twitchClipHeading: "New clip of {{name}}";
+        twitchVideoHeading: "New video from {{name}}";
         watchVideo: "Watch";
         youtubeFooter: "Staryl YouTube Notifications";
         youtubeHeading: "New video from {{name}}";

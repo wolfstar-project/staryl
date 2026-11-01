@@ -32,6 +32,8 @@ model TwitchSubscription {
   streamerId        String                 @map("streamer_id") @db.VarChar(10)
   subscriptionId    String                 @map("subscription_id") @db.VarChar(36)
   subscriptionType  TwitchSubscriptionType
+  // Why Twitch ended the EventSub subscription, when it could not be renewed.
+  revokedReason     String?                @map("revoked_reason") @db.VarChar(64)
   guildSubscription GuildSubscription[]
 
   @@unique([streamerId, subscriptionType])
@@ -95,6 +97,8 @@ enum SocialProviderName {
   Bluesky
   Mastodon
   YouTube
+  TwitchVideos
+  TwitchClips
 
   @@map("social_provider_name_enum")
 }
