@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UC_x5XG1OV2P6uZZ5FSM9Ttw"/>
+ <id>yt:channel:_x5XG1OV2P6uZZ5FSM9Ttw</id>
+ <yt:channelId>_x5XG1OV2P6uZZ5FSM9Ttw</yt:channelId>
+ <title>Google for Developers</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw"/>
+ <author>
+  <name>Google for Developers</name>
+  <uri>https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw</uri>
+ </author>
+ <published>2007-08-23T00:34:43+00:00</published>
+ <entry>
+  <id>yt:video:rPj14ToaZSA</id>
+  <yt:videoId>rPj14ToaZSA</yt:videoId>
+  <yt:channelId>UC_x5XG1OV2P6uZZ5FSM9Ttw</yt:channelId>
+  <title>A short one</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/rPj14ToaZSA"/>
+  <author><name>Google for Developers</name></author>
+  <published>2026-10-30T20:00:20+00:00</published>
+  <updated>2026-10-30T22:47:50+00:00</updated>
+  <media:group>
+   <media:title>A short one</media:title>
+   <media:thumbnail url="https://i3.ytimg.com/vi/rPj14ToaZSA/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Quick tip</media:description>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:rsOiZE19RVo</id>
+  <yt:videoId>rsOiZE19RVo</yt:videoId>
+  <yt:channelId>UC_x5XG1OV2P6uZZ5FSM9Ttw</yt:channelId>
+  <title>Accelerate shipping</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=rsOiZE19RVo"/>
+  <author><name>Google for Developers</name></author>
+  <published>2026-10-29T20:00:20+00:00</published>
+  <updated>2026-10-29T22:47:50+00:00</updated>
+  <media:group>
+   <media:title>Accelerate shipping</media:title>
+   <media:thumbnail url="https://i3.ytimg.com/vi/rsOiZE19RVo/hqdefault.jpg" width="480" height="360"/>
+   <media:description>A longer video</media:description>
+  </media:group>
+ </entry>
+</feed>

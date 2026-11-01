@@ -43,5 +43,9 @@ declare module "@wolfstar/env-utilities" {
 		REDDIT_CLIENT_ID: string;
 		REDDIT_CLIENT_SECRET: string;
 		REDDIT_USERNAME: string;
+
+		YOUTUBE_API_KEY: string;
+		YOUTUBE_WEBSUB_CALLBACK: string;
+		YOUTUBE_WEBSUB_SECRET: string;
 	}
 }

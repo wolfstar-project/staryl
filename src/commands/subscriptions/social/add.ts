@@ -14,6 +14,7 @@ import {
 import { channelMention } from "@discordjs/formatters";
 import {
 	applyLocalizedBuilder,
+	createSelectMenuChoiceName,
 	getSupportedLanguageT as resolveKey,
 } from "@wolfstar/plugin-i18next";
 import {
@@ -90,6 +91,26 @@ import { MessageFlags } from "discord-api-types/v10";
 					"commands/social:optionsExcludeRepostsName",
 					"commands/social:optionsExcludeRepostsDescription",
 				),
+			)
+			.addStringOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsShortsName",
+					"commands/social:optionsShortsDescription",
+				).addChoices(
+					createSelectMenuChoiceName(
+						"commands/social:optionsShortsChoiceInclude",
+						{ value: "include" },
+					),
+					createSelectMenuChoiceName(
+						"commands/social:optionsShortsChoiceExclude",
+						{ value: "exclude" },
+					),
+					createSelectMenuChoiceName(
+						"commands/social:optionsShortsChoiceOnly",
+						{ value: "only" },
+					),
+				),
 			),
 )
 export class UserCommand extends Command {
@@ -113,6 +134,7 @@ export class UserCommand extends Command {
 				minimumScore: options.minimum_score ?? null,
 				excludeReplies: options.exclude_replies ?? false,
 				excludeReposts: options.exclude_reposts ?? false,
+				shorts: options.shorts ?? "include",
 			},
 		});
 

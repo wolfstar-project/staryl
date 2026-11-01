@@ -91,6 +91,7 @@ enum SocialProviderName {
   Reddit
   Bluesky
   Mastodon
+  YouTube
 
   @@map("social_provider_name_enum")
 }

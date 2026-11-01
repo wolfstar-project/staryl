@@ -12,6 +12,7 @@ export enum SocialColors {
 	Reddit = 0xff4500,
 	Bluesky = 0x1185fe,
 	Mastodon = 0x6364ff,
+	YouTube = 0xff0000,
 }
 
 export enum Colors {
