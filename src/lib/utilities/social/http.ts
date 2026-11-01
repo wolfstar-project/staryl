@@ -1,6 +1,9 @@
 import type { ProviderFailure } from "#social/provider";
+import type { Result } from "@sapphire/result";
+import { err, ok } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
 
+const RequestTimeout = Time.Second * 10;
 /** A server does not get to park a source, or everything sharing its budget, for a year. */
 const MaximumRetryAfter = Time.Hour * 6;
 
@@ -38,4 +41,23 @@ export function toHttpFailure(
 		return { _tag: "TargetUnavailable" };
 	}
 	return { _tag: "Unavailable" };
+}
+
+/** Calls an API on a fixed host. A URL a member chose goes through `fetchPublicUrl` instead. */
+export async function sendRequest(
+	request: typeof fetch,
+	url: string,
+	init: RequestInit = {},
+): Promise<Result<Response, ProviderFailure>> {
+	try {
+		return ok(
+			await request(url, {
+				...init,
+				signal: AbortSignal.timeout(RequestTimeout),
+			}),
+		);
+	} catch {
+		// Timeouts and connection failures both just mean the API could not be reached right now.
+		return err({ _tag: "Unavailable" });
+	}
 }

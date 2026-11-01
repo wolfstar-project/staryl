@@ -62,6 +62,20 @@ import { MessageFlags } from "discord-api-types/v10";
 					"commands/social:optionsExcludeKeywordsName",
 					"commands/social:optionsExcludeKeywordsDescription",
 				).setMaxLength(500),
+			)
+			.addStringOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsFlairsName",
+					"commands/social:optionsFlairsDescription",
+				).setMaxLength(500),
+			)
+			.addIntegerOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsMinimumScoreName",
+					"commands/social:optionsMinimumScoreDescription",
+				).setMinValue(1),
 			),
 )
 export class UserCommand extends Command {
@@ -81,6 +95,8 @@ export class UserCommand extends Command {
 				...DefaultSocialFilters,
 				includeKeywords: parseKeywordList(options.keywords),
 				excludeKeywords: parseKeywordList(options.exclude_keywords),
+				flairs: parseKeywordList(options.flairs),
+				minimumScore: options.minimum_score ?? null,
 			},
 		});
 

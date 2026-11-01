@@ -253,6 +253,27 @@ describe("subscriptions social add", () => {
 		});
 	});
 
+	it("refuses a filter the provider has no data for", async () => {
+		await runner.run(
+			buildInteraction("add", addOptions(string("flairs", "News"))),
+		);
+
+		expect(reply().content).toContain("does not have the data");
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("says so when a provider has no credentials", async () => {
+		await runner.run(
+			buildInteraction("add", [
+				string("provider", "Reddit"),
+				string("target", "typescript"),
+				channelOption,
+			]),
+		);
+
+		expect(reply().content).toContain("not available");
+	});
+
 	it.each([
 		[
 			"a page without a feed",
