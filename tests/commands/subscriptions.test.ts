@@ -240,6 +240,7 @@ describe("subscriptions twitch add", () => {
 	it("renews a revoked subscription instead of connecting to a dead one", async () => {
 		findRevokedRow();
 		vi.mocked(addEventSubscription).mockResolvedValue({ id: "new" } as never);
+		prismaMock.twitchSubscription.updateMany.mockResolvedValue({ count: 1 });
 		prismaMock.guildSubscription.create.mockResolvedValue({});
 
 		await runner.run(addInteraction());

@@ -35,6 +35,7 @@ beforeEach(() => {
 	container.prisma = prismaMock as never;
 	vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(true);
 	prismaMock.twitchSubscription.findFirst.mockResolvedValue(Stored);
+	prismaMock.twitchSubscription.updateMany.mockResolvedValue({ count: 1 });
 	vi.spyOn(container.logger, "error").mockImplementation(() => undefined);
 });
 
@@ -65,6 +66,14 @@ describe("handleSubscriptionRevoked", () => {
 			where: { subscriptionId: "old" },
 			data: { revokedReason: "notification_failures_exceeded" },
 		});
+	});
+
+	it("removes the replacement when the row vanished during the renewal", async () => {
+		vi.mocked(addEventSubscription).mockResolvedValue({ id: "new" } as never);
+		prismaMock.twitchSubscription.updateMany.mockResolvedValue({ count: 0 });
+
+		expect(await revoke()).toBe("recorded");
+		expect(removeEventSubscription).toHaveBeenCalledWith("new");
 	});
 
 	it("records the reason when Twitch refuses", async () => {

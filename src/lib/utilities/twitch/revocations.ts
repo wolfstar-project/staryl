@@ -48,11 +48,12 @@ export async function handleSubscriptionRevoked(
 					revokedReason: null,
 				}),
 			);
-			if (stored.isOk()) return "renewed";
+			// No row updated means a member removed the last subscription while this waited on Twitch.
+			if (stored.unwrapOr({ count: 0 }).count > 0) return "renewed";
 
 			logger.error(
 				`[twitch-subscriptions] Could not store the renewed subscription of ${subscription.streamerId}`,
-				stored.unwrapErr(),
+				stored.isErr() ? stored.unwrapErr() : undefined,
 			);
 			// Left alive it would be an orphan nothing points at, and Twitch answers 409 to the next
 			// attempt. If this fails too there is nothing more to do from here.
