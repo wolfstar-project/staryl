@@ -62,6 +62,8 @@ export interface SocialAddOptions {
 	message?: string;
 	keywords?: string;
 	exclude_keywords?: string;
+	flairs?: string;
+	minimum_score?: number;
 }
 
 export interface SocialSubscriptionOptions {

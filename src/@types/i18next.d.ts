@@ -108,11 +108,16 @@ declare module "i18next" {
         optionsKeywordsDescription: "Comma separated. Only post items containing at least one of these.";
         optionsExcludeKeywordsName: "exclude_keywords";
         optionsExcludeKeywordsDescription: "Comma separated. Never post items containing one of these.";
+        optionsFlairsName: "flairs";
+        optionsFlairsDescription: "Reddit only, comma separated. Only post items with one of these flairs.";
+        optionsMinimumScoreName: "minimum_score";
+        optionsMinimumScoreDescription: "Reddit only. Wait until a post reaches this score before posting it.";
         optionsSourceName: "source";
         optionsSourceDescription: "The feed or account this server follows.";
         optionsRemoveChannelName: "channel";
         optionsRemoveChannelDescription: "The channel to stop posting in. Only needed if several follow this.";
         providerRss: "RSS or Atom feed";
+        providerReddit: "Reddit";
         addSuccess: "{{GREENTICK}} Success! Whenever **{{name}}** publishes something, I will post it in {{channel}}.";
         addProviderNotConfigured: "{{REDCROSS}} This provider is not available on this bot yet.";
         addFilterUnsupported: "{{REDCROSS}} This provider does not have the data for one of the filters you picked.";
@@ -226,6 +231,9 @@ declare module "i18next" {
       };
       "events/social": {
         openArticle: "Read";
+        openPost: "View post";
+        redditFooter: "Staryl Reddit Notifications";
+        redditHeading: "New post in {{name}}";
         rssFooter: "Staryl Feed Notifications";
         rssHeading: "New in {{name}}";
         testNotice: "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.";

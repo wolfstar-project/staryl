@@ -36,6 +36,7 @@ export interface SocialItemTraits {
 	isRepost?: boolean;
 	isShort?: boolean;
 	isNsfw?: boolean;
+	isSpoiler?: boolean;
 	flair?: string | null;
 	score?: number | null;
 }

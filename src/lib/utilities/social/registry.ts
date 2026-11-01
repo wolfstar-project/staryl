@@ -2,12 +2,16 @@ import type { SocialProviderName } from "#lib/setup/prisma";
 import type { SocialProvider } from "#social/provider";
 import { socialDelivery } from "#social/notifications";
 import { SocialPoller } from "#social/poller";
+import { createRedditProvider } from "#social/providers/reddit";
 import { createRssProvider } from "#social/providers/rss";
 import { createSocialStore } from "#social/store";
 import { container } from "@wolfstar/http-framework";
 
 /** Every integration. Adding one here is what exposes it to `/subscriptions social add`. */
-export const SocialProviders: readonly SocialProvider[] = [createRssProvider()];
+export const SocialProviders: readonly SocialProvider[] = [
+	createRssProvider(),
+	createRedditProvider(),
+];
 
 export function getSocialProvider(name: SocialProviderName) {
 	return SocialProviders.find((provider) => provider.name === name);

@@ -9,6 +9,7 @@ export enum BrandingColors {
 
 export enum SocialColors {
 	Rss = 0xf26522,
+	Reddit = 0xff4500,
 }
 
 export enum Colors {

@@ -1,5 +1,8 @@
 {
 	"openArticle": "Read",
+	"openPost": "View post",
+	"redditFooter": "Staryl Reddit Notifications",
+	"redditHeading": "New post in {{name}}",
 	"rssFooter": "Staryl Feed Notifications",
 	"rssHeading": "New in {{name}}",
 	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item."
