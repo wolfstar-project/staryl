@@ -101,6 +101,15 @@ describe("createSocialCard", () => {
 		expect(card.body!.length).toBeLessThanOrEqual(500);
 	});
 
+	it("links the normalized URL, so a parenthesis cannot end the link early", () => {
+		const card = createSocialCard(
+			{ ...Item, url: "https://example.com/a)b" },
+			Card,
+		);
+
+		expect(card.url).toBe("https://example.com/a%29b");
+	});
+
 	it("keeps a title on the line of its heading", () => {
 		const card = createSocialCard({ ...Item, title: "One\n\ntwo" }, Card);
 

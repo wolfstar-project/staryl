@@ -39,10 +39,12 @@ export interface SocialStore {
 	/**
 	 * Takes a due source for this check. Answers `false` when another process got there first, and a
 	 * process that dies mid-check only delays the source until its lease runs out.
+	 *
+	 * `lastCheckedAt` is compared too because a released claim looks like one never taken: without
+	 * it, a process holding an old read could check again a source another one just finished.
 	 */
 	claimSource(
-		id: bigint,
-		expectedClaim: Date | null,
+		source: Pick<SocialSource, "id" | "claimedUntil" | "lastCheckedAt">,
 		leaseUntil: Date,
 	): Promise<boolean>;
 	/** Extends a held claim, answering `false` when the source now belongs to another process. */
@@ -72,9 +74,9 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 				take: limit,
 			});
 		},
-		async claimSource(id, expectedClaim, leaseUntil) {
+		async claimSource({ id, claimedUntil, lastCheckedAt }, leaseUntil) {
 			const { count } = await prisma.socialSource.updateMany({
-				where: { id, claimedUntil: expectedClaim },
+				where: { id, claimedUntil, lastCheckedAt },
 				data: { claimedUntil: leaseUntil },
 			});
 			return count === 1;

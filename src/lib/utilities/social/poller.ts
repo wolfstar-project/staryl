@@ -162,9 +162,7 @@ export class SocialPoller {
 		}
 
 		let lease = new Date(now + ClaimLease);
-		if (!(await store.claimSource(source.id, source.claimedUntil, lease))) {
-			return;
-		}
+		if (!(await store.claimSource(source, lease))) return;
 
 		// A slow delivery can outlive the lease. Once another process takes the source over, carrying
 		// on would post what that process is posting and overwrite what it stores.

@@ -140,7 +140,7 @@ export function createSocialCard(
 				escapeInlineText(
 					cutText(item.title.replace(/\s+/g, " "), MaximumTitleLength),
 				),
-		url: item.url,
+		url: parseItemUrl(item.url) ?? item.url,
 		body: isNullishOrEmpty(item.text)
 			? null
 			: escapeInlineText(cutText(item.text, MaximumBodyLength)),

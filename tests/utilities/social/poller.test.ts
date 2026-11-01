@@ -510,8 +510,7 @@ describe("SocialPoller", () => {
 		await makePoller([provider], store, delivery).tick();
 
 		expect(store.claimSource).toHaveBeenCalledWith(
-			1n,
-			null,
+			expect.objectContaining({ id: 1n, claimedUntil: null }),
 			new Date(Now + ClaimLease),
 		);
 	});
