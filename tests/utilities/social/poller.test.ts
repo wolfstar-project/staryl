@@ -62,6 +62,7 @@ function makeSource(
 		lastCheckedAt: null,
 		nextCheckAt: new Date(Now - 1),
 		claimedUntil: null,
+		checkRequested: false,
 		subscriptions: [
 			{
 				guildId: 10n,

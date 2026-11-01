@@ -60,6 +60,9 @@ model SocialSource {
   nextCheckAt   DateTime                  @default(now()) @map("next_check_at") @db.Timestamptz
   // Set while a process is checking the source. Its value is what proves a process still owns it.
   claimedUntil  DateTime?                 @map("claimed_until") @db.Timestamptz
+  // Asks for a check ahead of schedule. Apart from `nextCheckAt` because a running check rewrites
+  // that when it ends, which would lose a request made while it ran.
+  checkRequested Boolean                  @default(false) @map("check_requested")
   subscriptions GuildSocialSubscription[]
 
   @@unique([provider, target])
@@ -91,6 +94,7 @@ enum SocialProviderName {
   Reddit
   Bluesky
   Mastodon
+  YouTube
 
   @@map("social_provider_name_enum")
 }

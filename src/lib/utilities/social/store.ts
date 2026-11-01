@@ -65,19 +65,21 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 			return prisma.socialSource.findMany({
 				where: {
 					provider,
-					nextCheckAt: { lte: now },
 					subscriptions: { some: {} },
-					OR: [{ claimedUntil: null }, { claimedUntil: { lte: now } }],
+					AND: [
+						{ OR: [{ nextCheckAt: { lte: now } }, { checkRequested: true }] },
+						{ OR: [{ claimedUntil: null }, { claimedUntil: { lte: now } }] },
+					],
 				},
 				include: { subscriptions: true },
-				orderBy: { nextCheckAt: "asc" },
+				orderBy: [{ checkRequested: "desc" }, { nextCheckAt: "asc" }],
 				take: limit,
 			});
 		},
 		async claimSource({ id, claimedUntil, lastCheckedAt }, leaseUntil) {
 			const { count } = await prisma.socialSource.updateMany({
 				where: { id, claimedUntil, lastCheckedAt },
-				data: { claimedUntil: leaseUntil },
+				data: { claimedUntil: leaseUntil, checkRequested: false },
 			});
 			return count === 1;
 		},
@@ -91,7 +93,7 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 		async deferSource(id, until) {
 			await prisma.socialSource.updateMany({
 				where: { id },
-				data: { nextCheckAt: until },
+				data: { nextCheckAt: until, checkRequested: false },
 			});
 		},
 		async recordCheck(id, lease, { state, ...record }) {

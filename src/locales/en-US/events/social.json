@@ -9,5 +9,9 @@
 	"redditHeading": "New post in {{name}}",
 	"rssFooter": "Staryl Feed Notifications",
 	"rssHeading": "New in {{name}}",
-	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item."
+	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.",
+	"watchVideo": "Watch",
+	"youtubeFooter": "Staryl YouTube Notifications",
+	"youtubeHeading": "New video from {{name}}",
+	"youtubeHeadingShort": "New Short from {{name}}"
 }

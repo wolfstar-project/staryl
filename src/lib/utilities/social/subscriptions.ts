@@ -4,7 +4,7 @@ import type {
 	SocialProviderName,
 	SocialSource,
 } from "#lib/setup/prisma";
-import type { SocialFilters } from "#social/filters";
+import type { ShortsFilter, SocialFilters } from "#social/filters";
 import type {
 	FetchOutcome,
 	ProviderFailure,
@@ -66,6 +66,7 @@ export interface SocialAddOptions {
 	minimum_score?: number;
 	exclude_replies?: boolean;
 	exclude_reposts?: boolean;
+	shorts?: ShortsFilter;
 }
 
 export interface SocialSubscriptionOptions {

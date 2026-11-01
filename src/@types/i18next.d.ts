@@ -99,7 +99,7 @@ declare module "i18next" {
         optionsProviderName: "provider";
         optionsProviderDescription: "Where the content comes from.";
         optionsTargetName: "target";
-        optionsTargetDescription: "The feed or site URL, or the account to follow.";
+        optionsTargetDescription: "The feed or site URL, subreddit, account or YouTube channel to follow.";
         optionsChannelName: "channel";
         optionsChannelDescription: "The Discord channel to post notifications in.";
         optionsMessageName: "message";
@@ -116,6 +116,11 @@ declare module "i18next" {
         optionsExcludeRepliesDescription: "Bluesky and Mastodon only. Leave out replies.";
         optionsExcludeRepostsName: "exclude_reposts";
         optionsExcludeRepostsDescription: "Bluesky and Mastodon only. Leave out reposts and boosts.";
+        optionsShortsName: "shorts";
+        optionsShortsDescription: "YouTube only. What to do with Shorts.";
+        optionsShortsChoiceInclude: "Post them too";
+        optionsShortsChoiceExclude: "Leave them out";
+        optionsShortsChoiceOnly: "Only post Shorts";
         optionsSourceName: "source";
         optionsSourceDescription: "The feed or account this server follows.";
         optionsRemoveChannelName: "channel";
@@ -124,11 +129,12 @@ declare module "i18next" {
         providerReddit: "Reddit";
         providerBluesky: "Bluesky";
         providerMastodon: "Mastodon";
+        providerYouTube: "YouTube";
         addSuccess: "{{GREENTICK}} Success! Whenever **{{name}}** publishes something, I will post it in {{channel}}.";
         addProviderNotConfigured: "{{REDCROSS}} This provider is not available on this bot yet.";
         addFilterUnsupported: "{{REDCROSS}} This provider does not have the data for one of the filters you picked.";
         addLimitReached: "{{REDCROSS}} This server already follows the maximum of 25 feeds and accounts. Remove one first.";
-        addTargetInvalid: "{{REDCROSS}} That does not look like a valid target for this provider.";
+        addTargetInvalid: "{{REDCROSS}} That does not look right for this provider. Feeds take a URL, Reddit a subreddit name, Bluesky a handle, Mastodon a `user@server` address and YouTube a channel URL.";
         addTargetNotFound: "{{REDCROSS}} I could not find that. Check the spelling and try again.";
         addTargetBlocked: "{{REDCROSS}} I cannot read that address. It has to be public and on the standard web ports.";
         addTargetUnsupported: "{{REDCROSS}} I could read that page, but found no RSS or Atom feed there.";
@@ -247,6 +253,10 @@ declare module "i18next" {
         rssFooter: "Staryl Feed Notifications";
         rssHeading: "New in {{name}}";
         testNotice: "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.";
+        watchVideo: "Watch";
+        youtubeFooter: "Staryl YouTube Notifications";
+        youtubeHeading: "New video from {{name}}";
+        youtubeHeadingShort: "New Short from {{name}}";
       };
       "events/twitch": {
         embedGame: "Game";
