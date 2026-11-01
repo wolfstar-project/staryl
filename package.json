@@ -78,7 +78,7 @@
 		"oxlint": "^1.90.0",
 		"prisma": "^7.10.1",
 		"taze": "^21.3.0",
-		"tsdown": "^0.23.2",
+		"tsdown": "^0.23.3",
 		"typescript": "~7.0.2",
 		"vitest": "^5.0.5"
 	},
@@ -104,5 +104,5 @@
 		"node": ">=24.0.0",
 		"pnpm": ">=10"
 	},
-	"packageManager": "pnpm@12.16.0"
+	"packageManager": "pnpm@12.16.1"
 }
