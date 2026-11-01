@@ -26,14 +26,6 @@ beforeEach(() => {
 	fetchMock.mockReset();
 });
 
-describe("checkIntervalMs", () => {
-	it("checks less often once pushes do the fast path", () => {
-		expect(makeProvider(WebSubEnv).checkIntervalMs).toBeGreaterThan(
-			makeProvider().checkIntervalMs,
-		);
-	});
-});
-
 describe("validateTarget", () => {
 	it.each([
 		ChannelId,

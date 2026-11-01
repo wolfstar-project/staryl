@@ -1,7 +1,6 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import {
 	extractChannelIds,
-	isFollowedChannel,
 	isValidHubSignature,
 	isWebSubConfigured,
 	readPushBody,
@@ -27,10 +26,6 @@ export class UserRoute extends Route {
 			return;
 		}
 
-		await Promise.all(
-			extractChannelIds(body).map(async (channelId) => {
-				if (await isFollowedChannel(channelId)) await wakeChannel(channelId);
-			}),
-		);
+		await Promise.all(extractChannelIds(body).map(wakeChannel));
 	}
 }

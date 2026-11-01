@@ -150,10 +150,9 @@ export function createYouTubeProvider(
 
 	return {
 		name: SocialProviderName.YouTube,
-		// Read on every use: the environment is not loaded yet when this module is evaluated.
-		get checkIntervalMs() {
-			return isWebSubConfigured(env) ? Time.Minute * 30 : Time.Minute * 10;
-		},
+		// The same with or without pushes: a hub accepting a subscription does not mean it can reach
+		// us, and a wrong callback must not quietly make notifications slower.
+		checkIntervalMs: Time.Minute * 10,
 		concurrency: 4,
 		rateLimit: { limit: 60, windowMs: Time.Minute },
 		supportedFilters: new Set(["includeKeywords", "excludeKeywords", "shorts"]),

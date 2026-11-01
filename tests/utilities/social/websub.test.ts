@@ -200,12 +200,4 @@ describe("POST /youtube/websub", () => {
 		expect(response.statusCode).toBe(200);
 		expect(prismaMock.socialSource.updateMany).not.toHaveBeenCalled();
 	});
-
-	it("ignores a channel nobody follows", async () => {
-		prismaMock.socialSource.count.mockResolvedValue(0);
-
-		await push(Body, sign(Body));
-
-		expect(prismaMock.socialSource.updateMany).not.toHaveBeenCalled();
-	});
 });
