@@ -48,7 +48,8 @@
 
 - Use TypeScript path mapping aliases for internal imports: `#lib/*`,
   `#utils/*`, `#common/*`, `#types/*`, `#twitch/*` (Twitch-specific utilities,
-  `src/lib/utilities/twitch/`), and `#generated/prisma` (the generated client)
+  `src/lib/utilities/twitch/`), `#social/*` (the social providers,
+  `src/lib/utilities/social/`), and `#generated/prisma` (the generated client)
 - Use `type` imports for type-only values: `import type { ... } from "..."`
 - Group imports: type imports first, then internal aliases, then external
   packages
@@ -90,6 +91,23 @@
   delivery path as the listeners. See
   `src/lib/utilities/twitch/notifications.ts` (imported as
   `#twitch/notifications`) / `tests/utilities/twitchNotifications.test.ts`.
+- **Shared Delivery**: Every notification, Twitch or social, goes through
+  `#utils/notificationDelivery`: it resolves the guild's language and channel,
+  gates on permissions, and scopes `allowed_mentions` to the message a member
+  stored, so text from a feed can never ping anyone. Do not export a name twice:
+  the Stars build auto-imports exports, and a re-export fails it with
+  `ASSIGN_TO_IMPORT`.
+- **Social Providers**: Feeds and social accounts implement the `SocialProvider`
+  contract in `src/lib/utilities/social/provider.ts`. `SocialPoller` owns the
+  schedule, backoff, rate limit budgets, filters, deduplication and delivery,
+  and `/subscriptions social` owns the commands, so a new integration is one
+  file under `src/lib/utilities/social/providers/` plus one entry in
+  `SocialProviders` (and its enum value, locale strings and
+  `commands/social:provider<Name>` label). Only use a data source its terms
+  allow: official APIs or feeds, identified with a real User-Agent, never
+  scraping. Anything fetched from a URL a member chose goes through
+  `fetchPublicUrl`, which refuses private addresses, including after a redirect
+  or a DNS change. See `GLOSSARY.md` for the vocabulary.
 - **Interaction Handlers**: Message-component and modal-submit interactions
   (buttons, select menus, modals) triggered by a command's own UI — as opposed
   to a fresh slash-command invocation — are routed to `InteractionHandler`
@@ -108,6 +126,8 @@
 - `src/middlewares/` - HTTP API middlewares (`@wolfstar/plugin-api` `Middleware`
   pieces)
 - `src/commands/` - Discord slash commands using decorator pattern
+- `src/lib/utilities/social/` - The social provider contract, the poller, the
+  store and the providers themselves (`providers/`), aliased as `#social/*`
 - `src/interaction-handlers/` - `InteractionHandler` pieces that route a
   command's own message-component/modal interactions (e.g. `/setup`'s menu)
 - `src/listeners/` - Event listeners for Twitch stream events
@@ -315,6 +335,8 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@wolfstar/plugin-subcommands-advanced` - Parent/child subcommand group
   pattern (`@RegisterAsSubcommandGroup`) for commands with enough subcommands to
   warrant one file each, e.g. `src/commands/subscriptions/`
+- `fast-xml-parser` - Reads RSS and Atom documents (`#social/feed`), with entity
+  processing off so a feed cannot define an entity bomb
 - `vitest` - Test runner for unit/integration tests (`tests/`)
 - `@wolfstar/http-framework-test-utils` - Test harness for dispatching fake
   Discord interactions through commands (`createTestHarness`,

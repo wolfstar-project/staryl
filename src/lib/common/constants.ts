@@ -7,6 +7,10 @@ export enum BrandingColors {
 	Secondary = 0x0000,
 }
 
+export enum SocialColors {
+	Rss = 0xf26522,
+}
+
 export enum Colors {
 	White = 0xe7e7e8,
 	Amber = 0xffc107,

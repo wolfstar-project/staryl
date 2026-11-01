@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { initializeApp } from "#lib/setup/all";
+import { startSocialPoller } from "#social/registry";
 import { envParseInteger, envParseString } from "@wolfstar/env-utilities";
 import { Client, container } from "@wolfstar/http-framework";
 import { registerCommands } from "@wolfstar/shared-http-pieces";
@@ -41,6 +42,8 @@ void registerCommands();
 const address = envParseString("HTTP_ADDRESS", "0.0.0.0");
 const port = envParseInteger("HTTP_PORT", 3000);
 await client.listen({ address, port });
+
+startSocialPoller();
 
 if (process.env.NODE_ENV === "development") {
 	client.server.on("request", (request, response) => {
