@@ -9,8 +9,13 @@ const prisma = new PrismaClient({ adapter });
 container.prisma = prisma;
 
 export type {
+	GuildSocialSubscription,
 	GuildSubscription,
 	Prisma,
+	SocialDeliveryError,
+	SocialFailure,
+	SocialProviderName,
+	SocialSource,
 	TwitchSubscription,
 	TwitchSubscriptionType,
 } from "#generated/prisma";

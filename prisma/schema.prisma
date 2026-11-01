@@ -8,8 +8,9 @@ datasource db {
 }
 
 model Guild {
-  id            BigInt              @id
-  subscriptions GuildSubscription[]
+  id                  BigInt                    @id
+  subscriptions       GuildSubscription[]
+  socialSubscriptions GuildSocialSubscription[]
 
   @@map("guild")
 }
@@ -42,4 +43,70 @@ enum TwitchSubscriptionType {
   StreamOffline @map("stream.offline")
 
   @@map("twitch_subscriptions_subscription_type_enum")
+}
+
+// One followed account, feed or channel. Shared by every guild that follows it, so it is checked
+// once however many guilds subscribe.
+model SocialSource {
+  id            BigInt                    @id @default(autoincrement())
+  provider      SocialProviderName
+  target        String                    @db.VarChar(512)
+  displayName   String                    @map("display_name") @db.VarChar(200)
+  // Owned by the provider, for example the ETag of the last response.
+  state         Json?
+  lastFailure   SocialFailure?            @map("last_failure")
+  failureCount  Int                       @default(0) @map("failure_count")
+  lastCheckedAt DateTime?                 @map("last_checked_at") @db.Timestamptz
+  nextCheckAt   DateTime                  @default(now()) @map("next_check_at") @db.Timestamptz
+  // Set while a process is checking the source. Its value is what proves a process still owns it.
+  claimedUntil  DateTime?                 @map("claimed_until") @db.Timestamptz
+  subscriptions GuildSocialSubscription[]
+
+  @@unique([provider, target])
+  @@index([provider, nextCheckAt])
+  @@map("social_source")
+}
+
+model GuildSocialSubscription {
+  guildId       BigInt               @map("guild_id")
+  channelId     BigInt               @map("channel_id")
+  sourceId      BigInt               @map("source_id")
+  message       String?              @db.VarChar(200)
+  filters       Json                 @default("{}")
+  // Kept per subscription because a filter can hold an item back for one channel only.
+  seenItemIds   String[]             @map("seen_item_ids")
+  deliveryError SocialDeliveryError? @map("delivery_error")
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  guild         Guild                @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  // Restrict: a cleanup racing a new subscription must fail, not cascade over the row just added.
+  source        SocialSource         @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+
+  @@id([guildId, channelId, sourceId])
+  @@index([sourceId])
+  @@map("guild_social_subscription")
+}
+
+enum SocialProviderName {
+  Rss
+
+  @@map("social_provider_name_enum")
+}
+
+enum SocialFailure {
+  RateLimited
+  TargetUnavailable
+  AuthFailed
+  Unavailable
+  InvalidResponse
+
+  @@map("social_failure_enum")
+}
+
+enum SocialDeliveryError {
+  GuildUnavailable
+  ChannelNotFound
+  MissingPermissions
+  SendFailed
+
+  @@map("social_delivery_error_enum")
 }
