@@ -89,6 +89,8 @@ model GuildSocialSubscription {
 enum SocialProviderName {
   Rss
   Reddit
+  Bluesky
+  Mastodon
 
   @@map("social_provider_name_enum")
 }
