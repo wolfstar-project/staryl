@@ -112,12 +112,18 @@ declare module "i18next" {
         optionsFlairsDescription: "Reddit only, comma separated. Only post items with one of these flairs.";
         optionsMinimumScoreName: "minimum_score";
         optionsMinimumScoreDescription: "Reddit only. Wait until a post reaches this score before posting it.";
+        optionsExcludeRepliesName: "exclude_replies";
+        optionsExcludeRepliesDescription: "Bluesky and Mastodon only. Leave out replies.";
+        optionsExcludeRepostsName: "exclude_reposts";
+        optionsExcludeRepostsDescription: "Bluesky and Mastodon only. Leave out reposts and boosts.";
         optionsSourceName: "source";
         optionsSourceDescription: "The feed or account this server follows.";
         optionsRemoveChannelName: "channel";
         optionsRemoveChannelDescription: "The channel to stop posting in. Only needed if several follow this.";
         providerRss: "RSS or Atom feed";
         providerReddit: "Reddit";
+        providerBluesky: "Bluesky";
+        providerMastodon: "Mastodon";
         addSuccess: "{{GREENTICK}} Success! Whenever **{{name}}** publishes something, I will post it in {{channel}}.";
         addProviderNotConfigured: "{{REDCROSS}} This provider is not available on this bot yet.";
         addFilterUnsupported: "{{REDCROSS}} This provider does not have the data for one of the filters you picked.";
@@ -230,6 +236,10 @@ declare module "i18next" {
         discordAbortError: "The request was aborted. Please try again later.";
       };
       "events/social": {
+        blueskyFooter: "Staryl Bluesky Notifications";
+        blueskyHeading: "New post by {{name}}";
+        mastodonFooter: "Staryl Mastodon Notifications";
+        mastodonHeading: "New post by {{name}}";
         openArticle: "Read";
         openPost: "View post";
         redditFooter: "Staryl Reddit Notifications";

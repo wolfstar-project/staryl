@@ -1,4 +1,8 @@
 {
+	"blueskyFooter": "Staryl Bluesky Notifications",
+	"blueskyHeading": "New post by {{name}}",
+	"mastodonFooter": "Staryl Mastodon Notifications",
+	"mastodonHeading": "New post by {{name}}",
 	"openArticle": "Read",
 	"openPost": "View post",
 	"redditFooter": "Staryl Reddit Notifications",

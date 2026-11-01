@@ -64,6 +64,8 @@ export interface SocialAddOptions {
 	exclude_keywords?: string;
 	flairs?: string;
 	minimum_score?: number;
+	exclude_replies?: boolean;
+	exclude_reposts?: boolean;
 }
 
 export interface SocialSubscriptionOptions {

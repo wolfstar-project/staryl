@@ -2,6 +2,8 @@ import type { SocialProviderName } from "#lib/setup/prisma";
 import type { SocialProvider } from "#social/provider";
 import { socialDelivery } from "#social/notifications";
 import { SocialPoller } from "#social/poller";
+import { createBlueskyProvider } from "#social/providers/bluesky";
+import { createMastodonProvider } from "#social/providers/mastodon";
 import { createRedditProvider } from "#social/providers/reddit";
 import { createRssProvider } from "#social/providers/rss";
 import { createSocialStore } from "#social/store";
@@ -11,6 +13,8 @@ import { container } from "@wolfstar/http-framework";
 export const SocialProviders: readonly SocialProvider[] = [
 	createRssProvider(),
 	createRedditProvider(),
+	createBlueskyProvider(),
+	createMastodonProvider(),
 ];
 
 export function getSocialProvider(name: SocialProviderName) {
