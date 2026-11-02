@@ -65,13 +65,15 @@ WORKDIR /usr/src/app
 
 COPY --chown=node:node --from=builder /usr/src/app/dist dist
 COPY --chown=node:node --from=builder /usr/src/app/src/.env src/.env
-# The schema and the Prisma CLI ship with the image so the platform can apply the schema
-# before each deployment: `node_modules/.bin/prisma db push`.
-COPY --chown=node:node prisma/ prisma/
-COPY --chown=node:node prisma.config.ts prisma.config.ts
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --prod --frozen-lockfile
+
+# The schema and the Prisma CLI ship with the image so the platform can apply the schema
+# before each deployment: `node_modules/.bin/prisma db push`. Copied after the install,
+# which does not read them, so a schema change keeps the install layer cached.
+COPY --chown=node:node prisma/ prisma/
+COPY --chown=node:node prisma.config.ts prisma.config.ts
 
 USER node
 
