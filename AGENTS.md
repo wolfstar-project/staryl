@@ -63,10 +63,14 @@ pnpm exec prisma db push
 The unused `ioredis` dependency has been removed. Postgres is the only required
 backing service for local dev.
 
-The Docker image does not touch the schema. After a change to
-`prisma/schema.prisma`, run `pnpm exec prisma db push` against the target
-database before deploying: without the tables the bot still boots, but the
-social poller logs an error on every tick.
+The Docker image carries the schema and the Prisma CLI. Production runs
+`node_modules/.bin/prisma db push` as Railway's pre-deploy command, against
+`DATABASE_DIRECT_URL` (Postgres without PgBouncer), so a deployment only goes
+live once its schema is applied. `db push` refuses a change that would lose
+data: the deployment then fails and the previous one keeps running, and the
+change has to be applied by hand. Anywhere else, run `pnpm exec prisma db push`
+yourself after a change to `prisma/schema.prisma`: without the tables the bot
+still boots, but the social poller logs an error on every tick.
 
 ### Environment variables
 

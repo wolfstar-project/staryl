@@ -8,6 +8,8 @@ export default defineConfig({
 		path: "prisma/migrations",
 	},
 	datasource: {
-		url: env("DATABASE_URL"),
+		// The CLI changes the schema, which a pooler in transaction mode cannot be trusted with:
+		// production reaches Postgres through PgBouncer, so it sets a direct URL for the CLI.
+		url: process.env.DATABASE_DIRECT_URL || env("DATABASE_URL"),
 	},
 });
