@@ -12,8 +12,8 @@
 
 <!-- Describe your changes in detail. Why is this change required? What problem does it solve? -->
 
-<!-- If you used AI tools to help with this contribution, please ensure the PR description and code reflect your own understanding.
-     Write in your own voice rather than copying AI-generated text. -->
+<!-- AI tools are welcome, see the AI policy: https://github.com/wolfstar-project/staryl/blob/main/AI_POLICY.md
+     Make sure you understand every change in this PR. If AI helped, ending the body with the disclosure line from the policy is appreciated. -->
 
 <!----------------------------------------------------------------------
 Before creating the pull request, please make sure you do the following:
