@@ -75,7 +75,15 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           FROM: ${{ inputs.from }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          # A real release tags the commit this run started from: only the default branch
+          # may do that. A dry run can start anywhere.
+          if [ "$DRY_RUN" != "true" ] && [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "::error::Run the release from $DEFAULT_BRANCH, not $GITHUB_REF_NAME, or turn on dry-run"
+            exit 1
+          fi
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
             echo "::error::version must look like 1.1.0 or 1.1.0-beta.1, got '$VERSION'"
             exit 1
