@@ -10,7 +10,12 @@ import { SocialColors } from "#common/constants";
 import { SocialProviderName } from "#generated/prisma";
 import { readConnectedJson } from "#social/connectedHttp";
 import { parseFeed } from "#social/feed";
-import { sendRequest, SocialUserAgent, toHttpFailure } from "#social/http";
+import {
+	sendRequest,
+	SocialUserAgent,
+	toHttpFailure,
+	parseRetryAfter,
+} from "#social/http";
 import {
 	createSocialCard,
 	parseImageUrl,
@@ -21,7 +26,7 @@ import {
 	getChannelTopic,
 	isWebSubConfigured,
 } from "#social/websub";
-import { err, ok } from "@sapphire/result";
+import { err, ok, Result as Results } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
 import { container } from "@wolfstar/http-framework";
 
@@ -116,7 +121,7 @@ export function createYouTubeProvider(
 		const where = { provider: SocialProviderName.YouTube, target: channelId };
 		const source = await container.prisma.socialSource.findUnique({
 			where: { provider_target: where },
-			select: { websubExpiresAt: true },
+			select: { websubExpiresAt: true, websubRequestedAt: true },
 		});
 		if (!source) return err({ _tag: "TargetUnavailable" });
 		if (
@@ -124,11 +129,16 @@ export function createYouTubeProvider(
 			source.websubExpiresAt.getTime() - now() > LeaseRenewalInterval
 		)
 			return ok(undefined);
-		// A missing verification is retried at the next maintenance check.
+
+		const requestedAt = source.websubRequestedAt?.getTime();
+		if (requestedAt !== undefined && now() - requestedAt < Time.Minute * 5)
+			return ok(undefined);
+		const verificationTimedOut = requestedAt !== undefined;
 		await container.prisma.socialSource.updateMany({
 			where,
-			data: { websubExpiresAt: new Date(now() + Time.Minute * 5) },
+			data: { websubRequestedAt: new Date(now()) },
 		});
+
 		const response = await sendRequest(request, HubUrl, {
 			method: "POST",
 			headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -144,14 +154,22 @@ export function createYouTubeProvider(
 		if (response.isErr()) return err(response.unwrapErr());
 		const answer = response.unwrap();
 		return answer.ok
-			? ok(undefined)
-			: err(toHttpFailure(answer.status, answer.headers.get("retry-after")));
+			? verificationTimedOut
+				? err({ _tag: "Unavailable" })
+				: ok(undefined)
+			: err(
+					answer.status === 401 || answer.status === 403
+						? { _tag: "Unavailable" }
+						: toHttpFailure(answer.status, answer.headers.get("retry-after")),
+				);
 	}
 
 	async function enrichItems(
 		items: SocialItem[],
-	): Promise<Result<SocialItem[], ProviderFailure>> {
-		if (items.length === 0) return ok([]);
+	): Promise<
+		Result<{ items: SocialItem[]; incomplete: boolean }, ProviderFailure>
+	> {
+		if (items.length === 0) return ok({ items: [], incomplete: false });
 		const ids = items.map((item) => item.id.replace(/^yt:video:/, ""));
 		const response = await readConnectedJson<{
 			items: {
@@ -166,39 +184,44 @@ export function createYouTubeProvider(
 		}>(
 			request,
 			`https://www.googleapis.com/youtube/v3/videos?${new URLSearchParams({ key: env.YOUTUBE_API_KEY!, part: "snippet,contentDetails", id: ids.join(",") })}`,
+			{},
+			classifyYouTubeFailure,
 		);
 		if (response.isErr()) return err(response.unwrapErr());
 		if (!Array.isArray(response.unwrap().items))
 			return err({ _tag: "InvalidResponse" });
-		return ok(
-			items.flatMap((item) => {
-				const video = response
-					.unwrap()
-					.items.find(
-						(entry) => entry.id === item.id.replace(/^yt:video:/, ""),
-					);
-				if (!video) return [];
-				const duration = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/.exec(
-					video.contentDetails.duration,
-				);
-				const seconds = duration
-					? Number(duration[1] ?? 0) * 3600 +
-						Number(duration[2] ?? 0) * 60 +
-						Number(duration[3] ?? 0)
-					: null;
-				return [
-					{
-						...item,
-						title: video.snippet.title,
-						text: video.snippet.description,
-						imageUrl:
-							parseImageUrl(video.snippet.thumbnails?.high?.url) ??
-							item.imageUrl,
-						isShort: seconds !== null && seconds > 0 && seconds <= 180,
-					},
-				];
-			}),
-		);
+		let incomplete = false;
+		const enriched = items.flatMap((item) => {
+			const video = response
+				.unwrap()
+				.items.find((entry) => entry.id === item.id.replace(/^yt:video:/, ""));
+			if (!video) {
+				// Fresh uploads may reach the feed before the Data API index. Older deleted videos must not keep a source pending forever.
+				if (item.publishedAt && now() - item.publishedAt.getTime() < Time.Hour)
+					incomplete = true;
+				return [];
+			}
+			const duration = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/.exec(
+				video.contentDetails.duration,
+			);
+			const seconds = duration
+				? Number(duration[1] ?? 0) * 3600 +
+					Number(duration[2] ?? 0) * 60 +
+					Number(duration[3] ?? 0)
+				: null;
+			return [
+				{
+					...item,
+					title: video.snippet.title,
+					text: video.snippet.description,
+					imageUrl:
+						parseImageUrl(video.snippet.thumbnails?.high?.url) ?? item.imageUrl,
+					isShort:
+						item.isShort || (seconds !== null && seconds > 0 && seconds <= 180),
+				},
+			];
+		});
+		return ok({ items: enriched, incomplete });
 	}
 
 	return {
@@ -236,11 +259,14 @@ export function createYouTubeProvider(
 			state,
 			context,
 		): Promise<Result<FetchOutcome, ProviderFailure>> {
+			let maintenanceFailure: ProviderFailure | undefined;
 			if (context) {
 				const renewed = await renewLease(target);
-				if (renewed.isErr()) return err(renewed.unwrapErr());
+				if (renewed.isErr()) maintenanceFailure = renewed.unwrapErr();
 				if (!context.checkRequested && state !== null)
-					return ok({ _tag: "NotModified" });
+					return maintenanceFailure
+						? err(maintenanceFailure)
+						: ok({ _tag: "NotModified" });
 			}
 			const response = await sendRequest(request, `${FeedOrigin}${target}`, {
 				headers: { "user-agent": SocialUserAgent },
@@ -281,8 +307,9 @@ export function createYouTubeProvider(
 				? err(enriched.unwrapErr())
 				: ok({
 						_tag: "Items",
-						items: enriched.unwrap(),
-						state: { baselineRead: true },
+						items: enriched.unwrap().items,
+						state: enriched.unwrap().incomplete ? null : { baselineRead: true },
+						...(maintenanceFailure ? { failure: maintenanceFailure } : {}),
 					});
 		},
 
@@ -300,4 +327,32 @@ export function createYouTubeProvider(
 			});
 		},
 	};
+}
+
+/** Quota exhaustion is retryable and must not ask operators to replace valid credentials. */
+async function classifyYouTubeFailure(
+	response: Response,
+): Promise<ProviderFailure> {
+	const parsed = await Results.fromAsync(() => response.json());
+	const body = parsed.unwrapOr(null) as {
+		error?: { errors?: { reason?: string }[] };
+	} | null;
+	const reasons = Array.isArray(body?.error?.errors) ? body.error.errors : [];
+	if (
+		reasons.some((error) =>
+			[
+				"quotaExceeded",
+				"dailyLimitExceeded",
+				"dailyLimitExceededUnreg",
+				"rateLimitExceeded",
+				"userRateLimitExceeded",
+			].includes(error.reason ?? ""),
+		)
+	)
+		return {
+			_tag: "RateLimited",
+			retryAfterMs:
+				parseRetryAfter(response.headers.get("retry-after")) ?? Time.Hour,
+		};
+	return toHttpFailure(response.status, response.headers.get("retry-after"));
 }

@@ -56,7 +56,7 @@ it("surfaces an API error returned with HTTP 200", async () => {
 		);
 	expect(
 		(await createTikTokApi({ env, fetch: request }).media(token)).unwrapErr(),
-	).toEqual({ _tag: "AuthFailed", retryAfterMs: 60000 });
+	).toEqual({ _tag: "AuthFailed" });
 });
 it("uses stable video IDs and a cover image", async () => {
 	const request = vi.fn<typeof fetch>().mockResolvedValue(
@@ -80,4 +80,51 @@ it("uses stable video IDs and a cover image", async () => {
 	expect(result.unwrap()).toMatchObject([
 		{ id: "42", text: "Caption", imageUrl: "https://example.com/cover.jpg" },
 	]);
+});
+it.each([undefined, {}, { display_name: "" }])(
+	"falls back to the owner ID when profile fields are absent: %j",
+	async (user) => {
+		const request = vi
+			.fn<typeof fetch>()
+			.mockResolvedValueOnce(
+				Response.json({
+					access_token: "access",
+					refresh_token: "refresh",
+					open_id: "owner",
+					expires_in: 7200,
+					scope: "user.info.basic,video.list",
+				}),
+			)
+			.mockResolvedValueOnce(
+				Response.json({ data: { user }, error: { code: "ok" } }),
+			);
+		expect(
+			(
+				await createTikTokApi({ fetch: request, env }).exchange("code")
+			).unwrap(),
+		).toMatchObject({ accountId: "owner", displayName: "owner" });
+	},
+);
+it("requires reconnection for a rejected refresh grant", async () => {
+	const request = vi
+		.fn<typeof fetch>()
+		.mockResolvedValue(
+			Response.json(
+				{ error: "invalid_grant", error_description: "Refresh token expired" },
+				{ status: 400 },
+			),
+		);
+	expect(
+		(await createTikTokApi({ fetch: request, env }).refresh(token)).unwrapErr(),
+	).toEqual({ _tag: "AuthFailed" });
+});
+it("keeps token endpoint outages retryable", async () => {
+	const request = vi
+		.fn<typeof fetch>()
+		.mockResolvedValue(
+			Response.json({ error: "temporarily_unavailable" }, { status: 503 }),
+		);
+	expect(
+		(await createTikTokApi({ fetch: request, env }).refresh(token)).unwrapErr(),
+	).toEqual({ _tag: "Unavailable" });
 });

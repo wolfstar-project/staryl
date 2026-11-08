@@ -14,7 +14,7 @@ import {
 } from "node:crypto";
 import { DefaultSocialFilters, parseSocialFilters } from "#social/filters";
 import { api } from "#utils/discordApi";
-import { err, ok } from "@sapphire/result";
+import { err, ok, Result as Results } from "@sapphire/result";
 import { cast } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import { PermissionFlagsBits } from "discord-api-types/v10";
@@ -95,16 +95,17 @@ export async function beginSocialConnection(
 	userId: string,
 	filters: SocialFilters = DefaultSocialFilters,
 	message: string | null = null,
-) {
+): Promise<Result<string, "NotConfigured" | "Denied">> {
 	if (
 		!client.configured ||
 		!/^[a-f\d]{64}$/i.test(process.env.SOCIAL_TOKEN_KEY ?? "")
 	)
-		return null;
+		return err("NotConfigured");
 	const channel = await api().channels.get(String(channelId));
 	if (!("guild_id" in channel) || channel.guild_id !== String(guildId))
-		return null;
-	if (!(await canManageSocialGuild(String(guildId), userId))) return null;
+		return err("Denied");
+	if (!(await canManageSocialGuild(String(guildId), userId)))
+		return err("Denied");
 	const state = randomBytes(32).toString("hex");
 	await container.prisma.socialOAuthState.deleteMany({
 		where: { expiresAt: { lt: new Date() } },
@@ -121,7 +122,7 @@ export async function beginSocialConnection(
 			expiresAt: new Date(Date.now() + 600_000),
 		},
 	});
-	return client.authorize(state);
+	return ok(client.authorize(state));
 }
 
 export async function finishSocialConnection(
@@ -161,18 +162,28 @@ export async function finishSocialConnection(
 		create: { provider: client.name, target, ...data },
 		update: data,
 	});
-	const { addSocialSubscription } = await import("#social/subscriptions");
-	const added = await addSocialSubscription({
-		guildId: pending.guildId,
-		channelId: pending.channelId,
-		providerName: client.name,
-		input: target,
-		message: pending.message,
-		filters: parseSocialFilters(pending.filters),
+
+	const existing = await container.prisma.guildSocialSubscription.findFirst({
+		where: {
+			guildId: pending.guildId,
+			channelId: pending.channelId,
+			source: { provider: client.name, target },
+		},
 	});
-	// Re-authorization repairs an existing subscription too.
-	if (added.isErr() && added.unwrapErr() !== "commands/social:addDuplicated")
-		return false;
+	if (!existing) {
+		const { addSocialSubscription } = await import("#social/subscriptions");
+		const added = await addSocialSubscription({
+			guildId: pending.guildId,
+			channelId: pending.channelId,
+			providerName: client.name,
+			input: target,
+			message: pending.message,
+			filters: parseSocialFilters(pending.filters),
+		});
+		if (added.isErr() && added.unwrapErr() !== "commands/social:addDuplicated")
+			return false;
+	}
+
 	await container.prisma.socialSource.updateMany({
 		where: { provider: client.name, target },
 		data: { checkRequested: true },
@@ -188,15 +199,22 @@ export async function readConnectedMedia(
 		where: { provider_target: { provider: client.name, target } },
 	});
 	if (!connection) return err<ProviderFailure>({ _tag: "AuthFailed" });
-	let token = openSocialToken(
-		connection.credentials,
-		process.env.SOCIAL_TOKEN_KEY!,
+
+	const decrypted = Results.from(() =>
+		openSocialToken(connection.credentials, process.env.SOCIAL_TOKEN_KEY!),
 	);
+	if (decrypted.isErr()) return err<ProviderFailure>({ _tag: "AuthFailed" });
+	let token = decrypted.unwrap();
 	if (token.expiresAt <= Date.now() + client.refreshWindowMs) {
 		const refreshed = await refreshConnection(client, connection, token);
-		if (refreshed.isErr()) return err(refreshed.unwrapErr());
-		token = refreshed.unwrap();
+		if (refreshed.isOk()) token = refreshed.unwrap();
+		else if (token.expiresAt <= Date.now()) return err(refreshed.unwrapErr());
+		else
+			container.logger.warn(
+				`[social-oauth] ${client.name} refresh failed (${refreshed.unwrapErr()._tag}); using the current unexpired token`,
+			);
 	}
+
 	return client.media(token);
 }
 

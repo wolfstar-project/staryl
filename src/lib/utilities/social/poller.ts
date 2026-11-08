@@ -157,7 +157,9 @@ export class SocialPoller {
 		if (resumeAt !== null) {
 			// Moved out of the way instead of left due: the queue is oldest first, so sources waiting
 			// on one slow host would otherwise fill every batch and starve the whole provider.
-			await store.deferSource(source.id, new Date(resumeAt));
+			if (source.provider === "YouTube" && source.checkRequested)
+				await store.deferSource(source.id, new Date(resumeAt), true);
+			else await store.deferSource(source.id, new Date(resumeAt));
 			return;
 		}
 
@@ -180,7 +182,12 @@ export class SocialPoller {
 		};
 
 		const result = await this.#fetch(provider, source);
-		const failure = result.isErr() ? result.unwrapErr() : null;
+		const value = result.isOk() ? result.unwrap() : null;
+		const failure = result.isErr()
+			? result.unwrapErr()
+			: value?._tag === "Items"
+				? (value.failure ?? null)
+				: null;
 		if (failure) this.#pauseScope(failure, scope, provider, now);
 
 		const plan = planNextCheck({
@@ -191,7 +198,6 @@ export class SocialPoller {
 			random: this.#random(),
 		});
 		const lastCheckedAt = new Date(now);
-		const value = result.isOk() ? result.unwrap() : null;
 		if (value?._tag !== "Items") {
 			await store.recordCheck(source.id, lease, { ...plan, lastCheckedAt });
 			return;

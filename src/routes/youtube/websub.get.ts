@@ -35,8 +35,12 @@ export class UserRoute extends Route {
 			(await isFollowedChannel(channelId));
 
 		if (isConfirmable) {
-			const seconds = Number(request.query["hub.lease_seconds"] ?? 86400);
-			if (!Number.isFinite(seconds) || seconds <= 0) {
+			const lease = request.query["hub.lease_seconds"];
+			const seconds =
+				typeof lease === "string" || lease === undefined
+					? Number(lease ?? 86400)
+					: Number.NaN;
+			if (!Number.isSafeInteger(seconds) || seconds <= 0) {
 				response.status(400).text("Invalid lease");
 				return;
 			}

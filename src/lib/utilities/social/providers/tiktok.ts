@@ -12,13 +12,16 @@ import { SocialColors } from "#common/constants";
 import { SocialProviderName } from "#generated/prisma";
 import { readConnectedMedia } from "#social/connectedAccounts";
 import { readConnectedJson } from "#social/connectedHttp";
+import { toHttpFailure } from "#social/http";
 import {
 	createSocialCard,
 	parseImageUrl,
 	parseItemUrl,
 } from "#social/notifications";
 import { err, ok } from "@sapphire/result";
+import { Result as Results } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
+import { isObject } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 
 export interface TikTokOptions {
@@ -66,6 +69,7 @@ export function createTikTokApi(
 					...parameters,
 				}),
 			},
+			classifyTikTokTokenFailure,
 		);
 		if (result.isErr()) return err(result.unwrapErr());
 		const token = result.unwrap();
@@ -105,16 +109,15 @@ export function createTikTokApi(
 		);
 		if (result.isErr()) return err(result.unwrapErr());
 		const body = result.unwrap();
-		if (body.error?.code && body.error.code !== "ok")
-			return err({
-				_tag:
-					body.error.code === "access_token_invalid"
-						? "AuthFailed"
-						: body.error.code === "rate_limit_exceeded"
-							? "RateLimited"
-							: "Unavailable",
-				retryAfterMs: 60_000,
-			} as ProviderFailure);
+
+		if (body.error?.code && body.error.code !== "ok") {
+			if (body.error.code === "access_token_invalid")
+				return err({ _tag: "AuthFailed" });
+			if (body.error.code === "rate_limit_exceeded")
+				return err({ _tag: "RateLimited", retryAfterMs: 60_000 });
+			return err({ _tag: "Unavailable" });
+		}
+
 		return body.data ? ok(body.data) : err({ _tag: "InvalidResponse" });
 	}
 	return {
@@ -140,13 +143,17 @@ export function createTikTokApi(
 			});
 			if (result.isErr()) return result;
 			const token = result.unwrap();
-			const profile = await api<{ user: { display_name: string } }>(
+			const profile = await api<{ user?: { display_name?: string } }>(
 				"user/info/?fields=open_id,display_name",
 				token.accessToken,
 			);
 			return profile.isErr()
 				? err(profile.unwrapErr())
-				: ok({ ...token, displayName: profile.unwrap().user.display_name });
+				: ok({
+						...token,
+						displayName:
+							profile.unwrap().user?.display_name?.trim() || token.displayName,
+					});
 		},
 		async refresh(token) {
 			return token.refreshToken
@@ -239,4 +246,24 @@ export function createTikTokProvider(
 			});
 		},
 	};
+}
+
+/** Invalid grants require owner authorization again; service outages remain retryable. */
+async function classifyTikTokTokenFailure(
+	response: Response,
+): Promise<ProviderFailure> {
+	const parsed = await Results.fromAsync(() => response.json());
+	const body = parsed.unwrapOr(null);
+	const code = isObject(body) && "error" in body ? body.error : null;
+	if (
+		typeof code === "string" &&
+		[
+			"invalid_grant",
+			"invalid_client",
+			"unauthorized_client",
+			"access_denied",
+		].includes(code)
+	)
+		return { _tag: "AuthFailed" };
+	return toHttpFailure(response.status, response.headers.get("retry-after"));
 }

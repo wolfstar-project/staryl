@@ -49,6 +49,21 @@ declare module "@wolfstar/env-utilities" {
 		REDDIT_CLIENT_SECRET: string;
 		REDDIT_USERNAME: string;
 
+		INSTAGRAM_APP_ID: string;
+		INSTAGRAM_APP_SECRET: string;
+		INSTAGRAM_REDIRECT_URI: string;
+		SOCIAL_TOKEN_KEY: string;
+
+		TIKTOK_CLIENT_KEY: string;
+		TIKTOK_CLIENT_SECRET: string;
+		TIKTOK_REDIRECT_URI: string;
+		TIKTOK_APP_APPROVED: string;
+
+		X_API_KEY: string;
+		X_API_SECRET: string;
+		X_ACCESS_TOKEN: string;
+		X_ACCESS_SECRET: string;
+
 		YOUTUBE_API_KEY: string;
 		YOUTUBE_WEBSUB_CALLBACK: string;
 		YOUTUBE_WEBSUB_SECRET: string;

@@ -33,6 +33,7 @@ export interface ResolvedTarget {
 /** Optional facts a filter can act on. A provider sets the ones it knows about. */
 export interface SocialItemTraits {
 	isReply?: boolean;
+	isReel?: boolean;
 	isRepost?: boolean;
 	isShort?: boolean;
 	isNsfw?: boolean;
@@ -60,6 +61,8 @@ export type FetchOutcome =
 			_tag: "Items";
 			/** Newest first, as every source already lists them. */
 			items: SocialItem[];
+			/** Reading succeeded, but independent maintenance needs backoff and health reporting. */
+			failure?: ProviderFailure;
 			/** Handed back on the next {@link SocialProvider.fetchLatest} call for this source. */
 			state: Prisma.InputJsonValue | null;
 	  };

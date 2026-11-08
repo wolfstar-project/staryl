@@ -128,6 +128,38 @@ describe("GET /youtube/websub", () => {
 		expect(response.statusCode).toBe(200);
 	});
 
+	it.each(["0", "-1", "NaN", "Infinity", "1.5", ["12"]])(
+		"rejects an invalid lease: %j",
+		async (lease) => {
+			const response = await run(VerifyRoute, {
+				query: { ...query, "hub.lease_seconds": lease } as never,
+			});
+			expect(response.statusCode).toBe(400);
+			expect(prismaMock.socialSource.updateMany).not.toHaveBeenCalled();
+		},
+	);
+	it.each([
+		[undefined, 86400],
+		["60", 60],
+		["172800", 86400],
+	])(
+		"stores the confirmed grant with a one-day maximum: %j",
+		async (lease, seconds) => {
+			const start = Date.now();
+			await run(VerifyRoute, {
+				query: { ...query, "hub.lease_seconds": lease } as never,
+			});
+			const data = prismaMock.socialSource.updateMany.mock.calls[0][0].data;
+			expect(data.websubRequestedAt).toBeNull();
+			expect(data.websubExpiresAt.getTime()).toBeGreaterThanOrEqual(
+				start + seconds * 1000,
+			);
+			expect(data.websubExpiresAt.getTime()).toBeLessThanOrEqual(
+				Date.now() + seconds * 1000,
+			);
+		},
+	);
+
 	it.each([
 		["a channel nobody follows", query, 0],
 		[

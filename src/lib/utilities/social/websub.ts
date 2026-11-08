@@ -98,6 +98,7 @@ export async function confirmYouTubeLease(channelId: string, seconds: number) {
 		where: { provider: SocialProviderName.YouTube, target: channelId },
 		data: {
 			websubExpiresAt: new Date(Date.now() + Math.min(seconds, 86400) * 1000),
+			websubRequestedAt: null,
 		},
 	});
 }
