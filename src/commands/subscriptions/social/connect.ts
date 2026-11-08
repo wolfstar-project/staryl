@@ -1,5 +1,6 @@
 import type { APIChannel } from "discord-api-types/v10";
 import { beginSocialConnection } from "#social/connectedAccounts";
+import { DefaultSocialFilters, parseKeywordList } from "#social/filters";
 import { createInstagramApi } from "#social/providers/instagram";
 import { SocialGroupName } from "#social/subscriptions";
 import {
@@ -35,12 +36,31 @@ import { MessageFlags } from "discord-api-types/v10";
 					.setRequired(true)
 					.addChoices({ name: "Instagram", value: "Instagram" }),
 			)
-			.addChannelOption(createChannelOption().setRequired(true)),
+			.addChannelOption(createChannelOption().setRequired(true))
+			.addStringOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsKeywordsName",
+					"commands/social:optionsKeywordsDescription",
+				).setMaxLength(500),
+			)
+			.addStringOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsExcludeKeywordsName",
+					"commands/social:optionsExcludeKeywordsDescription",
+				).setMaxLength(500),
+			),
 )
 export class UserCommand extends Command {
 	public override async chatInputRun(
 		interaction: Command.ChatInputInteraction,
-		options: { provider: "Instagram"; channel: APIChannel },
+		options: {
+			provider: "Instagram";
+			channel: APIChannel;
+			keywords?: string;
+			exclude_keywords?: string;
+		},
 	) {
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const result = await Result.fromAsync(() =>
@@ -49,6 +69,11 @@ export class UserCommand extends Command {
 				BigInt(interaction.guildId!),
 				BigInt(options.channel.id),
 				interaction.user.id,
+				{
+					...DefaultSocialFilters,
+					includeKeywords: parseKeywordList(options.keywords),
+					excludeKeywords: parseKeywordList(options.exclude_keywords),
+				},
 			),
 		);
 		const url = result.unwrapOr(null);

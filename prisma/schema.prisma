@@ -144,6 +144,8 @@ model SocialOAuthState {
   guildId BigInt @map("guild_id")
   channelId BigInt @map("channel_id")
   userId String @map("user_id")
+  filters Json @default("{}")
+  message String? @db.VarChar(200)
   expiresAt DateTime @map("expires_at") @db.Timestamptz
   @@index([expiresAt])
   @@map("social_oauth_state")

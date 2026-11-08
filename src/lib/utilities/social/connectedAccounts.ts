@@ -1,4 +1,9 @@
-import type { SocialProviderName, SocialConnection } from "#lib/setup/prisma";
+import type {
+	SocialProviderName,
+	SocialConnection,
+	Prisma,
+} from "#lib/setup/prisma";
+import type { SocialFilters } from "#social/filters";
 import type { ProviderFailure, SocialItem } from "#social/provider";
 import type { Result } from "@sapphire/result";
 import {
@@ -7,10 +12,10 @@ import {
 	randomBytes,
 	createHash,
 } from "node:crypto";
-import { DefaultSocialFilters } from "#social/filters";
-import { addSocialSubscription } from "#social/subscriptions";
+import { DefaultSocialFilters, parseSocialFilters } from "#social/filters";
 import { api } from "#utils/discordApi";
 import { err, ok } from "@sapphire/result";
+import { cast } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import { PermissionFlagsBits } from "discord-api-types/v10";
 
@@ -88,6 +93,8 @@ export async function beginSocialConnection(
 	guildId: bigint,
 	channelId: bigint,
 	userId: string,
+	filters: SocialFilters = DefaultSocialFilters,
+	message: string | null = null,
 ) {
 	if (
 		!client.configured ||
@@ -109,6 +116,8 @@ export async function beginSocialConnection(
 			guildId,
 			channelId,
 			userId,
+			filters: cast<Prisma.InputJsonValue>(filters),
+			message,
 			expiresAt: new Date(Date.now() + 600_000),
 		},
 	});
@@ -152,13 +161,14 @@ export async function finishSocialConnection(
 		create: { provider: client.name, target, ...data },
 		update: data,
 	});
+	const { addSocialSubscription } = await import("#social/subscriptions");
 	const added = await addSocialSubscription({
 		guildId: pending.guildId,
 		channelId: pending.channelId,
 		providerName: client.name,
 		input: target,
-		message: null,
-		filters: DefaultSocialFilters,
+		message: pending.message,
+		filters: parseSocialFilters(pending.filters),
 	});
 	// Re-authorization repairs an existing subscription too.
 	if (added.isErr() && added.unwrapErr() !== "commands/social:addDuplicated")
