@@ -161,6 +161,7 @@ declare module "i18next" {
           rateLimited: "⏳ Rate limited, retrying automatically";
           targetUnavailable: "❌ Not found or no longer public";
           authFailed: "❌ The bot's credentials were refused";
+          unavailable: "Unavailable: provider credentials or app approval missing";
         };
         deliveryErrors: {
           GuildUnavailable: "⚠️ Last post failed: I could not read this server.";
@@ -173,8 +174,9 @@ declare module "i18next" {
         connectName: "connect";
         connectDescription: "Authorize your own creator account to notify this channel";
         connectLink: "Authorize your account: {{url}}. This link expires in 10 minutes.";
-        connectFailed: "Cannot connect this provider. Check app approval, OAuth credentials and callback configuration.";
+        connectFailed: "Cannot connect this provider. Check OAuth configuration; TikTok requires approved Login Kit and Display API products.";
         connectDenied: "You need Manage Server permission to connect an account.";
+        providerTikTok: "TikTok (owner connected)";
       };
       "commands/subscriptions": {
         name: "subscriptions";
@@ -274,6 +276,8 @@ declare module "i18next" {
         instagramHeading: "New post by {{name}}";
         instagramReelHeading: "New reel by {{name}}";
         instagramFooter: "Staryl Instagram Notifications";
+        tiktokHeading: "New video from {{name}}";
+        tiktokFooter: "Staryl TikTok Notifications";
       };
       "events/twitch": {
         embedGame: "Game";

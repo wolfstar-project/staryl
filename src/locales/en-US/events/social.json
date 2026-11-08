@@ -20,5 +20,7 @@
 	"xFooter": "Staryl X Notifications",
 	"instagramHeading": "New post by {{name}}",
 	"instagramReelHeading": "New reel by {{name}}",
-	"instagramFooter": "Staryl Instagram Notifications"
+	"instagramFooter": "Staryl Instagram Notifications",
+	"tiktokHeading": "New video from {{name}}",
+	"tiktokFooter": "Staryl TikTok Notifications"
 }

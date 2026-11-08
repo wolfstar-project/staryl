@@ -1,4 +1,5 @@
 import { escapeInlineText } from "#social/notifications";
+import { getSocialProvider } from "#social/registry";
 import { describeSourceHealth } from "#social/schedule";
 import {
 	getGuildSocialSubscriptions,
@@ -65,7 +66,7 @@ export class UserCommand extends Command {
 			subscriptions.map(async ({ source, channelId, deliveryError }) => {
 				const health = await resolveKey(
 					interaction,
-					`commands/social:health.${describeSourceHealth(source)}`,
+					`commands/social:health.${getSocialProvider(source.provider)?.getAuthRequirements().satisfied ? describeSourceHealth(source) : "unavailable"}`,
 				);
 				const delivery = deliveryError
 					? `\n-# ${await resolveKey(interaction, `commands/social:deliveryErrors.${deliveryError}`)}`

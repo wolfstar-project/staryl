@@ -32,3 +32,19 @@ removed by the operator.
 
 Reference:
 https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login/
+
+## TikTok
+
+Create a TikTok Developer App and obtain approval for Login Kit, Display API,
+`user.info.basic` and `video.list`. Register `TIKTOK_REDIRECT_URI` pointing to
+`/social/tiktok/callback`. Leave `TIKTOK_APP_APPROVED=false` until approved: the
+provider remains unavailable and the connect command explains the requirement.
+Only the creator who authorizes the app is readable, never arbitrary accounts.
+
+The access token is refreshed ten minutes before the API's returned expiry.
+Every refresh persists both the new access token and rotated refresh token under
+a database lease. A rejected/expired refresh requires reconnecting. Preview URLs
+are TikTok CDN thumbnails; private/removed videos are not delivered.
+
+References: https://developers.tiktok.com/docs/en/display-api-get-started and
+https://developers.tiktok.com/docs/en/oauth-user-access-token-management

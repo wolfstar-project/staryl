@@ -185,7 +185,10 @@ export async function addSocialSubscription(options: {
 	if (resolved.isErr()) return err(TargetErrorKeys[resolved.unwrapErr()._tag]);
 
 	const { target } = resolved.unwrap();
-	if (providerName === "Instagram" && !target.startsWith(`${guildId}:`))
+	if (
+		(providerName === "Instagram" || providerName === "TikTok") &&
+		!target.startsWith(`${guildId}:`)
+	)
 		return err("commands/social:addTargetBlocked");
 	if (target.length > MaximumTargetLength) {
 		return err("commands/social:addTargetUnsupported");

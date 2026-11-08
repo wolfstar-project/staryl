@@ -75,7 +75,8 @@
 		"failing": "\u26a0\ufe0f Failing, retrying automatically",
 		"rateLimited": "\u23f3 Rate limited, retrying automatically",
 		"targetUnavailable": "\u274c Not found or no longer public",
-		"authFailed": "\u274c The bot's credentials were refused"
+		"authFailed": "\u274c The bot's credentials were refused",
+		"unavailable": "Unavailable: provider credentials or app approval missing"
 	},
 	"deliveryErrors": {
 		"GuildUnavailable": "\u26a0\ufe0f Last post failed: I could not read this server.",
@@ -88,6 +89,7 @@
 	"connectName": "connect",
 	"connectDescription": "Authorize your own creator account to notify this channel",
 	"connectLink": "Authorize your account: {{url}}. This link expires in 10 minutes.",
-	"connectFailed": "Cannot connect this provider. Check app approval, OAuth credentials and callback configuration.",
-	"connectDenied": "You need Manage Server permission to connect an account."
+	"connectFailed": "Cannot connect this provider. Check OAuth configuration; TikTok requires approved Login Kit and Display API products.",
+	"connectDenied": "You need Manage Server permission to connect an account.",
+	"providerTikTok": "TikTok (owner connected)"
 }

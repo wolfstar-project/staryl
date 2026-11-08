@@ -93,6 +93,7 @@ model GuildSocialSubscription {
 }
 
 enum SocialProviderName {
+  TikTok
   Instagram
   X
   Rss
