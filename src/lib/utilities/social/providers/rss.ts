@@ -26,6 +26,7 @@ import { fetchPublicUrl } from "#social/publicFetch";
 import { err, ok } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
 import { isObject } from "@sapphire/utilities";
+import { XMLValidator } from "fast-xml-parser";
 
 interface FeedState {
 	etag?: string;
@@ -109,7 +110,10 @@ function readFeed(
 		return err({ _tag: "TargetUnreachable" });
 	}
 
-	const feed = parseFeed(response.body);
+	const feed =
+		XMLValidator.validate(response.body) === true
+			? parseFeed(response.body)
+			: null;
 	if (feed === null) return err({ _tag: "TargetUnsupported" });
 
 	return ok({
