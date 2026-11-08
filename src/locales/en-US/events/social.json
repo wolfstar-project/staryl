@@ -1,6 +1,9 @@
 {
 	"blueskyFooter": "Staryl Bluesky Notifications",
 	"blueskyHeading": "New post by {{name}}",
+	"instagramFooter": "Staryl Instagram Notifications",
+	"instagramHeading": "New post by {{name}}",
+	"instagramReelHeading": "New reel by {{name}}",
 	"mastodonFooter": "Staryl Mastodon Notifications",
 	"mastodonHeading": "New post by {{name}}",
 	"openArticle": "Read",

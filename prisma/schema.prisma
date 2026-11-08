@@ -94,6 +94,7 @@ model GuildSocialSubscription {
 }
 
 enum SocialProviderName {
+  Instagram
   X
   Rss
   Reddit
@@ -123,4 +124,30 @@ enum SocialDeliveryError {
   SendFailed
 
   @@map("social_delivery_error_enum")
+}
+
+// OAuth credentials never enter source state, command replies or notification payloads.
+model SocialConnection {
+  provider SocialProviderName
+  target String @db.VarChar(512)
+  guildId BigInt @map("guild_id")
+  displayName String @map("display_name") @db.VarChar(200)
+  credentials String
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  refreshingUntil DateTime? @map("refreshing_until") @db.Timestamptz
+  @@id([provider, target])
+  @@map("social_connection")
+}
+
+model SocialOAuthState {
+  id String @id @db.VarChar(64)
+  provider SocialProviderName
+  guildId BigInt @map("guild_id")
+  channelId BigInt @map("channel_id")
+  userId String @map("user_id")
+  filters Json @default("{}")
+  message String? @db.VarChar(200)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  @@index([expiresAt])
+  @@map("social_oauth_state")
 }

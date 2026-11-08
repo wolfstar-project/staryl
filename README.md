@@ -121,6 +121,10 @@ These include, but are not limited to:
 - **Reddit** (optional): Reddit's Data API Terms require an approved app, so
   Reddit subscriptions stay off until `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`
   and `REDDIT_USERNAME` are set.
+- **Instagram** (optional): Professional account owners authorize Instagram
+  Login. Set `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`,
+  `INSTAGRAM_REDIRECT_URI` and a stable `SOCIAL_TOKEN_KEY`. See
+  [owner connections](docs/social-oauth.md).
 - **X** (optional): Official API with billed reads. Set `X_API_KEY`,
   `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_SECRET` in `src/.env.local`.
   The root `.env.example` also lists the new social integration settings.

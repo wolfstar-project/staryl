@@ -16,6 +16,7 @@ export type {
 	SocialFailure,
 	SocialProviderName,
 	SocialSource,
+	SocialConnection,
 	TwitchSubscription,
 	TwitchSubscriptionType,
 } from "#generated/prisma";

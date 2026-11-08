@@ -3,6 +3,7 @@ import type { SocialProvider } from "#social/provider";
 import { socialDelivery } from "#social/notifications";
 import { SocialPoller } from "#social/poller";
 import { createBlueskyProvider } from "#social/providers/bluesky";
+import { createInstagramProvider } from "#social/providers/instagram";
 import { createMastodonProvider } from "#social/providers/mastodon";
 import { createRedditProvider } from "#social/providers/reddit";
 import { createRssProvider } from "#social/providers/rss";
@@ -25,6 +26,7 @@ export const SocialProviders: readonly SocialProvider[] = [
 	createTwitchVideosProvider(),
 	createTwitchClipsProvider(),
 	createXProvider(),
+	createInstagramProvider(),
 ];
 
 export function getSocialProvider(name: SocialProviderName) {

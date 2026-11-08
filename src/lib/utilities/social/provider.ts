@@ -33,6 +33,7 @@ export interface ResolvedTarget {
 /** Optional facts a filter can act on. A provider sets the ones it knows about. */
 export interface SocialItemTraits {
 	isReply?: boolean;
+	isReel?: boolean;
 	isRepost?: boolean;
 	isShort?: boolean;
 	isNsfw?: boolean;

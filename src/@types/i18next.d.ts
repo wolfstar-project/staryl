@@ -98,6 +98,11 @@ declare module "i18next" {
         addTargetUnreachable: "{{REDCROSS}} I could not reach that right now. Please try again later.";
         addTargetUnsupported: "{{REDCROSS}} I could read that page, but found no RSS or Atom feed there.";
         addXLimitReached: "{{REDCROSS}} This server already follows the maximum of {{maximum}} X accounts. Remove an X account before adding another.";
+        connectDenied: "You need Manage Server permission to connect an account.";
+        connectDescription: "Authorize your own creator account to notify this channel";
+        connectFailed: "Cannot connect this provider. Check app approval, OAuth credentials and callback configuration.";
+        connectLink: "Authorize your account: {{url}}. This link expires in 10 minutes.";
+        connectName: "connect";
         deliveryErrors: {
           ChannelNotFound: "⚠️ Last post failed: I can no longer see this channel.";
           GuildUnavailable: "⚠️ Last post failed: I could not read this server.";
@@ -144,6 +149,7 @@ declare module "i18next" {
         optionsTargetDescription: "The feed or site URL, subreddit, account or YouTube channel to follow.";
         optionsTargetName: "target";
         providerBluesky: "Bluesky";
+        providerInstagram: "Instagram (owner connected)";
         providerMastodon: "Mastodon";
         providerReddit: "Reddit";
         providerRss: "RSS or Atom feed";
@@ -249,6 +255,9 @@ declare module "i18next" {
       "events/social": {
         blueskyFooter: "Staryl Bluesky Notifications";
         blueskyHeading: "New post by {{name}}";
+        instagramFooter: "Staryl Instagram Notifications";
+        instagramHeading: "New post by {{name}}";
+        instagramReelHeading: "New reel by {{name}}";
         mastodonFooter: "Staryl Mastodon Notifications";
         mastodonHeading: "New post by {{name}}";
         openArticle: "Read";
