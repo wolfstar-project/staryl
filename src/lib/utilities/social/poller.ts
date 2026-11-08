@@ -234,7 +234,9 @@ export class SocialPoller {
 		source: SocialSourceWithSubscriptions,
 	): Promise<Result<FetchOutcome, ProviderFailure>> {
 		try {
-			return await provider.fetchLatest(source.target, source.state);
+			return await provider.fetchLatest(source.target, source.state, {
+				checkRequested: source.checkRequested,
+			});
 		} catch (error) {
 			this.#options.logger.error(
 				`[social-poller] ${provider.name} threw while fetching source ${source.id}`,

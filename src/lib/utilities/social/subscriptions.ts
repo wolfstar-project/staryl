@@ -299,6 +299,14 @@ export async function addSocialSubscription(options: {
 	}
 
 	if (!createdResult.unwrap()) return err("commands/social:addLimitReached");
+	if (provider.onSubscribed) {
+		const started = await callProvider(() => provider.onSubscribed!(target), {
+			_tag: "Unavailable",
+		} as ProviderFailure);
+		started.inspectErr((error) =>
+			logFailure(`subscribe to ${target} after saving`, error),
+		);
+	}
 	return ok({ displayName });
 }
 

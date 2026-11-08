@@ -115,7 +115,10 @@ export interface SocialProvider {
 	fetchLatest(
 		target: string,
 		state: Prisma.JsonValue | null,
+		context?: { checkRequested: boolean },
 	): Promise<Result<FetchOutcome, ProviderFailure>>;
+	/** Runs only after the source and its first subscription have been saved. */
+	onSubscribed?(target: string): Promise<Result<void, ProviderFailure>>;
 	formatNotification(
 		item: SocialItem,
 		source: NotifiedSource,

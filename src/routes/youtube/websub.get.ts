@@ -1,5 +1,6 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import {
+	confirmYouTubeLease,
 	isFollowedChannel,
 	isValidCallbackToken,
 	isWebSubConfigured,
@@ -34,6 +35,12 @@ export class UserRoute extends Route {
 			(await isFollowedChannel(channelId));
 
 		if (isConfirmable) {
+			const seconds = Number(request.query["hub.lease_seconds"] ?? 86400);
+			if (!Number.isFinite(seconds) || seconds <= 0) {
+				response.status(400).text("Invalid lease");
+				return;
+			}
+			await confirmYouTubeLease(channelId!, seconds);
 			response.text(challenge);
 			return;
 		}

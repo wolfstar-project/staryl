@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { createYouTubeProvider } from "#social/providers/youtube";
-import { getCallbackToken } from "#social/websub";
 import { Time } from "@sapphire/time-utilities";
 import { container } from "@wolfstar/http-framework";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -103,124 +102,84 @@ describe("validateTarget", () => {
 	});
 });
 
-describe("fetchLatest", () => {
-	it("maps each video and tells Shorts apart by their player link", async () => {
+describe("WebSub lifecycle", () => {
+	const sourceStore = { findUnique: vi.fn(), updateMany: vi.fn() };
+	const env = { ...WebSubEnv, YOUTUBE_API_KEY: "key" };
+	beforeEach(() => {
+		container.prisma = { socialSource: sourceStore } as never;
+		sourceStore.findUnique.mockResolvedValue({ websubExpiresAt: null });
+		sourceStore.updateMany.mockResolvedValue({ count: 1 });
+	});
+	it("baselines with Data API metadata without subscribing before save", async () => {
 		fetchMock.mockResolvedValueOnce(new Response(Feed));
-
-		const result = await makeProvider().fetchLatest(ChannelId, null);
-
+		fetchMock.mockResolvedValueOnce(
+			Response.json({
+				items: [
+					{
+						id: "rPj14ToaZSA",
+						snippet: { title: "Short", description: "Caption" },
+						contentDetails: { duration: "PT45S" },
+					},
+					{
+						id: "rsOiZE19RVo",
+						snippet: { title: "Long", description: "Long description" },
+						contentDetails: { duration: "PT20M" },
+					},
+				],
+			}),
+		);
+		const result = await makeProvider(env).fetchLatest(ChannelId, null);
 		expect(result.unwrap()).toMatchObject({
-			_tag: "Items",
 			items: [
-				{
-					id: "yt:video:rPj14ToaZSA",
-					title: "A short one",
-					text: "Quick tip",
-					isShort: true,
-					imageUrl: "https://i3.ytimg.com/vi/rPj14ToaZSA/hqdefault.jpg",
-				},
-				{
-					id: "yt:video:rsOiZE19RVo",
-					url: "https://www.youtube.com/watch?v=rsOiZE19RVo",
-					isShort: false,
-				},
+				{ title: "Short", isShort: true },
+				{ title: "Long", isShort: false },
 			],
 		});
+		expect(
+			fetchMock.mock.calls.every(([, init]) => init?.method !== "POST"),
+		).toBe(true);
+		expect(sourceStore.findUnique).not.toHaveBeenCalled();
 	});
-
-	it("carries on without pushes when the callback is not a URL", async () => {
-		fetchMock.mockResolvedValueOnce(new Response(Feed));
-
-		const result = await makeProvider({
-			...WebSubEnv,
-			YOUTUBE_WEBSUB_CALLBACK: "staryl.example/youtube/websub",
-		}).fetchLatest(ChannelId, null);
-
+	it("subscribes after the source exists, requesting at most one day", async () => {
+		fetchMock.mockResolvedValue(new Response(null, { status: 202 }));
+		const result = await makeProvider(env).onSubscribed!(ChannelId);
 		expect(result.isOk()).toBe(true);
-		expect(fetchMock).toHaveBeenCalledOnce();
+		const body = fetchMock.mock.calls[0][1]?.body as URLSearchParams;
+		expect(body.get("hub.lease_seconds")).toBe("86400");
+		expect(body.get("hub.topic")).toContain(ChannelId);
 	});
-
-	it("does not talk to the hub without WebSub configured", async () => {
-		fetchMock.mockResolvedValueOnce(new Response(Feed));
-
-		await makeProvider().fetchLatest(ChannelId, null);
-
-		expect(fetchMock).toHaveBeenCalledOnce();
+	it("never asks the hub to verify a missing source", async () => {
+		sourceStore.findUnique.mockResolvedValue(null);
+		expect((await makeProvider(env).onSubscribed!(ChannelId)).isErr()).toBe(
+			true,
+		);
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
-
-	it("subscribes to the hub with the secret, for the channel's topic", async () => {
-		fetchMock.mockResolvedValueOnce(new Response(Feed));
-		fetchMock.mockResolvedValueOnce(new Response(null, { status: 202 }));
-
-		const result = await makeProvider(WebSubEnv).fetchLatest(ChannelId, null);
-
-		const [url, init] = fetchMock.mock.calls[1];
-		const body = init!.body as URLSearchParams;
-		expect(url).toBe("https://pubsubhubbub.appspot.com/subscribe");
-		expect(Object.fromEntries(body)).toMatchObject({
-			"hub.callback": `${WebSubEnv.YOUTUBE_WEBSUB_CALLBACK}?token=${getCallbackToken("secret", ChannelId)}`,
-			"hub.mode": "subscribe",
-			"hub.secret": "secret",
-			"hub.topic": `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${ChannelId}`,
+	it("uses scheduled checks only for lease maintenance", async () => {
+		sourceStore.findUnique.mockResolvedValue({
+			websubExpiresAt: new Date(Now + Time.Hour * 12),
 		});
-		expect(result.unwrap()).toMatchObject({
-			state: { leaseRequestedAt: Now },
+		const result = await makeProvider(env).fetchLatest(ChannelId, null, {
+			checkRequested: false,
 		});
+		expect(result.unwrap()).toEqual({ _tag: "NotModified" });
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
-
-	it("leaves a recent lease alone", async () => {
-		fetchMock.mockResolvedValueOnce(new Response(Feed));
-
-		await makeProvider(WebSubEnv).fetchLatest(ChannelId, {
-			leaseRequestedAt: Now - Time.Day,
+	it("renews a short grant before expiry without reading videos", async () => {
+		sourceStore.findUnique.mockResolvedValue({
+			websubExpiresAt: new Date(Now + Time.Minute * 20),
 		});
-
-		expect(fetchMock).toHaveBeenCalledOnce();
-	});
-
-	it("renews a lease well before it can expire", async () => {
-		fetchMock.mockResolvedValueOnce(new Response(Feed));
-		fetchMock.mockResolvedValueOnce(new Response(null, { status: 202 }));
-
-		await makeProvider(WebSubEnv).fetchLatest(ChannelId, {
-			leaseRequestedAt: Now - Time.Day * 4,
+		fetchMock.mockResolvedValue(new Response(null, { status: 202 }));
+		await makeProvider(env).fetchLatest(ChannelId, null, {
+			checkRequested: false,
 		});
-
-		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(fetchMock.mock.calls[0][1]?.method).toBe("POST");
 	});
-
-	it("still delivers when the hub is down, and retries on the next check", async () => {
-		const warn = vi
-			.spyOn(container.logger, "warn")
-			.mockImplementation(() => undefined);
-		fetchMock.mockResolvedValueOnce(new Response(Feed));
-		fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
-
-		const result = await makeProvider(WebSubEnv).fetchLatest(ChannelId, null);
-
-		expect(result.unwrap()).toMatchObject({ _tag: "Items", state: {} });
-		expect(result.unwrap()).not.toHaveProperty("state.leaseRequestedAt");
-		expect(warn).toHaveBeenCalledOnce();
-	});
-
-	it.each([
-		[
-			"a removed channel",
-			new Response(null, { status: 404 }),
-			"TargetUnavailable",
-		],
-		[
-			"a refusal, which is not about credentials",
-			new Response(null, { status: 403 }),
-			"Unavailable",
-		],
-		["an outage", new Response(null, { status: 500 }), "Unavailable"],
-		["garbage", new Response("nope"), "InvalidResponse"],
-	])("reports %s", async (_, answer, tag) => {
-		fetchMock.mockResolvedValueOnce(answer);
-
-		const result = await makeProvider().fetchLatest(ChannelId, null);
-
-		expect(result.unwrapErr()).toEqual({ _tag: tag });
+	it("surfaces a failed hub request for backoff and health reporting", async () => {
+		fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
+		expect(
+			(await makeProvider(env).onSubscribed!(ChannelId)).unwrapErr(),
+		).toEqual({ _tag: "Unavailable" });
 	});
 });
