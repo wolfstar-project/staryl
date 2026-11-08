@@ -97,7 +97,7 @@ declare module "i18next" {
         addTargetNotFound: "{{REDCROSS}} I could not find that. Check the spelling and try again.";
         addTargetUnreachable: "{{REDCROSS}} I could not reach that right now. Please try again later.";
         addTargetUnsupported: "{{REDCROSS}} I could read that page, but found no RSS or Atom feed there.";
-        addXLimitReached: "This server already follows the maximum of 2 X accounts. Remove an X account before adding another.";
+        addXLimitReached: "{{REDCROSS}} This server already follows the maximum of {{maximum}} X accounts. Remove an X account before adding another.";
         deliveryErrors: {
           ChannelNotFound: "⚠️ Last post failed: I can no longer see this channel.";
           GuildUnavailable: "⚠️ Last post failed: I could not read this server.";
