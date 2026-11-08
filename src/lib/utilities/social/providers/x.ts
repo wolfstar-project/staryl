@@ -8,7 +8,6 @@ import { SocialColors } from "#common/constants";
 import { SocialProviderName } from "#generated/prisma";
 import { sendRequest, toHttpFailure, SocialUserAgent } from "#social/http";
 import { createSocialCard, parseImageUrl } from "#social/notifications";
-import { RateLimitManager } from "@sapphire/ratelimits";
 import { err, ok, Result } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
 import { isObject } from "@sapphire/utilities";
@@ -27,6 +26,7 @@ interface XPost {
 	author_id?: string;
 	referenced_tweets?: { type: string }[];
 	attachments?: { media_keys?: string[] };
+	possibly_sensitive?: boolean;
 }
 interface XResponse {
 	data?: XPost[];
@@ -56,12 +56,7 @@ export function createXProvider(
 	} = {},
 ): SocialProvider {
 	const { env = process.env, fetch: request = fetch } = options;
-	const budget = new RateLimitManager(Time.Minute * 15, 15);
 	async function read(url: URL): Promise<Result<Response, ProviderFailure>> {
-		const bucket = budget.acquire("x");
-		if (bucket.limited)
-			return err({ _tag: "RateLimited", retryAfterMs: Time.Minute * 15 });
-		bucket.consume();
 		const oauth: Record<string, string> = {
 			oauth_consumer_key: env.X_API_KEY!,
 			oauth_token: env.X_ACCESS_TOKEN!,
@@ -96,12 +91,7 @@ export function createXProvider(
 		return response.ok
 			? ok(response)
 			: err(
-					response.status === 403
-						? { _tag: "TargetUnavailable" }
-						: toHttpFailure(
-								response.status,
-								response.headers.get("retry-after"),
-							),
+					toHttpFailure(response.status, response.headers.get("retry-after")),
 				);
 	}
 	return {
@@ -121,10 +111,7 @@ export function createXProvider(
 			satisfied: Variables.every((key) => Boolean(env[key])),
 		}),
 		async validateTarget(input) {
-			const handle =
-				/^(?:https?:\/\/(?:www\.)?(?:x|twitter)\.com\/)?@?(\w{1,15})\/?$/.exec(
-					input,
-				)?.[1];
+			const handle = parseXHandle(input);
 			if (!handle) return err({ _tag: "InvalidTarget" });
 			const url = new URL(`https://api.x.com/2/users/by/username/${handle}`);
 			url.searchParams.set("user.fields", "protected");
@@ -150,10 +137,11 @@ export function createXProvider(
 			if (!/^\d+$/.test(target)) return err({ _tag: "TargetUnavailable" });
 			const url = new URL(`https://api.x.com/2/users/${target}/tweets`);
 			url.search = new URLSearchParams({
-				max_results: "100",
-				"tweet.fields": "created_at,referenced_tweets,attachments,author_id",
+				max_results: state === null ? "5" : "100",
+				"tweet.fields":
+					"created_at,referenced_tweets,attachments,author_id,possibly_sensitive",
 				expansions: "author_id,attachments.media_keys",
-				"user.fields": "username,name,profile_image_url",
+				"user.fields": "username,name,profile_image_url,protected",
 				"media.fields": "url,preview_image_url",
 			}).toString();
 			const previous =
@@ -163,31 +151,23 @@ export function createXProvider(
 					? state.sinceId
 					: null;
 			if (previous) url.searchParams.set("since_id", previous);
-			const pages: XResponse[] = [];
-			for (let page = 0; page < 10; page++) {
-				// oxlint-disable-next-line no-await-in-loop -- X pagination is sequential
-				const result = await read(url);
-				if (result.isErr()) return err(result.unwrapErr());
-				// oxlint-disable-next-line no-await-in-loop -- parse this page before requesting the next
-				const parsed = await Result.fromAsync(
-					() => result.unwrap().json() as Promise<XResponse>,
-				);
-				if (parsed.isErr()) return err({ _tag: "InvalidResponse" });
-				const body = parsed.unwrap();
-				pages.push(body);
-				if (!body.meta?.next_token) break;
-				if (page === 9) return err({ _tag: "Unavailable" });
-				url.searchParams.set("pagination_token", body.meta.next_token);
-			}
-			const body: XResponse = {
-				data: pages.flatMap((page) => page.data ?? []),
-				includes: {
-					users: pages.flatMap((page) => page.includes?.users ?? []),
-					media: pages.flatMap((page) => page.includes?.media ?? []),
-				},
-			};
+
+			// The shared poller admits at most 100 items. A baseline/preview needs just the newest page,
+			// never the account's archive; one read also matches one shared request-budget token.
+			const result = await read(url);
+			if (result.isErr()) return err(result.unwrapErr());
+			const parsed = await Result.fromAsync(
+				() => result.unwrap().json() as Promise<XResponse>,
+			);
+			if (parsed.isErr()) return err({ _tag: "InvalidResponse" });
+			const body = parsed.unwrap();
 			if (body.data !== undefined && !Array.isArray(body.data))
 				return err({ _tag: "InvalidResponse" });
+			const owner = body.includes?.users?.find((user) => user.id === target);
+			if (owner?.protected === true) return err({ _tag: "TargetUnavailable" });
+			if (body.data?.length && owner?.protected !== false)
+				return err({ _tag: "InvalidResponse" });
+
 			const items: SocialItem[] = (body.data ?? []).map((post) => {
 				const author = body.includes?.users?.find(
 					(user) => user.id === post.author_id,
@@ -199,7 +179,12 @@ export function createXProvider(
 					id: post.id,
 					url: `https://x.com/i/status/${post.id}`,
 					title: null,
-					text: post.text,
+					text: post.text.replace(
+						/&(amp|lt|gt);/g,
+						(entity) =>
+							({ "&amp;": "&", "&lt;": "<", "&gt;": ">" })[entity] ?? entity,
+					),
+					isNsfw: post.possibly_sensitive === true,
 					authorName: author?.name ?? null,
 					authorAvatarUrl: parseImageUrl(author?.profile_image_url),
 					imageUrl: parseImageUrl(media?.url ?? media?.preview_image_url),
@@ -227,4 +212,13 @@ export function createXProvider(
 			});
 		},
 	};
+}
+
+/** Canonical handle spelling without making a billed user lookup. */
+export function parseXHandle(input: string) {
+	return (
+		/^(?:https?:\/\/(?:www\.)?(?:x|twitter)\.com\/)?@?(\w{1,15})\/?$/
+			.exec(input)?.[1]
+			?.toLowerCase() ?? null
+	);
 }

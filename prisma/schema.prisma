@@ -79,6 +79,7 @@ model GuildSocialSubscription {
   message       String?              @db.VarChar(200)
   filters       Json                 @default("{}")
   // Kept per subscription because a filter can hold an item back for one channel only.
+  // Most recent successful delivery; the seen window separately records filtered and baseline items.
   lastNotifiedId String? @map("last_notified_id") @db.VarChar(512)
   seenItemIds   String[]             @map("seen_item_ids")
   deliveryError SocialDeliveryError? @map("delivery_error")

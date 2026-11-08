@@ -9,13 +9,13 @@
 	"redditHeading": "New post in {{name}}",
 	"rssFooter": "Staryl Feed Notifications",
 	"rssHeading": "New in {{name}}",
-	"testNotice": "\ud83e\uddea **Test notification** \u2014 this is a preview requested by a server manager, showing the newest item.",
+	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.",
 	"twitchClipHeading": "New clip of {{name}}",
 	"twitchVideoHeading": "New video from {{name}}",
 	"watchVideo": "Watch",
+	"xFooter": "Staryl X Notifications",
+	"xHeading": "New post by {{name}}",
 	"youtubeFooter": "Staryl YouTube Notifications",
 	"youtubeHeading": "New video from {{name}}",
-	"youtubeHeadingShort": "New Short from {{name}}",
-	"xHeading": "New post by {{name}}",
-	"xFooter": "Staryl X Notifications"
+	"youtubeHeadingShort": "New Short from {{name}}"
 }
