@@ -245,3 +245,23 @@ describe("insertion validation", () => {
 		expect(fetchUrl.mock.calls[1][0]).toBe("https://example.com/atom.xml");
 	});
 });
+
+it("accepts harmless whitespace before the XML declaration", async () => {
+	const { provider } = makeProvider(ok(respond({ body: `\n  ${Rss}\n` })));
+	expect((await provider.validateTarget(FeedUrl)).unwrap()).toMatchObject({
+		target: FeedUrl,
+		displayName: "Example & Friends",
+	});
+});
+it("still refuses an unescaped ampersand in newly linked XML", async () => {
+	const { provider } = makeProvider(
+		ok(
+			respond({
+				body: '<rss version="2.0"><channel><title>Q&A</title></channel></rss>',
+			}),
+		),
+	);
+	expect((await provider.validateTarget(FeedUrl)).unwrapErr()).toEqual({
+		_tag: "TargetUnsupported",
+	});
+});
