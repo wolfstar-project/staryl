@@ -17,6 +17,7 @@ import type { NotificationDeliveryError } from "#utils/notificationDelivery";
 import type { APIChannel } from "discord-api-types/v10";
 import { getActiveFilters } from "#social/filters";
 import { isNsfwChannel, socialDelivery } from "#social/notifications";
+import { parseXHandle } from "#social/providers/x";
 import { getSocialProvider, SocialProviders } from "#social/registry";
 import { MaximumFetchedItems, toSeenId } from "#social/seen";
 import { SlashCommandStringOption } from "@discordjs/builders";
@@ -40,6 +41,7 @@ export const SocialGroupName = "social";
  * the limit is what keeps one guild from turning the bot into a crawler.
  */
 export const MaximumSocialSubscriptionsPerGuild = 25;
+export const MaximumXAccountsPerGuild = 2;
 
 /** Match the columns of `SocialSource`, so a long feed title cannot fail the insert. */
 const MaximumTargetLength = 512;
@@ -81,6 +83,7 @@ export type AddSocialSubscriptionError =
 	| "commands/social:addProviderNotConfigured"
 	| "commands/social:addFilterUnsupported"
 	| "commands/social:addLimitReached"
+	| "commands/social:addXLimitReached"
 	| "commands/social:addTargetInvalid"
 	| "commands/social:addTargetNotFound"
 	| "commands/social:addTargetBlocked"
@@ -178,8 +181,35 @@ export async function addSocialSubscription(options: {
 	const limitError = await checkGuildLimit(guildId);
 	if (limitError) return err(limitError);
 
+	let existingX: ResolvedTarget | undefined;
+	if (providerName === "X") {
+		const followed = await Result.fromAsync(() =>
+			container.prisma.guildSocialSubscription.findMany({
+				where: { guildId, source: { provider: "X" } },
+				include: { source: true },
+			}),
+		);
+		if (followed.isErr()) return err("commands/social:addFailedDatabase");
+		const sources = followed
+			.unwrap()
+			.map((subscription) => subscription.source);
+		const handle = parseXHandle(input.trim());
+		existingX = sources.find(
+			(source) =>
+				parseXHandle(source.displayName) === handle && handle !== null,
+		);
+		if (
+			!existingX &&
+			new Set(sources.map((source) => source.target)).size >=
+				MaximumXAccountsPerGuild
+		)
+			return err("commands/social:addXLimitReached");
+	}
 	const resolved = await callProvider<ResolvedTarget, TargetError>(
-		() => provider.validateTarget(input.trim()),
+		() =>
+			existingX
+				? Promise.resolve(ok(existingX))
+				: provider.validateTarget(input.trim()),
 		{ _tag: "TargetUnreachable" },
 	);
 	if (resolved.isErr()) return err(TargetErrorKeys[resolved.unwrapErr()._tag]);
@@ -234,10 +264,6 @@ export async function addSocialSubscription(options: {
 			message,
 			filters: toStoredFilters(filters),
 			seenItemIds,
-			lastNotifiedId:
-				outcome._tag === "Items" && outcome.items[0]
-					? toSeenId(outcome.items[0])
-					: undefined,
 			guild: {
 				connectOrCreate: {
 					where: { id: guildId },
@@ -266,7 +292,7 @@ export async function addSocialSubscription(options: {
 	const createdResult = await Result.fromAsync(async () => {
 		if (providerName !== "X") {
 			await container.prisma.guildSocialSubscription.create(createInput);
-			return true;
+			return null;
 		}
 		// Serialize paid-account additions for a guild across all bot processes.
 		return container.prisma.$transaction(async (transaction) => {
@@ -280,13 +306,14 @@ export async function addSocialSubscription(options: {
 					.filter((subscription) => subscription.source.provider === "X")
 					.map((subscription) => subscription.source.target),
 			);
-			if (
-				subscriptions.length >= MaximumSocialSubscriptionsPerGuild ||
-				(!accounts.has(target) && accounts.size >= 2)
-			)
-				return false;
+
+			if (subscriptions.length >= MaximumSocialSubscriptionsPerGuild)
+				return "commands/social:addLimitReached" as const;
+			if (!accounts.has(target) && accounts.size >= MaximumXAccountsPerGuild)
+				return "commands/social:addXLimitReached" as const;
+
 			await transaction.guildSocialSubscription.create(createInput);
-			return true;
+			return null;
 		});
 	});
 
@@ -295,7 +322,8 @@ export async function addSocialSubscription(options: {
 		return err("commands/social:addFailedDatabase");
 	}
 
-	if (!createdResult.unwrap()) return err("commands/social:addLimitReached");
+	const creationError = createdResult.unwrap();
+	if (creationError) return err(creationError);
 	return ok({ displayName });
 }
 
