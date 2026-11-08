@@ -88,3 +88,31 @@ it("rejects a third X account before spending any paid API reads", async () => {
 	expect(provider.validateTarget).not.toHaveBeenCalled();
 	expect(provider.fetchLatest).not.toHaveBeenCalled();
 });
+it("resolves a reused handle instead of following its previous owner", async () => {
+	vi.clearAllMocks();
+	container.prisma = {
+		guildSocialSubscription: {
+			count: vi.fn().mockResolvedValue(2),
+			findMany: vi
+				.fn()
+				.mockResolvedValue([
+					{ source: { target: "1", displayName: "@reused" } },
+					{ source: { target: "2", displayName: "@two" } },
+				]),
+		},
+	} as never;
+	provider.validateTarget.mockResolvedValue(
+		ok({ target: "3", displayName: "@reused" }),
+	);
+	const result = await addSocialSubscription({
+		guildId: 1n,
+		channelId: 2n,
+		providerName: "X",
+		input: "@reused",
+		message: null,
+		filters: DefaultSocialFilters,
+	});
+	expect(result.unwrapErr()).toBe("commands/social:addXLimitReached");
+	expect(provider.validateTarget).toHaveBeenCalledWith("@reused");
+	expect(provider.fetchLatest).not.toHaveBeenCalled();
+});
