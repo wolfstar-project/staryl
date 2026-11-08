@@ -233,13 +233,14 @@ export function createYouTubeProvider(
 
 		async fetchLatest(
 			target,
-			_state,
+			state,
 			context,
 		): Promise<Result<FetchOutcome, ProviderFailure>> {
 			if (context) {
 				const renewed = await renewLease(target);
 				if (renewed.isErr()) return err(renewed.unwrapErr());
-				if (!context.checkRequested) return ok({ _tag: "NotModified" });
+				if (!context.checkRequested && state !== null)
+					return ok({ _tag: "NotModified" });
 			}
 			const response = await sendRequest(request, `${FeedOrigin}${target}`, {
 				headers: { "user-agent": SocialUserAgent },
@@ -278,7 +279,11 @@ export function createYouTubeProvider(
 			const enriched = await enrichItems(items);
 			return enriched.isErr()
 				? err(enriched.unwrapErr())
-				: ok({ _tag: "Items", items: enriched.unwrap(), state: null });
+				: ok({
+						_tag: "Items",
+						items: enriched.unwrap(),
+						state: { baselineRead: true },
+					});
 		},
 
 		formatNotification(item, source, t) {

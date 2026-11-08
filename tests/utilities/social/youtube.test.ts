@@ -159,9 +159,13 @@ describe("WebSub lifecycle", () => {
 		sourceStore.findUnique.mockResolvedValue({
 			websubExpiresAt: new Date(Now + Time.Hour * 12),
 		});
-		const result = await makeProvider(env).fetchLatest(ChannelId, null, {
-			checkRequested: false,
-		});
+		const result = await makeProvider(env).fetchLatest(
+			ChannelId,
+			{ baselineRead: true },
+			{
+				checkRequested: false,
+			},
+		);
 		expect(result.unwrap()).toEqual({ _tag: "NotModified" });
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
@@ -170,11 +174,42 @@ describe("WebSub lifecycle", () => {
 			websubExpiresAt: new Date(Now + Time.Minute * 20),
 		});
 		fetchMock.mockResolvedValue(new Response(null, { status: 202 }));
-		await makeProvider(env).fetchLatest(ChannelId, null, {
-			checkRequested: false,
-		});
+		await makeProvider(env).fetchLatest(
+			ChannelId,
+			{ baselineRead: true },
+			{
+				checkRequested: false,
+			},
+		);
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		expect(fetchMock.mock.calls[0][1]?.method).toBe("POST");
+	});
+
+	it("re-reads an unacknowledged delivery even without another push", async () => {
+		sourceStore.findUnique.mockResolvedValue({
+			websubExpiresAt: new Date(Now + Time.Hour * 12),
+		});
+		fetchMock.mockResolvedValueOnce(new Response(Feed));
+		fetchMock.mockResolvedValueOnce(
+			Response.json({
+				items: [
+					{
+						id: "rPj14ToaZSA",
+						snippet: { title: "Retry", description: "Caption" },
+						contentDetails: { duration: "PT45S" },
+					},
+				],
+			}),
+		);
+		const result = await makeProvider(env).fetchLatest(ChannelId, null, {
+			checkRequested: false,
+		});
+		expect(result.unwrap()).toMatchObject({
+			_tag: "Items",
+			items: [{ title: "Retry" }],
+			state: { baselineRead: true },
+		});
+		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 	it("surfaces a failed hub request for backoff and health reporting", async () => {
 		fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
