@@ -234,7 +234,9 @@ export class SocialPoller {
 		source: SocialSourceWithSubscriptions,
 	): Promise<Result<FetchOutcome, ProviderFailure>> {
 		try {
-			return await provider.fetchLatest(source.target, source.state);
+			return await provider.fetchLatest(source.target, source.state, {
+				checkRequested: source.checkRequested,
+			});
 		} catch (error) {
 			this.#options.logger.error(
 				`[social-poller] ${provider.name} threw while fetching source ${source.id}`,
@@ -250,6 +252,7 @@ export class SocialPoller {
 		const pausedUntil = this.#pausedScopes.get(scope) ?? 0;
 		if (pausedUntil > now) return pausedUntil + spread;
 		this.#pausedScopes.delete(scope);
+		if (provider.rateLimitOwner === "provider") return null;
 
 		const { windowMs, limit } = provider.rateLimit;
 		const key = `${limit}/${windowMs}`;
@@ -290,7 +293,12 @@ export class SocialPoller {
 		holdsClaim: () => Promise<boolean>,
 	) {
 		const { store, delivery, logger } = this.#options;
-		const fresh = findFreshItems(items, subscription.seenItemIds);
+		const fresh = findFreshItems(
+			items,
+			subscription.lastNotifiedId
+				? [...subscription.seenItemIds, subscription.lastNotifiedId]
+				: subscription.seenItemIds,
+		);
 		if (fresh.length === 0) return false;
 
 		const key = {
@@ -374,7 +382,11 @@ export class SocialPoller {
 
 			this.#refusals.delete(attempt);
 			seenItemIds = mergeSeenIds(seenItemIds, [item]);
-			await store.updateSubscription(key, { seenItemIds, deliveryError });
+			await store.updateSubscription(key, {
+				seenItemIds,
+				deliveryError,
+				...(sent.isOk() ? { lastNotifiedId: toSeenId(item) } : {}),
+			});
 		}
 
 		return pending;

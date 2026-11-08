@@ -3,6 +3,7 @@ import { DefaultSocialFilters, parseKeywordList } from "#social/filters";
 import { escapeInlineText } from "#social/notifications";
 import {
 	addSocialSubscription,
+	MaximumXAccountsPerGuild,
 	createProviderOption,
 	SocialGroupName,
 } from "#social/subscriptions";
@@ -139,8 +140,14 @@ export class UserCommand extends Command {
 		});
 
 		if (result.isErr()) {
+			const error = result.unwrapErr();
 			return deferred.update({
-				content: await resolveKey(interaction, result.unwrapErr()),
+				content:
+					error === "commands/social:addXLimitReached"
+						? await resolveKey(interaction, error, {
+								maximum: MaximumXAccountsPerGuild,
+							})
+						: await resolveKey(interaction, error),
 			});
 		}
 

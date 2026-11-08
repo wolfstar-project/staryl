@@ -13,6 +13,8 @@
 	"twitchClipHeading": "New clip of {{name}}",
 	"twitchVideoHeading": "New video from {{name}}",
 	"watchVideo": "Watch",
+	"xFooter": "Staryl X Notifications",
+	"xHeading": "New post by {{name}}",
 	"youtubeFooter": "Staryl YouTube Notifications",
 	"youtubeHeading": "New video from {{name}}",
 	"youtubeHeadingShort": "New Short from {{name}}"

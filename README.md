@@ -121,6 +121,9 @@ These include, but are not limited to:
 - **Reddit** (optional): Reddit's Data API Terms require an approved app, so
   Reddit subscriptions stay off until `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`
   and `REDDIT_USERNAME` are set.
+- **X** (optional): Official API with billed reads. Set `X_API_KEY`,
+  `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_SECRET` in `src/.env.local`.
+  The root `.env.example` also lists the new social integration settings.
 - **Twitch EventSub**: Requires a publicly accessible HTTPS endpoint for webhook
   delivery.
 - Other external APIs, each requiring their own individual API keys.

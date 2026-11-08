@@ -49,6 +49,11 @@ declare module "@wolfstar/env-utilities" {
 		REDDIT_CLIENT_SECRET: string;
 		REDDIT_USERNAME: string;
 
+		X_API_KEY: string;
+		X_API_SECRET: string;
+		X_ACCESS_TOKEN: string;
+		X_ACCESS_SECRET: string;
+
 		YOUTUBE_API_KEY: string;
 		YOUTUBE_WEBSUB_CALLBACK: string;
 		YOUTUBE_WEBSUB_SECRET: string;

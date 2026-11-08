@@ -17,6 +17,7 @@ import type { NotificationDeliveryError } from "#utils/notificationDelivery";
 import type { APIChannel } from "discord-api-types/v10";
 import { getActiveFilters } from "#social/filters";
 import { isNsfwChannel, socialDelivery } from "#social/notifications";
+import { parseXHandle } from "#social/providers/x";
 import { getSocialProvider, SocialProviders } from "#social/registry";
 import { MaximumFetchedItems, toSeenId } from "#social/seen";
 import { SlashCommandStringOption } from "@discordjs/builders";
@@ -40,6 +41,7 @@ export const SocialGroupName = "social";
  * the limit is what keeps one guild from turning the bot into a crawler.
  */
 export const MaximumSocialSubscriptionsPerGuild = 25;
+export const MaximumXAccountsPerGuild = 2;
 
 /** Match the columns of `SocialSource`, so a long feed title cannot fail the insert. */
 const MaximumTargetLength = 512;
@@ -81,6 +83,7 @@ export type AddSocialSubscriptionError =
 	| "commands/social:addProviderNotConfigured"
 	| "commands/social:addFilterUnsupported"
 	| "commands/social:addLimitReached"
+	| "commands/social:addXLimitReached"
 	| "commands/social:addTargetInvalid"
 	| "commands/social:addTargetNotFound"
 	| "commands/social:addTargetBlocked"
@@ -178,6 +181,31 @@ export async function addSocialSubscription(options: {
 	const limitError = await checkGuildLimit(guildId);
 	if (limitError) return err(limitError);
 
+	let xTargets: Set<string> | undefined;
+	if (providerName === "X") {
+		const followed = await Result.fromAsync(() =>
+			container.prisma.guildSocialSubscription.findMany({
+				where: { guildId, source: { provider: "X" } },
+				include: { source: true },
+			}),
+		);
+		if (followed.isErr()) return err("commands/social:addFailedDatabase");
+		const sources = followed
+			.unwrap()
+			.map((subscription) => subscription.source);
+		const handle = parseXHandle(input.trim());
+		const previousHandle = sources.find(
+			(source) =>
+				parseXHandle(source.displayName) === handle && handle !== null,
+		);
+		if (
+			!previousHandle &&
+			new Set(sources.map((source) => source.target)).size >=
+				MaximumXAccountsPerGuild
+		)
+			return err("commands/social:addXLimitReached");
+		xTargets = new Set(sources.map((source) => source.target));
+	}
 	const resolved = await callProvider<ResolvedTarget, TargetError>(
 		() => provider.validateTarget(input.trim()),
 		{ _tag: "TargetUnreachable" },
@@ -185,6 +213,12 @@ export async function addSocialSubscription(options: {
 	if (resolved.isErr()) return err(TargetErrorKeys[resolved.unwrapErr()._tag]);
 
 	const { target } = resolved.unwrap();
+	if (
+		xTargets &&
+		xTargets.size >= MaximumXAccountsPerGuild &&
+		!xTargets.has(target)
+	)
+		return err("commands/social:addXLimitReached");
 	if (target.length > MaximumTargetLength) {
 		return err("commands/social:addTargetUnsupported");
 	}
@@ -226,39 +260,72 @@ export async function addSocialSubscription(options: {
 	const finalLimitError = await checkGuildLimit(guildId);
 	if (finalLimitError) return err(finalLimitError);
 
-	const createdResult = await Result.fromAsync(() =>
-		container.prisma.guildSocialSubscription.create({
-			data: {
-				channelId,
-				message,
-				filters: toStoredFilters(filters),
-				seenItemIds,
-				guild: {
-					connectOrCreate: {
-						where: { id: guildId },
-						create: { id: guildId },
-					},
+	const createInput = {
+		data: {
+			channelId,
+			message,
+			filters: toStoredFilters(filters),
+			seenItemIds,
+			guild: {
+				connectOrCreate: {
+					where: { id: guildId },
+					create: { id: guildId },
 				},
-				source: {
-					connectOrCreate: {
-						where: { provider_target: { provider: providerName, target } },
-						create: {
-							provider: providerName,
-							target,
-							displayName,
-							nextCheckAt: new Date(Date.now() + provider.checkIntervalMs),
-						},
+			},
+			source: {
+				connectOrCreate: {
+					where: { provider_target: { provider: providerName, target } },
+					create: {
+						provider: providerName,
+						target,
+						displayName,
+						state:
+							outcome._tag === "Items"
+								? (outcome.state ?? undefined)
+								: undefined,
+						nextCheckAt: new Date(Date.now() + provider.checkIntervalMs),
 					},
 				},
 			},
-			select: null,
-		}),
-	);
+		},
+		select: null,
+	} satisfies Prisma.GuildSocialSubscriptionCreateArgs;
+
+	const createdResult = await Result.fromAsync(async () => {
+		if (providerName !== "X") {
+			await container.prisma.guildSocialSubscription.create(createInput);
+			return null;
+		}
+		// Serialize paid-account additions for a guild across all bot processes.
+		return container.prisma.$transaction(async (transaction) => {
+			await transaction.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(${guildId})`;
+			const subscriptions = await transaction.guildSocialSubscription.findMany({
+				where: { guildId },
+				include: { source: true },
+			});
+			const accounts = new Set(
+				subscriptions
+					.filter((subscription) => subscription.source.provider === "X")
+					.map((subscription) => subscription.source.target),
+			);
+
+			if (subscriptions.length >= MaximumSocialSubscriptionsPerGuild)
+				return "commands/social:addLimitReached" as const;
+			if (!accounts.has(target) && accounts.size >= MaximumXAccountsPerGuild)
+				return "commands/social:addXLimitReached" as const;
+
+			await transaction.guildSocialSubscription.create(createInput);
+			return null;
+		});
+	});
+
 	if (createdResult.isErr()) {
 		logFailure("store the subscription", createdResult.unwrapErr());
 		return err("commands/social:addFailedDatabase");
 	}
 
+	const creationError = createdResult.unwrap();
+	if (creationError) return err(creationError);
 	return ok({ displayName });
 }
 
@@ -368,7 +435,11 @@ async function checkGuildLimit(
 	guildId: bigint,
 ): Promise<AddSocialSubscriptionError | null> {
 	const countResult = await Result.fromAsync(() =>
-		container.prisma.guildSocialSubscription.count({ where: { guildId } }),
+		container.prisma.guildSocialSubscription.count({
+			where: {
+				guildId,
+			},
+		}),
 	);
 	if (countResult.isErr()) {
 		logFailure("count the guild subscriptions", countResult.unwrapErr());

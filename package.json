@@ -33,7 +33,8 @@
 		"test:watch": "vitest",
 		"prepare": "node .husky/install.mjs || true",
 		"update:interactive": "taze",
-		"stars:info": "stars info"
+		"stars:info": "stars info",
+		"check": "pnpm lint && pnpm build && pnpm test"
 	},
 	"dependencies": {
 		"@discordjs/builders": "^1.14.1",

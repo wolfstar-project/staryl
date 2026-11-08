@@ -860,3 +860,15 @@ describe("SocialPoller", () => {
 		expect(new Set(seenItemIds).size).toBe(MaximumFetchedItems);
 	});
 });
+
+it("does not double-charge a provider that budgets each API request itself", async () => {
+	const { store } = makeStore([makeSource({ id: 1n }), makeSource({ id: 2n })]);
+	const { delivery } = makeDelivery();
+	const fetchLatest = vi.fn(async () => items());
+	const provider = makeProvider(fetchLatest, {
+		rateLimitOwner: "provider",
+		rateLimit: { limit: 1, windowMs: Time.Minute },
+	});
+	await makePoller([provider], store, delivery).tick();
+	expect(fetchLatest).toHaveBeenCalledTimes(2);
+});

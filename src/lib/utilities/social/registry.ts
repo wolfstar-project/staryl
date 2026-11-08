@@ -10,6 +10,7 @@ import {
 	createTwitchClipsProvider,
 	createTwitchVideosProvider,
 } from "#social/providers/twitch";
+import { createXProvider } from "#social/providers/x";
 import { createYouTubeProvider } from "#social/providers/youtube";
 import { createSocialStore } from "#social/store";
 import { container } from "@wolfstar/http-framework";
@@ -23,6 +24,7 @@ export const SocialProviders: readonly SocialProvider[] = [
 	createYouTubeProvider(),
 	createTwitchVideosProvider(),
 	createTwitchClipsProvider(),
+	createXProvider(),
 ];
 
 export function getSocialProvider(name: SocialProviderName) {
