@@ -97,7 +97,7 @@ declare module "i18next" {
         addTargetNotFound: "{{REDCROSS}} I could not find that. Check the spelling and try again.";
         addTargetUnreachable: "{{REDCROSS}} I could not reach that right now. Please try again later.";
         addTargetUnsupported: "{{REDCROSS}} I could read that page, but found no RSS or Atom feed there.";
-        addXLimitReached: "This server already follows the maximum of 2 X accounts. Remove an X account before adding another.";
+        addXLimitReached: "{{REDCROSS}} This server already follows the maximum of {{maximum}} X accounts. Remove an X account before adding another.";
         connectDenied: "You need Manage Server permission to connect an account.";
         connectDescription: "Authorize your own creator account to notify this channel";
         connectFailed: "Cannot connect this provider. Check OAuth configuration; TikTok requires approved Login Kit and Display API products.";

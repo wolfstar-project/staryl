@@ -367,3 +367,43 @@ describe("read and maintenance failures", () => {
 		).toMatchObject({ items: [{ isShort: true }] });
 	});
 });
+
+describe("unaccepted lease requests", () => {
+	it.each(["transport", "refusal"])(
+		"does not treat a %s failure as an accepted request awaiting verification",
+		async (failure) => {
+			let clock = Now;
+			const row: {
+				websubExpiresAt: Date | null;
+				websubRequestedAt: Date | null;
+			} = { websubExpiresAt: null, websubRequestedAt: null };
+			container.prisma = {
+				socialSource: {
+					findUnique: vi.fn(async () => ({ ...row })),
+					updateMany: vi.fn(async ({ where, data }) => {
+						if (
+							where.websubRequestedAt &&
+							where.websubRequestedAt.getTime() !==
+								row.websubRequestedAt?.getTime()
+						)
+							return { count: 0 };
+						Object.assign(row, data);
+						return { count: 1 };
+					}),
+				},
+			} as never;
+			if (failure === "transport")
+				fetchMock.mockRejectedValueOnce(new Error("Connection lost"));
+			else fetchMock.mockResolvedValueOnce(new Response(null, { status: 503 }));
+			fetchMock.mockResolvedValueOnce(new Response(null, { status: 202 }));
+			const provider = createYouTubeProvider({
+				fetch: fetchMock,
+				env: { ...WebSubEnv, YOUTUBE_API_KEY: "key" },
+				now: () => clock,
+			});
+			expect((await provider.onSubscribed!(ChannelId)).isErr()).toBe(true);
+			clock += Time.Minute * 10;
+			expect((await provider.onSubscribed!(ChannelId)).isOk()).toBe(true);
+		},
+	);
+});

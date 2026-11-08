@@ -1,8 +1,5 @@
 // oxlint-disable no-await-in-loop -- each worker checks its sources one at a time on purpose
-import type {
-	GuildSocialSubscription,
-	SocialProviderName,
-} from "#lib/setup/prisma";
+import type { GuildSocialSubscription } from "#lib/setup/prisma";
 import type { SocialDelivery } from "#social/notifications";
 import type {
 	FetchOutcome,
@@ -11,6 +8,7 @@ import type {
 	SocialProvider,
 } from "#social/provider";
 import type { SocialSourceWithSubscriptions, SocialStore } from "#social/store";
+import { SocialProviderName } from "#generated/prisma";
 import { evaluateItem, parseSocialFilters } from "#social/filters";
 import { isNsfwChannel, parseItemUrl } from "#social/notifications";
 import { MaximumBackoff, planNextCheck } from "#social/schedule";
@@ -157,7 +155,10 @@ export class SocialPoller {
 		if (resumeAt !== null) {
 			// Moved out of the way instead of left due: the queue is oldest first, so sources waiting
 			// on one slow host would otherwise fill every batch and starve the whole provider.
-			if (source.provider === "YouTube" && source.checkRequested)
+			if (
+				source.provider === SocialProviderName.YouTube &&
+				source.checkRequested
+			)
 				await store.deferSource(source.id, new Date(resumeAt), true);
 			else await store.deferSource(source.id, new Date(resumeAt));
 			return;

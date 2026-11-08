@@ -3,11 +3,13 @@ import type {
 	GuildSocialSubscription,
 	Prisma,
 	SocialDeliveryError,
-	SocialProviderName,
 	SocialSource,
 } from "#lib/setup/prisma";
 import type { CheckPlan } from "#social/schedule";
-import { Prisma as PrismaNamespace } from "#generated/prisma";
+import {
+	Prisma as PrismaNamespace,
+	SocialProviderName,
+} from "#generated/prisma";
 
 export type SocialSourceWithSubscriptions = SocialSource & {
 	subscriptions: GuildSocialSubscription[];
@@ -90,7 +92,7 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 					claimedUntil: leaseUntil,
 					checkRequested: false,
 					// Persist a full-read marker before consuming a push, so failure or process death cannot lose it.
-					...(provider === "YouTube" && checkRequested
+					...(provider === SocialProviderName.YouTube && checkRequested
 						? { state: PrismaNamespace.DbNull }
 						: {}),
 				},

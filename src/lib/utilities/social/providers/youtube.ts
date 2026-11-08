@@ -134,9 +134,10 @@ export function createYouTubeProvider(
 		if (requestedAt !== undefined && now() - requestedAt < Time.Minute * 5)
 			return ok(undefined);
 		const verificationTimedOut = requestedAt !== undefined;
+		const requestStartedAt = new Date(now());
 		await container.prisma.socialSource.updateMany({
 			where,
-			data: { websubRequestedAt: new Date(now()) },
+			data: { websubRequestedAt: requestStartedAt },
 		});
 
 		const response = await sendRequest(request, HubUrl, {
@@ -151,17 +152,25 @@ export function createYouTubeProvider(
 				"hub.verify": "async",
 			}),
 		});
-		if (response.isErr()) return err(response.unwrapErr());
+		const clearPending = () =>
+			container.prisma.socialSource.updateMany({
+				where: { ...where, websubRequestedAt: requestStartedAt },
+				data: { websubRequestedAt: null },
+			});
+		if (response.isErr()) {
+			await clearPending();
+			return err(response.unwrapErr());
+		}
 		const answer = response.unwrap();
-		return answer.ok
-			? verificationTimedOut
-				? err({ _tag: "Unavailable" })
-				: ok(undefined)
-			: err(
-					answer.status === 401 || answer.status === 403
-						? { _tag: "Unavailable" }
-						: toHttpFailure(answer.status, answer.headers.get("retry-after")),
-				);
+		if (!answer.ok) {
+			await clearPending();
+			return err(
+				answer.status === 401 || answer.status === 403
+					? { _tag: "Unavailable" }
+					: toHttpFailure(answer.status, answer.headers.get("retry-after")),
+			);
+		}
+		return verificationTimedOut ? err({ _tag: "Unavailable" }) : ok(undefined);
 	}
 
 	async function enrichItems(
