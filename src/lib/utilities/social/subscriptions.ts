@@ -331,6 +331,15 @@ export async function addSocialSubscription(options: {
 
 	const creationError = createdResult.unwrap();
 	if (creationError) return err(creationError);
+	if (provider.onSubscribed) {
+		const started = await callProvider(() => provider.onSubscribed!(target), {
+			_tag: "Unavailable",
+		} as ProviderFailure);
+		started.inspectErr((error) =>
+			logFailure(`subscribe to ${target} after saving`, error),
+		);
+	}
+
 	return ok({ displayName });
 }
 

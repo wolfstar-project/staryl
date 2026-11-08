@@ -61,6 +61,8 @@ export type FetchOutcome =
 			_tag: "Items";
 			/** Newest first, as every source already lists them. */
 			items: SocialItem[];
+			/** Reading succeeded, but independent maintenance needs backoff and health reporting. */
+			failure?: ProviderFailure;
 			/** Handed back on the next {@link SocialProvider.fetchLatest} call for this source. */
 			state: Prisma.InputJsonValue | null;
 	  };
@@ -120,6 +122,8 @@ export interface SocialProvider {
 		state: Prisma.JsonValue | null,
 		context?: { checkRequested: boolean },
 	): Promise<Result<FetchOutcome, ProviderFailure>>;
+	/** Runs only after the source and its first subscription have been saved. */
+	onSubscribed?(target: string): Promise<Result<void, ProviderFailure>>;
 	formatNotification(
 		item: SocialItem,
 		source: NotifiedSource,

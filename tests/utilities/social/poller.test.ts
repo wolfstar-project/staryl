@@ -13,7 +13,7 @@ import type {
 } from "#social/store";
 import type { NotificationTarget } from "#utils/notificationDelivery";
 import type { Result } from "@sapphire/result";
-import { SocialProviderName } from "#generated/prisma";
+import { SocialProviderName, Prisma } from "#generated/prisma";
 import {
 	AuthFailurePause,
 	ClaimLease,
@@ -23,6 +23,7 @@ import {
 	SocialPoller,
 } from "#social/poller";
 import { MaximumFetchedItems, MaximumSeenItems } from "#social/seen";
+import { createSocialStore } from "#social/store";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import { err, ok } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
@@ -871,4 +872,96 @@ it("does not double-charge a provider that budgets each API request itself", asy
 	});
 	await makePoller([provider], store, delivery).tick();
 	expect(fetchLatest).toHaveBeenCalledTimes(2);
+});
+
+describe("durable push read intent", () => {
+	it.each(["failed read", "budget deferral"])(
+		"survives a new poller after %s",
+		async (reason) => {
+			let clock = Now;
+			const row = makeSource({
+				provider: SocialProviderName.YouTube,
+				checkRequested: true,
+				state: { baselineRead: true },
+			});
+			const prisma = {
+				socialSource: {
+					findMany: vi.fn(async () =>
+						row.checkRequested || row.nextCheckAt.getTime() <= clock
+							? [structuredClone(row)]
+							: [],
+					),
+					updateMany: vi.fn(async ({ where, data }) => {
+						if (
+							"claimedUntil" in where &&
+							row.claimedUntil?.getTime() !== where.claimedUntil?.getTime()
+						)
+							return { count: 0 };
+						const stored = {
+							...data,
+							...("state" in data
+								? { state: data.state === Prisma.DbNull ? null : data.state }
+								: {}),
+						};
+						Object.assign(row, stored);
+						return { count: 1 };
+					}),
+				},
+				guildSocialSubscription: {
+					updateMany: vi.fn(async ({ data }) => {
+						Object.assign(row.subscriptions[0], data);
+						return { count: 1 };
+					}),
+				},
+			};
+			const store = createSocialStore(prisma as never);
+			const { delivery, posted } = makeDelivery();
+			let fail = reason === "failed read";
+			const provider = makeProvider(
+				async (_target, state, context) => {
+					if (!context?.checkRequested && state !== null)
+						return ok({ _tag: "NotModified" });
+					if (fail) {
+						fail = false;
+						return err({ _tag: "Unavailable" });
+					}
+					return items(makeItem("pending-video"));
+				},
+				{ name: SocialProviderName.YouTube },
+			);
+			const freshPoller = () =>
+				new SocialPoller({
+					providers: [provider],
+					store,
+					delivery,
+					logger,
+					now: () => clock,
+					random: () => 0,
+				});
+			if (reason === "failed read") await freshPoller().tick();
+			else await store.deferSource(row.id, new Date(Now + Time.Minute), true);
+			expect(posted).toEqual([]);
+			clock = Now + Time.Hour;
+			await freshPoller().tick();
+			expect(posted).toEqual(["pending-video"]);
+		},
+	);
+	it("delivers fetched items while retaining an independent maintenance failure in source health", async () => {
+		const { store, checks } = makeStore([makeSource()]);
+		const { delivery, posted } = makeDelivery();
+		const provider = makeProvider(async () =>
+			ok({
+				_tag: "Items",
+				items: [makeItem("video")],
+				state: { baselineRead: true },
+				failure: { _tag: "Unavailable" },
+			}),
+		);
+		await makePoller([provider], store, delivery).tick();
+		expect(posted).toEqual(["video"]);
+		expect(checks[0].record).toMatchObject({
+			lastFailure: "Unavailable",
+			failureCount: 1,
+		});
+	});
 });
