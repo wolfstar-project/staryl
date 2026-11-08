@@ -374,7 +374,11 @@ export class SocialPoller {
 
 			this.#refusals.delete(attempt);
 			seenItemIds = mergeSeenIds(seenItemIds, [item]);
-			await store.updateSubscription(key, { seenItemIds, deliveryError });
+			await store.updateSubscription(key, {
+				seenItemIds,
+				deliveryError,
+				...(sent.isOk() ? { lastNotifiedId: item.id } : {}),
+			});
 		}
 
 		return pending;

@@ -168,6 +168,7 @@ declare module "i18next" {
           MissingPermissions: "⚠️ Last post failed: I need View Channel, Send Messages and Embed Links there.";
           SendFailed: "⚠️ Last post failed: Discord rejected the message.";
         };
+        providerX: "X (Twitter)";
       };
       "commands/subscriptions": {
         name: "subscriptions";
@@ -262,6 +263,8 @@ declare module "i18next" {
         youtubeFooter: "Staryl YouTube Notifications";
         youtubeHeading: "New video from {{name}}";
         youtubeHeadingShort: "New Short from {{name}}";
+        xHeading: "New post by {{name}}";
+        xFooter: "Staryl X Notifications";
       };
       "events/twitch": {
         embedGame: "Game";

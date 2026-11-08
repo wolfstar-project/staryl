@@ -19,6 +19,7 @@ export type SubscriptionKey = Pick<
 >;
 
 export interface SubscriptionUpdate {
+	lastNotifiedId?: string;
 	seenItemIds?: string[];
 	deliveryError?: SocialDeliveryError | null;
 }

@@ -71,16 +71,17 @@
 	"removeChannelRequired": "{{REDCROSS}} Several channels follow that. Tell me which one with the `channel` option.",
 	"testNoItems": "{{REDCROSS}} There is nothing published there yet, so there is nothing to send.",
 	"health": {
-		"active": "✅ Working",
-		"failing": "⚠️ Failing, retrying automatically",
-		"rateLimited": "⏳ Rate limited, retrying automatically",
-		"targetUnavailable": "❌ Not found or no longer public",
-		"authFailed": "❌ The bot's credentials were refused"
+		"active": "\u2705 Working",
+		"failing": "\u26a0\ufe0f Failing, retrying automatically",
+		"rateLimited": "\u23f3 Rate limited, retrying automatically",
+		"targetUnavailable": "\u274c Not found or no longer public",
+		"authFailed": "\u274c The bot's credentials were refused"
 	},
 	"deliveryErrors": {
-		"GuildUnavailable": "⚠️ Last post failed: I could not read this server.",
-		"ChannelNotFound": "⚠️ Last post failed: I can no longer see this channel.",
-		"MissingPermissions": "⚠️ Last post failed: I need View Channel, Send Messages and Embed Links there.",
-		"SendFailed": "⚠️ Last post failed: Discord rejected the message."
-	}
+		"GuildUnavailable": "\u26a0\ufe0f Last post failed: I could not read this server.",
+		"ChannelNotFound": "\u26a0\ufe0f Last post failed: I can no longer see this channel.",
+		"MissingPermissions": "\u26a0\ufe0f Last post failed: I need View Channel, Send Messages and Embed Links there.",
+		"SendFailed": "\u26a0\ufe0f Last post failed: Discord rejected the message."
+	},
+	"providerX": "X (Twitter)"
 }
