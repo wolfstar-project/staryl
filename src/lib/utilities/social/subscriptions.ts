@@ -268,7 +268,7 @@ export async function addSocialSubscription(options: {
 		}
 		// Serialize paid-account additions for a guild across all bot processes.
 		return container.prisma.$transaction(async (transaction) => {
-			await transaction.$queryRaw`SELECT pg_advisory_xact_lock(${guildId})`;
+			await transaction.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(${guildId})`;
 			const subscriptions = await transaction.guildSocialSubscription.findMany({
 				where: { guildId },
 				include: { source: true },
