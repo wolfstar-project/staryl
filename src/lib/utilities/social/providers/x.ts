@@ -49,7 +49,7 @@ const encode = (value: string) =>
 		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
 	);
 
-/** Official API only. The shared poller owns the budget, retry and delivery. */
+/** Official API only. Commands and scheduled reads share one provider request budget. */
 export function createXProvider(
 	options: {
 		fetch?: typeof fetch;
