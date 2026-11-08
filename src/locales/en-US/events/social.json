@@ -17,5 +17,8 @@
 	"youtubeHeading": "New video from {{name}}",
 	"youtubeHeadingShort": "New Short from {{name}}",
 	"xHeading": "New post by {{name}}",
-	"xFooter": "Staryl X Notifications"
+	"xFooter": "Staryl X Notifications",
+	"instagramHeading": "New post by {{name}}",
+	"instagramReelHeading": "New reel by {{name}}",
+	"instagramFooter": "Staryl Instagram Notifications"
 }

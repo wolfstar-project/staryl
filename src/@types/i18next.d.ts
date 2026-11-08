@@ -169,6 +169,12 @@ declare module "i18next" {
           SendFailed: "⚠️ Last post failed: Discord rejected the message.";
         };
         providerX: "X (Twitter)";
+        providerInstagram: "Instagram (owner connected)";
+        connectName: "connect";
+        connectDescription: "Authorize your own creator account to notify this channel";
+        connectLink: "Authorize your account: {{url}}. This link expires in 10 minutes.";
+        connectFailed: "Cannot connect this provider. Check app approval, OAuth credentials and callback configuration.";
+        connectDenied: "You need Manage Server permission to connect an account.";
       };
       "commands/subscriptions": {
         name: "subscriptions";
@@ -265,6 +271,9 @@ declare module "i18next" {
         youtubeHeadingShort: "New Short from {{name}}";
         xHeading: "New post by {{name}}";
         xFooter: "Staryl X Notifications";
+        instagramHeading: "New post by {{name}}";
+        instagramReelHeading: "New reel by {{name}}";
+        instagramFooter: "Staryl Instagram Notifications";
       };
       "events/twitch": {
         embedGame: "Game";
