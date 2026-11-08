@@ -259,6 +259,7 @@ export class SocialPoller {
 		const pausedUntil = this.#pausedScopes.get(scope) ?? 0;
 		if (pausedUntil > now) return pausedUntil + spread;
 		this.#pausedScopes.delete(scope);
+		if (provider.rateLimitOwner === "provider") return null;
 
 		const { windowMs, limit } = provider.rateLimit;
 		const key = `${limit}/${windowMs}`;

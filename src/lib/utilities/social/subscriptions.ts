@@ -181,7 +181,7 @@ export async function addSocialSubscription(options: {
 	const limitError = await checkGuildLimit(guildId);
 	if (limitError) return err(limitError);
 
-	let existingX: ResolvedTarget | undefined;
+	let xTargets: Set<string> | undefined;
 	if (providerName === "X") {
 		const followed = await Result.fromAsync(() =>
 			container.prisma.guildSocialSubscription.findMany({
@@ -194,22 +194,20 @@ export async function addSocialSubscription(options: {
 			.unwrap()
 			.map((subscription) => subscription.source);
 		const handle = parseXHandle(input.trim());
-		existingX = sources.find(
+		const previousHandle = sources.find(
 			(source) =>
 				parseXHandle(source.displayName) === handle && handle !== null,
 		);
 		if (
-			!existingX &&
+			!previousHandle &&
 			new Set(sources.map((source) => source.target)).size >=
 				MaximumXAccountsPerGuild
 		)
 			return err("commands/social:addXLimitReached");
+		xTargets = new Set(sources.map((source) => source.target));
 	}
 	const resolved = await callProvider<ResolvedTarget, TargetError>(
-		() =>
-			existingX
-				? Promise.resolve(ok(existingX))
-				: provider.validateTarget(input.trim()),
+		() => provider.validateTarget(input.trim()),
 		{ _tag: "TargetUnreachable" },
 	);
 	if (resolved.isErr()) return err(TargetErrorKeys[resolved.unwrapErr()._tag]);
@@ -220,6 +218,12 @@ export async function addSocialSubscription(options: {
 		!target.startsWith(`${guildId}:`)
 	)
 		return err("commands/social:addTargetBlocked");
+	if (
+		xTargets &&
+		xTargets.size >= MaximumXAccountsPerGuild &&
+		!xTargets.has(target)
+	)
+		return err("commands/social:addXLimitReached");
 	if (target.length > MaximumTargetLength) {
 		return err("commands/social:addTargetUnsupported");
 	}

@@ -862,6 +862,18 @@ describe("SocialPoller", () => {
 	});
 });
 
+it("does not double-charge a provider that budgets each API request itself", async () => {
+	const { store } = makeStore([makeSource({ id: 1n }), makeSource({ id: 2n })]);
+	const { delivery } = makeDelivery();
+	const fetchLatest = vi.fn(async () => items());
+	const provider = makeProvider(fetchLatest, {
+		rateLimitOwner: "provider",
+		rateLimit: { limit: 1, windowMs: Time.Minute },
+	});
+	await makePoller([provider], store, delivery).tick();
+	expect(fetchLatest).toHaveBeenCalledTimes(2);
+});
+
 describe("durable push read intent", () => {
 	it.each(["failed read", "budget deferral"])(
 		"survives a new poller after %s",
