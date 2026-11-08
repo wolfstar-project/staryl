@@ -290,7 +290,12 @@ export class SocialPoller {
 		holdsClaim: () => Promise<boolean>,
 	) {
 		const { store, delivery, logger } = this.#options;
-		const fresh = findFreshItems(items, subscription.seenItemIds);
+		const fresh = findFreshItems(
+			items,
+			subscription.lastNotifiedId
+				? [...subscription.seenItemIds, subscription.lastNotifiedId]
+				: subscription.seenItemIds,
+		);
 		if (fresh.length === 0) return false;
 
 		const key = {
@@ -377,7 +382,7 @@ export class SocialPoller {
 			await store.updateSubscription(key, {
 				seenItemIds,
 				deliveryError,
-				...(sent.isOk() ? { lastNotifiedId: item.id } : {}),
+				...(sent.isOk() ? { lastNotifiedId: toSeenId(item) } : {}),
 			});
 		}
 

@@ -175,7 +175,7 @@ export async function addSocialSubscription(options: {
 	);
 	if (unsupported) return err("commands/social:addFilterUnsupported");
 
-	const limitError = await checkGuildLimit(guildId, providerName);
+	const limitError = await checkGuildLimit(guildId);
 	if (limitError) return err(limitError);
 
 	const resolved = await callProvider<ResolvedTarget, TargetError>(
@@ -223,48 +223,77 @@ export async function addSocialSubscription(options: {
 
 	// Asked again: validating a target can take seconds, which is plenty of time for parallel adds
 	// to all pass the first check.
-	const finalLimitError = await checkGuildLimit(guildId, providerName);
+	const finalLimitError = await checkGuildLimit(guildId);
 	if (finalLimitError) return err(finalLimitError);
 
-	const createdResult = await Result.fromAsync(() =>
-		container.prisma.guildSocialSubscription.create({
-			data: {
-				channelId,
-				message,
-				filters: toStoredFilters(filters),
-				seenItemIds,
-				lastNotifiedId:
-					outcome._tag === "Items" ? outcome.items[0]?.id : undefined,
-				guild: {
-					connectOrCreate: {
-						where: { id: guildId },
-						create: { id: guildId },
-					},
+	const createInput = {
+		data: {
+			channelId,
+			message,
+			filters: toStoredFilters(filters),
+			seenItemIds,
+			lastNotifiedId:
+				outcome._tag === "Items" && outcome.items[0]
+					? toSeenId(outcome.items[0])
+					: undefined,
+			guild: {
+				connectOrCreate: {
+					where: { id: guildId },
+					create: { id: guildId },
 				},
-				source: {
-					connectOrCreate: {
-						where: { provider_target: { provider: providerName, target } },
-						create: {
-							provider: providerName,
-							target,
-							displayName,
-							state:
-								outcome._tag === "Items"
-									? (outcome.state ?? undefined)
-									: undefined,
-							nextCheckAt: new Date(Date.now() + provider.checkIntervalMs),
-						},
+			},
+			source: {
+				connectOrCreate: {
+					where: { provider_target: { provider: providerName, target } },
+					create: {
+						provider: providerName,
+						target,
+						displayName,
+						state:
+							outcome._tag === "Items"
+								? (outcome.state ?? undefined)
+								: undefined,
+						nextCheckAt: new Date(Date.now() + provider.checkIntervalMs),
 					},
 				},
 			},
-			select: null,
-		}),
-	);
+		},
+		select: null,
+	} satisfies Prisma.GuildSocialSubscriptionCreateArgs;
+
+	const createdResult = await Result.fromAsync(async () => {
+		if (providerName !== "X") {
+			await container.prisma.guildSocialSubscription.create(createInput);
+			return true;
+		}
+		// Serialize paid-account additions for a guild across all bot processes.
+		return container.prisma.$transaction(async (transaction) => {
+			await transaction.$queryRaw`SELECT pg_advisory_xact_lock(${guildId})`;
+			const subscriptions = await transaction.guildSocialSubscription.findMany({
+				where: { guildId },
+				include: { source: true },
+			});
+			const accounts = new Set(
+				subscriptions
+					.filter((subscription) => subscription.source.provider === "X")
+					.map((subscription) => subscription.source.target),
+			);
+			if (
+				subscriptions.length >= MaximumSocialSubscriptionsPerGuild ||
+				(!accounts.has(target) && accounts.size >= 2)
+			)
+				return false;
+			await transaction.guildSocialSubscription.create(createInput);
+			return true;
+		});
+	});
+
 	if (createdResult.isErr()) {
 		logFailure("store the subscription", createdResult.unwrapErr());
 		return err("commands/social:addFailedDatabase");
 	}
 
+	if (!createdResult.unwrap()) return err("commands/social:addLimitReached");
 	return ok({ displayName });
 }
 
@@ -372,13 +401,11 @@ async function callProvider<T, E>(
 
 async function checkGuildLimit(
 	guildId: bigint,
-	providerName: SocialProviderName,
 ): Promise<AddSocialSubscriptionError | null> {
 	const countResult = await Result.fromAsync(() =>
 		container.prisma.guildSocialSubscription.count({
 			where: {
 				guildId,
-				...(providerName === "X" ? { source: { provider: providerName } } : {}),
 			},
 		}),
 	);
@@ -387,8 +414,7 @@ async function checkGuildLimit(
 		return "commands/social:addFailedDatabase";
 	}
 
-	return countResult.unwrap() >=
-		(providerName === "X" ? 2 : MaximumSocialSubscriptionsPerGuild)
+	return countResult.unwrap() >= MaximumSocialSubscriptionsPerGuild
 		? "commands/social:addLimitReached"
 		: null;
 }

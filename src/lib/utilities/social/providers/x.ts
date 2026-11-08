@@ -72,7 +72,7 @@ export function createXProvider(
 		};
 		const parameters = [...url.searchParams, ...Object.entries(oauth)]
 			.map(([key, value]) => [encode(key), encode(value)])
-			.sort(([a, b], [c, d]) =>
+			.toSorted(([a, b], [c, d]) =>
 				a < c ? -1 : a > c ? 1 : b < d ? -1 : b > d ? 1 : 0,
 			)
 			.map(([key, value]) => `${key}=${value}`)
@@ -157,7 +157,9 @@ export function createXProvider(
 				"media.fields": "url,preview_image_url",
 			}).toString();
 			const previous =
-				isObject(state) && typeof state.sinceId === "string"
+				isObject(state) &&
+				"sinceId" in state &&
+				typeof state.sinceId === "string"
 					? state.sinceId
 					: null;
 			if (previous) url.searchParams.set("since_id", previous);
