@@ -67,7 +67,8 @@ it("uses the video preview for reels rather than attaching an mp4 as an image", 
 	expect(result.unwrap()).toMatchObject([
 		{
 			id: "1",
-			title: "Reel",
+			title: null,
+			isReel: true,
 			imageUrl: "https://example.com/preview.jpg",
 			text: "caption",
 		},
@@ -88,4 +89,24 @@ it("refreshes a long lived grant and honours the returned expiry", async () => {
 			}).refresh(token)
 		).unwrap(),
 	).toMatchObject({ accessToken: "renewed", expiresAt: 5184001000 });
+});
+it("does not match the presentation-only reel label as a keyword", async () => {
+	const request = vi.fn<typeof fetch>().mockResolvedValue(
+		Response.json({
+			data: [
+				{
+					id: "1",
+					caption: "Release announcement",
+					media_type: "VIDEO",
+					media_product_type: "REELS",
+					permalink: "https://www.instagram.com/reel/1/",
+				},
+			],
+		}),
+	);
+	const items = (
+		await createInstagramApi({ fetch: request, env }).media(token)
+	).unwrap();
+	expect(items[0]?.title).toBeNull();
+	expect(items[0]?.text).not.toContain("Reel");
 });

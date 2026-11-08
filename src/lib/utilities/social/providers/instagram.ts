@@ -155,7 +155,8 @@ export function createInstagramApi(
 						{
 							id: media.id,
 							url,
-							title: media.media_product_type === "REELS" ? "Reel" : null,
+							title: null,
+							isReel: media.media_product_type === "REELS",
 							text: media.caption ?? null,
 							authorName: media.username ?? token.displayName,
 							authorAvatarUrl: null,
@@ -217,7 +218,7 @@ export function createInstagramProvider(
 			return createSocialCard(item, {
 				accentColor: SocialColors.Instagram,
 				heading: t(
-					item.title === "Reel"
+					item.isReel
 						? "events/social:instagramReelHeading"
 						: "events/social:instagramHeading",
 					{ name: source.displayName },

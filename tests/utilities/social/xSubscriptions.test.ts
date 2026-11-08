@@ -44,6 +44,7 @@ it.each([
 			guildSocialSubscription: {
 				count: vi.fn().mockResolvedValue(2),
 				findFirst: vi.fn().mockResolvedValue(null),
+				findMany: vi.fn().mockResolvedValue([]),
 			},
 			$transaction: vi.fn((callback) => callback(tx)),
 		} as never;
@@ -58,6 +59,32 @@ it.each([
 		expect(result.isOk()).toBe(allowed);
 		expect(create).toHaveBeenCalledTimes(allowed ? 1 : 0);
 		if (!allowed)
-			expect(result.unwrapErr()).toBe("commands/social:addLimitReached");
+			expect(result.unwrapErr()).toBe("commands/social:addXLimitReached");
 	},
 );
+
+it("rejects a third X account before spending any paid API reads", async () => {
+	vi.clearAllMocks();
+	container.prisma = {
+		guildSocialSubscription: {
+			count: vi.fn().mockResolvedValue(2),
+			findMany: vi
+				.fn()
+				.mockResolvedValue([
+					{ source: { target: "1", displayName: "@one" } },
+					{ source: { target: "2", displayName: "@two" } },
+				]),
+		},
+	} as never;
+	const result = await addSocialSubscription({
+		guildId: 1n,
+		channelId: 2n,
+		providerName: "X",
+		input: "@three",
+		message: null,
+		filters: DefaultSocialFilters,
+	});
+	expect(result.unwrapErr()).toBe("commands/social:addXLimitReached");
+	expect(provider.validateTarget).not.toHaveBeenCalled();
+	expect(provider.fetchLatest).not.toHaveBeenCalled();
+});
