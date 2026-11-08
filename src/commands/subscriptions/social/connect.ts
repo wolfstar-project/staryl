@@ -59,7 +59,12 @@ import { MessageFlags } from "discord-api-types/v10";
 export class UserCommand extends Command {
 	public override async chatInputRun(
 		interaction: Command.ChatInputInteraction,
-options: {provider: "Instagram" | "TikTok"; channel: APIChannel; keywords?:string; exclude_keywords?:string},
+		options: {
+			provider: "Instagram" | "TikTok";
+			channel: APIChannel;
+			keywords?: string;
+			exclude_keywords?: string;
+		},
 	) {
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const result = await Result.fromAsync(() =>
