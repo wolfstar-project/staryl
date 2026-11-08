@@ -111,7 +111,7 @@ function readFeed(
 	}
 
 	const feed =
-		XMLValidator.validate(response.body) === true
+		XMLValidator.validate(response.body.trim()) === true
 			? parseFeed(response.body)
 			: null;
 	if (feed === null) return err({ _tag: "TargetUnsupported" });
