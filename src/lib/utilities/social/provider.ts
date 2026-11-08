@@ -106,6 +106,8 @@ export interface SocialProvider {
 	readonly concurrency: number;
 	/** The requests allowed per {@link rateLimitScope} and time window. */
 	readonly rateLimit: { limit: number; windowMs: number };
+	/** Providers that budget every API request share that one budget with commands; the poller only schedules them. */
+	readonly rateLimitOwner?: "provider" | "poller";
 	/** The filters this provider has the data for. `add` refuses any other. */
 	readonly supportedFilters: ReadonlySet<SocialFilterName>;
 	/** Sources sharing a scope share a budget, such as one API token or one remote host. */
@@ -116,6 +118,7 @@ export interface SocialProvider {
 	fetchLatest(
 		target: string,
 		state: Prisma.JsonValue | null,
+		context?: { checkRequested: boolean },
 	): Promise<Result<FetchOutcome, ProviderFailure>>;
 	formatNotification(
 		item: SocialItem,

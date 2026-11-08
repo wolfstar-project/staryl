@@ -8,6 +8,7 @@ import { SocialColors } from "#common/constants";
 import { SocialProviderName } from "#generated/prisma";
 import { sendRequest, toHttpFailure, SocialUserAgent } from "#social/http";
 import { createSocialCard, parseImageUrl } from "#social/notifications";
+import { RateLimitManager } from "@sapphire/ratelimits";
 import { err, ok, Result } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
 import { isObject } from "@sapphire/utilities";
@@ -48,7 +49,7 @@ const encode = (value: string) =>
 		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
 	);
 
-/** Official API only. The shared poller owns the budget, retry and delivery. */
+/** Official API only. Commands and scheduled reads share one provider request budget. */
 export function createXProvider(
 	options: {
 		fetch?: typeof fetch;
@@ -56,7 +57,12 @@ export function createXProvider(
 	} = {},
 ): SocialProvider {
 	const { env = process.env, fetch: request = fetch } = options;
+	const budget = new RateLimitManager(Time.Minute * 15, 15);
 	async function read(url: URL): Promise<Result<Response, ProviderFailure>> {
+		const bucket = budget.acquire("x");
+		if (bucket.limited)
+			return err({ _tag: "RateLimited", retryAfterMs: bucket.remainingTime });
+		bucket.consume();
 		const oauth: Record<string, string> = {
 			oauth_consumer_key: env.X_API_KEY!,
 			oauth_token: env.X_ACCESS_TOKEN!,
@@ -99,6 +105,7 @@ export function createXProvider(
 		checkIntervalMs: Time.Minute * 15,
 		concurrency: 1,
 		rateLimit: { limit: 15, windowMs: Time.Minute * 15 },
+		rateLimitOwner: "provider",
 		rateLimitScope: () => "x",
 		supportedFilters: new Set([
 			"includeKeywords",
@@ -133,11 +140,11 @@ export function createXProvider(
 				? err({ _tag: "TargetBlocked" })
 				: ok({ target: user.id, displayName: `@${user.username}` });
 		},
-		async fetchLatest(target, state) {
+		async fetchLatest(target, state, context) {
 			if (!/^\d+$/.test(target)) return err({ _tag: "TargetUnavailable" });
 			const url = new URL(`https://api.x.com/2/users/${target}/tweets`);
 			url.search = new URLSearchParams({
-				max_results: state === null ? "5" : "100",
+				max_results: state === null && !context ? "5" : "100",
 				"tweet.fields":
 					"created_at,referenced_tweets,attachments,author_id,possibly_sensitive",
 				expansions: "author_id,attachments.media_keys",
@@ -153,7 +160,7 @@ export function createXProvider(
 			if (previous) url.searchParams.set("since_id", previous);
 
 			// The shared poller admits at most 100 items. A baseline/preview needs just the newest page,
-			// never the account's archive; one read also matches one shared request-budget token.
+			// never the account's archive; each read draws from the same budget used by commands.
 			const result = await read(url);
 			if (result.isErr()) return err(result.unwrapErr());
 			const parsed = await Result.fromAsync(

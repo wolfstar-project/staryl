@@ -128,3 +128,36 @@ it("reports an app-level 403 as a credential problem", async () => {
 		).unwrapErr(),
 	).toEqual({ _tag: "TargetUnreachable" });
 });
+it("keeps the full notification window during a background delivery retry", async () => {
+	const request = vi
+		.fn<typeof fetch>()
+		.mockResolvedValue(Response.json({ data: [] }));
+	await createXProvider({ fetch: request, env }).fetchLatest("123", null, {
+		checkRequested: false,
+	});
+	expect(
+		new URL(String(request.mock.calls[0][0])).searchParams.get("max_results"),
+	).toBe("100");
+});
+it("shares the request budget between command previews and scheduled reads", async () => {
+	const request = vi
+		.fn<typeof fetch>()
+		.mockImplementation(async () => Response.json({ data: [] }));
+	const provider = createXProvider({ fetch: request, env });
+	for (let i = 0; i < 15; i++) {
+		// oxlint-disable-next-line no-await-in-loop -- exercise consecutive requests against one shared budget
+		expect(
+			(
+				await provider.fetchLatest(
+					"123",
+					null,
+					i % 2 ? { checkRequested: false } : undefined,
+				)
+			).isOk(),
+		).toBe(true);
+	}
+	expect((await provider.fetchLatest("123", null)).unwrapErr()).toMatchObject({
+		_tag: "RateLimited",
+	});
+	expect(request).toHaveBeenCalledTimes(15);
+});
