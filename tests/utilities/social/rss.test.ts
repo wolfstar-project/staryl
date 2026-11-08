@@ -212,3 +212,36 @@ describe("rateLimitScope", () => {
 		);
 	});
 });
+
+describe("insertion validation", () => {
+	it.each([
+		'<rss version="2.0"><channel><title>Broken</title>',
+		"<feed><entry></feed>",
+		"<html><body>Not a feed</body></html>",
+	])("rejects invalid XML or an unknown document: %s", async (body) => {
+		const { provider } = makeProvider(ok(respond({ body })));
+		expect((await provider.validateTarget(FeedUrl)).unwrapErr()).toEqual({
+			_tag: "TargetUnsupported",
+		});
+	});
+	it("discovers and validates an Atom feed from a website", async () => {
+		const { provider, fetchUrl } = makeProvider(
+			ok(
+				respond({
+					url: "https://example.com/",
+					body: '<html><head><link href="/atom.xml" type="application/atom+xml" rel="alternate"></head></html>',
+				}),
+			),
+			ok(
+				respond({
+					url: "https://example.com/atom.xml",
+					body: '<feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title></feed>',
+				}),
+			),
+		);
+		expect(
+			(await provider.validateTarget("https://example.com/")).unwrap(),
+		).toEqual({ target: "https://example.com/atom.xml", displayName: "Atom" });
+		expect(fetchUrl.mock.calls[1][0]).toBe("https://example.com/atom.xml");
+	});
+});
