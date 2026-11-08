@@ -2,6 +2,7 @@ import type { APIChannel } from "discord-api-types/v10";
 import { beginSocialConnection } from "#social/connectedAccounts";
 import { DefaultSocialFilters, parseKeywordList } from "#social/filters";
 import { createInstagramApi } from "#social/providers/instagram";
+import { createTikTokApi } from "#social/providers/tiktok";
 import { SocialGroupName } from "#social/subscriptions";
 import {
 	createChannelOption,
@@ -34,7 +35,10 @@ import { MessageFlags } from "discord-api-types/v10";
 					"commands/social:optionsProviderDescription",
 				)
 					.setRequired(true)
-					.addChoices({ name: "Instagram", value: "Instagram" }),
+					.addChoices(
+						{ name: "Instagram", value: "Instagram" },
+						{ name: "TikTok", value: "TikTok" },
+					),
 			)
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption((option) =>
@@ -56,7 +60,7 @@ export class UserCommand extends Command {
 	public override async chatInputRun(
 		interaction: Command.ChatInputInteraction,
 		options: {
-			provider: "Instagram";
+			provider: "Instagram" | "TikTok";
 			channel: APIChannel;
 			keywords?: string;
 			exclude_keywords?: string;
@@ -65,7 +69,9 @@ export class UserCommand extends Command {
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const result = await Result.fromAsync(() =>
 			beginSocialConnection(
-				createInstagramApi(),
+				options.provider === "TikTok"
+					? createTikTokApi()
+					: createInstagramApi(),
 				BigInt(interaction.guildId!),
 				BigInt(options.channel.id),
 				interaction.user.id,

@@ -15,7 +15,7 @@
 	"addXLimitReached": "{{REDCROSS}} This server already follows the maximum of {{maximum}} X accounts. Remove an X account before adding another.",
 	"connectDenied": "You need Manage Server permission to connect an account.",
 	"connectDescription": "Authorize your own creator account to notify this channel",
-	"connectFailed": "Cannot connect this provider. Check app approval, OAuth credentials and callback configuration.",
+	"connectFailed": "Cannot connect this provider. Check OAuth configuration; TikTok requires approved Login Kit and Display API products.",
 	"connectLink": "Authorize your account: {{url}}. This link expires in 10 minutes.",
 	"connectName": "connect",
 	"deliveryErrors": {
@@ -30,7 +30,8 @@
 		"authFailed": "❌ The bot's credentials were refused",
 		"failing": "⚠️ Failing, retrying automatically",
 		"rateLimited": "⏳ Rate limited, retrying automatically",
-		"targetUnavailable": "❌ Not found or no longer public"
+		"targetUnavailable": "❌ Not found or no longer public",
+		"unavailable": "Unavailable: provider credentials or app approval missing"
 	},
 	"name": "social",
 	"noSubscriptions": "{{REDCROSS}} This server does not follow any feed or account yet.",
@@ -68,6 +69,7 @@
 	"providerMastodon": "Mastodon",
 	"providerReddit": "Reddit",
 	"providerRss": "RSS or Atom feed",
+	"providerTikTok": "TikTok (owner connected)",
 	"providerTwitchClips": "Twitch clips",
 	"providerTwitchVideos": "Twitch videos",
 	"providerX": "X (Twitter)",

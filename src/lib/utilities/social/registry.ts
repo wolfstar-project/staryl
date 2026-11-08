@@ -7,6 +7,7 @@ import { createInstagramProvider } from "#social/providers/instagram";
 import { createMastodonProvider } from "#social/providers/mastodon";
 import { createRedditProvider } from "#social/providers/reddit";
 import { createRssProvider } from "#social/providers/rss";
+import { createTikTokProvider } from "#social/providers/tiktok";
 import {
 	createTwitchClipsProvider,
 	createTwitchVideosProvider,
@@ -27,6 +28,7 @@ export const SocialProviders: readonly SocialProvider[] = [
 	createTwitchClipsProvider(),
 	createXProvider(),
 	createInstagramProvider(),
+	createTikTokProvider(),
 ];
 
 export function getSocialProvider(name: SocialProviderName) {

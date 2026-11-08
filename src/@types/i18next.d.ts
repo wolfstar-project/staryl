@@ -100,7 +100,7 @@ declare module "i18next" {
         addXLimitReached: "{{REDCROSS}} This server already follows the maximum of {{maximum}} X accounts. Remove an X account before adding another.";
         connectDenied: "You need Manage Server permission to connect an account.";
         connectDescription: "Authorize your own creator account to notify this channel";
-        connectFailed: "Cannot connect this provider. Check app approval, OAuth credentials and callback configuration.";
+        connectFailed: "Cannot connect this provider. Check OAuth configuration; TikTok requires approved Login Kit and Display API products.";
         connectLink: "Authorize your account: {{url}}. This link expires in 10 minutes.";
         connectName: "connect";
         deliveryErrors: {
@@ -116,6 +116,7 @@ declare module "i18next" {
           failing: "⚠️ Failing, retrying automatically";
           rateLimited: "⏳ Rate limited, retrying automatically";
           targetUnavailable: "❌ Not found or no longer public";
+          unavailable: "Unavailable: provider credentials or app approval missing";
         };
         name: "social";
         noSubscriptions: "{{REDCROSS}} This server does not follow any feed or account yet.";
@@ -153,6 +154,7 @@ declare module "i18next" {
         providerMastodon: "Mastodon";
         providerReddit: "Reddit";
         providerRss: "RSS or Atom feed";
+        providerTikTok: "TikTok (owner connected)";
         providerTwitchClips: "Twitch clips";
         providerTwitchVideos: "Twitch videos";
         providerX: "X (Twitter)";
@@ -267,6 +269,8 @@ declare module "i18next" {
         rssFooter: "Staryl Feed Notifications";
         rssHeading: "New in {{name}}";
         testNotice: "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.";
+        tiktokFooter: "Staryl TikTok Notifications";
+        tiktokHeading: "New video from {{name}}";
         twitchClipHeading: "New clip of {{name}}";
         twitchVideoHeading: "New video from {{name}}";
         watchVideo: "Watch";

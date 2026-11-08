@@ -1,4 +1,6 @@
+import type { APIEmbed } from "discord-api-types/v10";
 import { escapeInlineText } from "#social/notifications";
+import { getSocialProvider } from "#social/registry";
 import { describeSourceHealth } from "#social/schedule";
 import {
 	getGuildSocialSubscriptions,
@@ -65,7 +67,7 @@ export class UserCommand extends Command {
 			subscriptions.map(async ({ source, channelId, deliveryError }) => {
 				const health = await resolveKey(
 					interaction,
-					`commands/social:health.${describeSourceHealth(source)}`,
+					`commands/social:health.${getSocialProvider(source.provider)?.getAuthRequirements().satisfied ? describeSourceHealth(source) : "unavailable"}`,
 				);
 				const delivery = deliveryError
 					? `\n-# ${await resolveKey(interaction, `commands/social:deliveryErrors.${deliveryError}`)}`
@@ -92,7 +94,22 @@ export class UserCommand extends Command {
 				.setDescription(description)
 				.toJSON(),
 		);
-		return deferred.update({ embeds });
+		const pages = splitEmbedMessages(embeds);
+		const initialReply = await deferred.update({ embeds: pages[0]! });
+		for (const page of pages.slice(1)) {
+			// oxlint-disable-next-line no-await-in-loop -- preserve the subscription order in private follow-ups
+			const sent = await interaction.followup({
+				embeds: page,
+				flags: MessageFlags.Ephemeral,
+			});
+			sent.inspectErr((error) =>
+				this.container.logger.error(
+					"[social-subscriptions] Failed to send another subscription page",
+					error,
+				),
+			);
+		}
+		return initialReply;
 	}
 }
 
@@ -111,4 +128,23 @@ function splitDescriptions(lines: readonly string[]) {
 
 	descriptions.push(current);
 	return descriptions;
+}
+
+/** Discord counts text across all embeds in one message, not just each description. */
+function splitEmbedMessages(embeds: APIEmbed[]) {
+	const pages: APIEmbed[][] = [];
+	let current: APIEmbed[] = [];
+	let length = 0;
+	for (const embed of embeds) {
+		const size = (embed.title?.length ?? 0) + (embed.description?.length ?? 0);
+		if (current.length === 10 || length + size > 6000) {
+			pages.push(current);
+			current = [];
+			length = 0;
+		}
+		current.push(embed);
+		length += size;
+	}
+	if (current.length) pages.push(current);
+	return pages;
 }

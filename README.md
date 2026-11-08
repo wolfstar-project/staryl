@@ -125,6 +125,9 @@ These include, but are not limited to:
   Login. Set `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`,
   `INSTAGRAM_REDIRECT_URI` and a stable `SOCIAL_TOKEN_KEY`. See
   [owner connections](docs/social-oauth.md).
+- **TikTok** (optional): Creator-authorized Display API access requires approved
+  Login Kit and Display API products. Configure the `TIKTOK_*` settings in
+  `src/.env.local`, including `TIKTOK_APP_APPROVED=true` after approval.
 - **X** (optional): Official API with billed reads. Set `X_API_KEY`,
   `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_SECRET` in `src/.env.local`.
   The root `.env.example` also lists the new social integration settings.
