@@ -82,15 +82,14 @@ export class UserCommand extends Command {
 				},
 			),
 		);
-		const started = result.unwrapOr(null);
 		return deferred.update({
-			content: started?.isOk()
+			content: result.isOk()
 				? await resolveKey(interaction, "commands/social:connectLink", {
-						url: started.unwrap(),
+						url: result.unwrap(),
 					})
 				: await resolveKey(
 						interaction,
-						started?.isErr() && started.unwrapErr() === "Denied"
+						result.unwrapErr() === "Denied"
 							? "commands/social:connectDenied"
 							: "commands/social:connectFailed",
 					),
