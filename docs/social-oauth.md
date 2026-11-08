@@ -12,9 +12,10 @@ destination. The private reply contains a ten-minute authorization link. The
 callback checks their current Manage Server permission, exchanges the code
 server-side and baselines the account before linking it. Use
 `/subscriptions social show` for connection health, `test` for a preview and
-`remove` to stop delivery. Reconnect to repair a revoked grant. Use `add` on the
-returned guild-scoped target to set keyword filters or link another channel in
-the same server. The account cannot be linked from a different server.
+`remove` to stop delivery. Reconnect to repair a revoked grant. Choose
+`keywords` and `exclude_keywords` when connecting. Run `connect` again to link
+another channel. Remove an existing link before reconnecting to change its
+filters. Each server must obtain its own authorization.
 
 Set a stable `SOCIAL_TOKEN_KEY` to 32 random bytes encoded as 64 hexadecimal
 characters. Tokens are AES-256-GCM encrypted in `SocialConnection`; protect and
