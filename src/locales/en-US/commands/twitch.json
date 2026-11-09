@@ -1,20 +1,20 @@
 {
 	"name": "twitch",
-	"description": "Manage the Twitch stream notification subscriptions.",
+	"description": "Manage Twitch live, offline, video and clip notifications.",
 	"addName": "add",
-	"addDescription": "Add a new Twitch subscription for a streamer.",
+	"addDescription": "Add Twitch notifications to a channel.",
 	"removeName": "remove",
-	"removeDescription": "Remove a Twitch subscription for a streamer.",
+	"removeDescription": "Remove Twitch notifications from a channel.",
 	"testName": "test",
-	"testDescription": "Send a test notification to check that an existing subscription works.",
+	"testDescription": "Send a test notification for the selected Twitch event.",
 	"resetName": "reset",
-	"resetDescription": "Remove all Twitch subscriptions from this server.",
+	"resetDescription": "Remove Twitch subscriptions; optionally filter by streamer or event.",
 	"showName": "show",
-	"showDescription": "Show all Twitch subscriptions for this server.",
+	"showDescription": "List Twitch subscriptions; optionally filter by streamer or event.",
 	"optionsStreamerName": "streamer",
 	"optionsStreamerDescription": "The Twitch streamer to subscribe to.",
 	"optionsChannelName": "channel",
-	"optionsChannelDescription": "The Discord channel to post notifications in.",
+	"optionsChannelDescription": "Discord channel for notifications.",
 	"optionsTypeName": "type",
 	"optionsTypeDescription": "Whether to notify when the streamer goes live or offline.",
 	"optionsMessageName": "message",
@@ -32,7 +32,7 @@
 	"addFailedDatabase": "{{REDCROSS}} I could not save the subscription. Please try again later.",
 	"removeFailed": "{{REDCROSS}} I could not remove the subscription. Please try again later.",
 	"resetFailed": "{{REDCROSS}} I could not remove the subscriptions. Please try again later.",
-	"testSuccess": "{{GREENTICK}} Sent! Check {{channel}} — that is exactly what the notification will look like.",
+	"testSuccess": "{{GREENTICK}} Sent! Check {{channel}} \u2014 that is exactly what the notification will look like.",
 	"testFailed": "{{REDCROSS}} I could not read the subscriptions. Please try again later.",
 	"testFailedGuild": "{{REDCROSS}} I could not read this server. Please try again later.",
 	"testFailedChannel": "{{REDCROSS}} I can no longer see {{channel}}. Was it deleted, or did I lose access to it?",
@@ -53,6 +53,14 @@
 		"offline": "Offline"
 	},
 	"showUnknownUser": "Unknown",
-	"showRevoked": "⚠️ Twitch ended this subscription and I could not renew it. Remove it and add it again.",
-	"showEmbedTitle": "Twitch Subscriptions"
+	"showRevoked": "\u26a0\ufe0f Twitch ended this subscription and I could not renew it. Remove it and add it again.",
+	"showEmbedTitle": "Twitch Subscriptions",
+	"optionsEventName": "event",
+	"optionsEventDescription": "Which Twitch event to subscribe to.",
+	"events": {
+		"live": "Stream goes live",
+		"offline": "Stream goes offline",
+		"video": "Video published",
+		"clip": "Clip published"
+	}
 }

@@ -27,7 +27,6 @@ import { cast, isNullish, isNullishOrEmpty } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
-	createSelectMenuChoiceName,
 	getSupportedLanguageT as resolveKey,
 } from "@wolfstar/plugin-i18next";
 import {
@@ -119,21 +118,6 @@ export interface TwitchChannelSearchResult {
 	display_name: string;
 	id: string;
 	is_live: boolean;
-}
-
-export function createTypeChoiceOption() {
-	return applyLocalizedBuilder(
-		new SlashCommandStringOption(),
-		"commands/twitch:optionsTypeName",
-		"commands/twitch:optionsTypeDescription",
-	).addChoices(
-		createSelectMenuChoiceName("commands/twitch:optionsTypeChoiceOnline", {
-			value: "StreamOnline",
-		}),
-		createSelectMenuChoiceName("commands/twitch:optionsTypeChoiceOffline", {
-			value: "StreamOffline",
-		}),
-	);
 }
 
 export function createChannelOption() {

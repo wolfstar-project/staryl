@@ -47,6 +47,7 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 	return {
 		...actual,
 		areTwitchEventSubCredentialsSet: vi.fn(),
+		areTwitchClientCredentialsSet: vi.fn(),
 		fetchUsers: vi.fn(),
 		fetchStream: vi.fn(),
 		addEventSubscription: vi.fn(),
@@ -68,6 +69,7 @@ const apiMock = vi.hoisted(() => ({
 vi.mock("#utils/discordApi", () => ({ api: () => apiMock }));
 
 const {
+	areTwitchClientCredentialsSet,
 	areTwitchEventSubCredentialsSet,
 	fetchUsers,
 	fetchStream,
@@ -84,6 +86,14 @@ const ChannelId = "800000000000000001";
 const SubscriptionId = 900n;
 
 const prismaMock = {
+	guildSocialSubscription: {
+		findMany: vi.fn(),
+		delete: vi.fn(),
+		count: vi.fn(),
+		findFirst: vi.fn(),
+		create: vi.fn(),
+	},
+	socialSource: { deleteMany: vi.fn() },
 	twitchSubscription: {
 		findFirst: vi.fn(),
 		create: vi.fn(),
@@ -128,6 +138,13 @@ afterAll(() => {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	vi.mocked(areTwitchClientCredentialsSet).mockReturnValue(true);
+	prismaMock.guildSocialSubscription.count.mockResolvedValue(0);
+	prismaMock.guildSocialSubscription.findFirst.mockResolvedValue(null);
+	prismaMock.guildSocialSubscription.create.mockResolvedValue({});
+	prismaMock.guildSocialSubscription.delete.mockResolvedValue({});
+	prismaMock.socialSource.deleteMany.mockResolvedValue({ count: 0 });
+	prismaMock.guildSocialSubscription.findMany.mockResolvedValue([]);
 	vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(true);
 	container.prisma = prismaMock as never;
 	vi.spyOn(container.rest, "patch").mockResolvedValue({
@@ -180,7 +197,16 @@ function channelOption(
 function typeOption(
 	value: string,
 ): APIApplicationCommandInteractionDataBasicOption {
-	return { type: ApplicationCommandOptionType.String, name: "type", value };
+	return {
+		type: ApplicationCommandOptionType.String,
+		name: "event",
+		value:
+			value === "StreamOnline"
+				? "live"
+				: value === "StreamOffline"
+					? "offline"
+					: value,
+	};
 }
 
 function channelResolved(): APIInteractionDataResolved {
@@ -1366,5 +1392,211 @@ describe("subscriptions registration", () => {
 				.map((option) => option.name)
 				.toSorted(),
 		).toEqual(["add", "remove", "reset", "show", "test"]);
+	});
+});
+
+describe("Twitch media commands", () => {
+	const GuildId = "737141877803057244";
+	function subscription(provider = "TwitchVideos") {
+		return {
+			guildId: BigInt(GuildId),
+			channelId: BigInt(ChannelId),
+			sourceId: 42n,
+			message: null,
+			filters: {},
+			deliveryError: null,
+			source: {
+				id: 42n,
+				provider,
+				target: StreamerId,
+				displayName: StreamerDisplayName,
+				lastFailure: null,
+				failureCount: 0,
+			},
+		};
+	}
+	function grantMediaPermissions() {
+		const roleId = "900000000000000001";
+		apiMock.guilds.get.mockResolvedValue({
+			preferred_locale: "en-US",
+			roles: [
+				{ id: GuildId, permissions: "0" },
+				{
+					id: roleId,
+					permissions: String(
+						PermissionFlagsBits.ViewChannel |
+							PermissionFlagsBits.SendMessages |
+							PermissionFlagsBits.EmbedLinks,
+					),
+				},
+			],
+		});
+		apiMock.guilds.getChannels.mockResolvedValue([
+			{ id: ChannelId, type: 0, guild_id: GuildId },
+		]);
+		apiMock.users.getCurrent.mockResolvedValue({ id: "bot" });
+		apiMock.guilds.getMember.mockResolvedValue({ roles: [roleId] });
+		apiMock.channels.createMessage.mockResolvedValue({ id: "sent" });
+	}
+
+	beforeEach(() => {
+		vi.mocked(fetchUsers).mockResolvedValue(
+			ok({
+				data: [
+					{
+						id: StreamerId,
+						login: "coolstreamer",
+						display_name: StreamerDisplayName,
+					},
+				],
+			}) as never,
+		);
+		vi.mocked(getRequest).mockResolvedValue(ok({ data: [] }) as never);
+		prismaMock.guildSubscription.findMany.mockResolvedValue([]);
+	});
+	it.each([
+		["video", "TwitchVideos"],
+		["clip", "TwitchClips"],
+	])("adds %s through the shared provider service", async (event, provider) => {
+		await runner.run(
+			buildInteraction(
+				"add",
+				[
+					streamerOption("coolstreamer"),
+					channelOption(ChannelId),
+					typeOption(event),
+				],
+				channelResolved(),
+			),
+		);
+		expect(prismaMock.guildSocialSubscription.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					source: {
+						connectOrCreate: expect.objectContaining({
+							where: { provider_target: { provider, target: StreamerId } },
+						}),
+					},
+				}),
+			}),
+		);
+		expect(addEventSubscription).not.toHaveBeenCalled();
+		expect(patchedContent()).toContain("Success!");
+	});
+	it("removes a video subscription by streamer and channel", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			subscription(),
+			subscription("TwitchClips"),
+		]);
+		await runner.run(
+			buildInteraction(
+				"remove",
+				[
+					streamerOption("coolstreamer"),
+					channelOption(ChannelId),
+					typeOption("video"),
+				],
+				channelResolved(),
+			),
+		);
+		expect(
+			prismaMock.guildSocialSubscription.delete,
+		).toHaveBeenCalledExactlyOnceWith({
+			where: {
+				guildId_channelId_sourceId: {
+					guildId: BigInt(GuildId),
+					channelId: BigInt(ChannelId),
+					sourceId: 42n,
+				},
+			},
+			select: null,
+		});
+		expect(removeEventSubscription).not.toHaveBeenCalled();
+	});
+	it("shows videos when there are no live subscriptions", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			subscription(),
+		]);
+		await runner.run(buildInteraction("show"));
+		expect(JSON.stringify(patchedBody())).toContain("Video published");
+	});
+	it("resets only clips when the event filter is clip", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			subscription(),
+			{ ...subscription("TwitchClips"), sourceId: 43n },
+		]);
+		await runner.run(buildInteraction("reset", [typeOption("clip")]));
+		expect(
+			prismaMock.guildSocialSubscription.delete,
+		).toHaveBeenCalledExactlyOnceWith({
+			where: {
+				guildId_channelId_sourceId: {
+					guildId: BigInt(GuildId),
+					channelId: BigInt(ChannelId),
+					sourceId: 43n,
+				},
+			},
+			select: null,
+		});
+		expect(prismaMock.guildSubscription.findMany).not.toHaveBeenCalled();
+	});
+	it("reports an empty video source when testing instead of taking the live delivery path", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			subscription(),
+		]);
+		grantMediaPermissions();
+		await runner.run(
+			buildInteraction(
+				"test",
+				[
+					streamerOption("coolstreamer"),
+					channelOption(ChannelId),
+					typeOption("video"),
+				],
+				channelResolved(),
+			),
+		);
+		expect(patchedContent()).toContain("nothing published");
+		expect(fetchStream).not.toHaveBeenCalled();
+	});
+	it("delivers a published video through the shared notification path", async () => {
+		grantMediaPermissions();
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			subscription(),
+		]);
+		vi.mocked(getRequest).mockResolvedValue(
+			ok({
+				data: [
+					{
+						id: "1",
+						title: "Finished stream",
+						description: "",
+						url: "https://www.twitch.tv/videos/1",
+						user_name: StreamerDisplayName,
+						thumbnail_url:
+							"https://static-cdn.jtvnw.net/cf_vods/x/thumb-%{width}x%{height}.jpg",
+						published_at: "2026-11-01T10:00:00Z",
+						duration: "1h",
+					},
+				],
+			}) as never,
+		);
+		await runner.run(
+			buildInteraction(
+				"test",
+				[
+					streamerOption("coolstreamer"),
+					channelOption(ChannelId),
+					typeOption("video"),
+				],
+				channelResolved(),
+			),
+		);
+		expect(apiMock.channels.createMessage).toHaveBeenCalledOnce();
+		expect(
+			JSON.stringify(apiMock.channels.createMessage.mock.calls[0]),
+		).toContain("https://www.twitch.tv/videos/1");
+		expect(patchedContent()).toContain("Sent!");
+		expect(fetchStream).not.toHaveBeenCalled();
 	});
 });

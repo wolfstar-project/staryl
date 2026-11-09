@@ -10,28 +10,32 @@ import "i18next";
 declare module "i18next" {
   interface CustomTypeOptions {
     resources: {
-      "commands/setup": {
-        name: "setup";
-        description: "Open the interactive setup menu for this server.";
+      "commands/settings": {
+        name: "settings";
+        description: "Manage this server’s Twitch and social notification settings.";
         menu: {
           placeholder: "Choose what you want to configure";
-          close: "Close setup";
+          close: "Close settings";
           options: {
             overview: {
-              label: "Overview";
-              description: "View the setup status";
+              label: "General";
+              description: "View the settings status";
             };
             add: {
-              label: "Add a notification";
+              label: "Twitch · Add";
               description: "Subscribe to a Twitch streamer";
             };
             manage: {
-              label: "Manage notifications";
+              label: "Twitch · Manage";
               description: "Review, remove, or reset subscriptions";
             };
             test: {
-              label: "Test notifications";
+              label: "Twitch · Test";
               description: "Verify the real delivery path";
+            };
+            twitch: {
+              label: "Twitch live";
+              description: "Configure live and offline notifications";
             };
           };
         };
@@ -55,7 +59,7 @@ declare module "i18next" {
           };
         };
         manage: {
-          selectPlaceholder: "Select one or more notifications";
+          selectPlaceholder: "Select notifications to remove immediately";
           removeButton: "Remove selected";
           resetButton: "Reset all";
           resetConfirmButton: "Confirm reset all";
@@ -68,23 +72,57 @@ declare module "i18next" {
           empty: "No notifications configured yet.";
         };
         pages: {
-          overview: "{{notice}}## Staryl setup\nConfigure Twitch notifications for this server from one place.\n**Current notifications:** {{count}}\nUse the menu below to add, manage, or test a notification.";
+          overview: "{{notice}}## Server settings\nManage Twitch live notifications and subscriptions to feeds, videos and social accounts.\n**Current notifications:** {{count}}\nChoose Twitch or a social provider below. Each subscription keeps its own Discord channel, message and filters.\nUse `/subscriptions <provider> add` for advanced filters and `/subscriptions instagram connect` or `/subscriptions tiktok connect` to authorize Instagram or TikTok.";
           add: "{{notice}}## Add a Twitch notification\nPress **Add notification** below and fill in:\n- the **streamer** to follow;\n- the Discord **channel** that receives the notification;\n- whether to notify when the stream goes **online** or **offline**;\n- an optional custom message (required for offline notifications).";
           manage_one: "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notification.\nSelect one or more below to remove them, or reset everything.";
           manage_other: "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notifications.\nSelect one or more below to remove them, or reset everything.";
           test: "{{notice}}## Test a notification\nSelect a notification below to send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions.";
+          twitch: "{{notice}}## Server settings › Twitch live\nAdd subscriptions for live or offline events, manage existing subscriptions or send a test notification. Videos and clips have their own provider sections.";
         };
-        closed: "## Setup closed\nRun `/setup` whenever you need it again.";
+        closed: "## Settings closed\nRun `/settings` whenever you need it again.";
         errors: {
-          invalid: "This setup menu is invalid. Run `/setup` to open a new one.";
-          ownerOnly: "Only the member who opened this setup menu can use it.";
-          permissionRevoked: "You no longer have the Manage Server permission in this server. Run `/setup` again once it's restored.";
-          actionUnavailable: "This setup action is no longer available. Run `/setup` again.";
-          sectionUnavailable: "That setup section is not available.";
+          invalid: "This settings menu is invalid. Run `/settings` to open a new one.";
+          ownerOnly: "Only the member who opened this settings menu can use it.";
+          permissionRevoked: "You no longer have the Manage Server permission in this server. Run `/settings` again once it's restored.";
+          actionUnavailable: "This settings action is no longer available. Run `/settings` again.";
+          sectionUnavailable: "That settings section is not available.";
+        };
+        social: {
+          title: "Server settings";
+          add: "Add subscription";
+          edit: "Edit message";
+          test: "Send test";
+          remove: "Remove";
+          confirm: "Confirm removal";
+          refresh: "Refresh";
+          previous: "Previous";
+          next: "Next";
+          target: "Target";
+          message: "Message";
+          filters: "Filters";
+          status: "Status";
+          active: "Active";
+          defaultMessage: "Default message";
+          select: "Choose a subscription to inspect or edit";
+          count: "Subscriptions: {{count}}";
+          connect: "To authorize your account and choose a channel, use `/subscriptions {{provider}} connect`.";
+          saved: "Message saved.";
+          removed: "Subscription removed.";
+          confirmNotice: "Remove this subscription? Confirm below, or choose another subscription to cancel.";
+          noFilters: "All items";
+        };
+        filterLabels: {
+          includeKeywords: "Include keywords";
+          excludeKeywords: "Exclude keywords";
+          excludeReplies: "Exclude replies";
+          excludeReposts: "Exclude reposts";
+          shorts: "Shorts";
+          flairs: "Flairs";
+          minimumScore: "Minimum score";
         };
       };
       "commands/social": {
-        addDescription: "Follow a feed or an account and post what it publishes.";
+        addDescription: "Add notifications from this provider to a channel.";
         addDuplicated: "{{REDCROSS}} That channel already follows this.";
         addFailedDatabase: "{{REDCROSS}} I could not save the subscription. Please try again later.";
         addFilterUnsupported: "{{REDCROSS}} This provider does not have the data for one of the filters you picked.";
@@ -122,7 +160,7 @@ declare module "i18next" {
         noSubscriptions: "{{REDCROSS}} This server does not follow any feed or account yet.";
         optionsChannelDescription: "The Discord channel to post notifications in.";
         optionsChannelName: "channel";
-        optionsExcludeKeywordsDescription: "Comma separated. Never post items containing one of these.";
+        optionsExcludeKeywordsDescription: "Comma-separated keywords that exclude an item.";
         optionsExcludeKeywordsName: "exclude_keywords";
         optionsExcludeRepliesDescription: "Bluesky and Mastodon only. Leave out replies.";
         optionsExcludeRepliesName: "exclude_replies";
@@ -130,7 +168,7 @@ declare module "i18next" {
         optionsExcludeRepostsName: "exclude_reposts";
         optionsFlairsDescription: "Reddit only, comma separated. Only post items with one of these flairs.";
         optionsFlairsName: "flairs";
-        optionsKeywordsDescription: "Comma separated. Only post items containing at least one of these.";
+        optionsKeywordsDescription: "Comma-separated keywords an item must contain.";
         optionsKeywordsName: "keywords";
         optionsMessageDescription: "Custom message to include in the notification.";
         optionsMessageName: "message";
@@ -138,16 +176,16 @@ declare module "i18next" {
         optionsMinimumScoreName: "minimum_score";
         optionsProviderDescription: "Where the content comes from.";
         optionsProviderName: "provider";
-        optionsRemoveChannelDescription: "The channel to stop posting in. Only needed if several follow this.";
+        optionsRemoveChannelDescription: "Channel to stop posting in; needed if several use this source.";
         optionsRemoveChannelName: "channel";
         optionsShortsChoiceExclude: "Leave them out";
         optionsShortsChoiceInclude: "Post them too";
         optionsShortsChoiceOnly: "Only post Shorts";
         optionsShortsDescription: "YouTube only. What to do with Shorts.";
         optionsShortsName: "shorts";
-        optionsSourceDescription: "The feed or account this server follows.";
+        optionsSourceDescription: "Subscription source (choose from the list).";
         optionsSourceName: "source";
-        optionsTargetDescription: "The feed or site URL, subreddit, account or YouTube channel to follow.";
+        optionsTargetDescription: "Feed URL, subreddit, account handle or channel URL.";
         optionsTargetName: "target";
         providerBluesky: "Bluesky";
         providerInstagram: "Instagram (owner connected)";
@@ -160,46 +198,62 @@ declare module "i18next" {
         providerX: "X (Twitter)";
         providerYouTube: "YouTube";
         removeChannelRequired: "{{REDCROSS}} Several channels follow that. Tell me which one with the `channel` option.";
-        removeDescription: "Stop following a feed or an account in a channel.";
+        removeDescription: "Remove a subscription from a channel.";
         removeFailed: "{{REDCROSS}} I could not remove the subscription. Please try again later.";
         removeName: "remove";
         removeSuccess: "{{GREENTICK}} Success! I will no longer post **{{name}}** in {{channel}}.";
-        resetDescription: "Stop following every feed and account in this server.";
+        resetDescription: "Remove all subscriptions for this provider.";
         resetFailed: "{{REDCROSS}} I could not remove the subscriptions. Please try again later.";
         resetName: "reset";
         resetSuccess_one: "{{GREENTICK}} Success! {{count}} subscription has been removed from this server.";
         resetSuccess_other: "{{GREENTICK}} Success! {{count}} subscriptions have been removed from this server.";
-        showDescription: "Show what this server follows, and whether it is working.";
+        showDescription: "List subscriptions and delivery status.";
         showEmbedTitle: "Followed feeds and accounts";
         showFailed: "{{REDCROSS}} I could not read the subscriptions. Please try again later.";
         showName: "show";
         sourceNotFound: "{{REDCROSS}} This server does not follow that. Pick one from the list.";
         subscriptionNotFound: "{{REDCROSS}} {{channel}} does not follow that. Pick one from the list.";
-        testDescription: "Post the newest item now, to check that a subscription works.";
+        testDescription: "Send the newest item to test delivery.";
         testName: "test";
         testNoItems: "{{REDCROSS}} There is nothing published there yet, so there is nothing to send.";
       };
       "commands/subscriptions": {
         name: "subscriptions";
         description: "Manage the notification subscriptions for your server.";
+        groupRssName: "rss";
+        groupRssDescription: "Manage RSS and Atom subscriptions.";
+        groupRedditName: "reddit";
+        groupRedditDescription: "Manage Reddit subscriptions.";
+        groupBlueskyName: "bluesky";
+        groupBlueskyDescription: "Manage Bluesky subscriptions.";
+        groupMastodonName: "mastodon";
+        groupMastodonDescription: "Manage Mastodon subscriptions.";
+        groupYoutubeName: "youtube";
+        groupYoutubeDescription: "Manage YouTube subscriptions.";
+        groupXName: "x";
+        groupXDescription: "Manage X (Twitter) subscriptions.";
+        groupInstagramName: "instagram";
+        groupInstagramDescription: "Manage Instagram subscriptions.";
+        groupTiktokName: "tiktok";
+        groupTiktokDescription: "Manage TikTok subscriptions.";
       };
       "commands/twitch": {
         name: "twitch";
-        description: "Manage the Twitch stream notification subscriptions.";
+        description: "Manage Twitch live, offline, video and clip notifications.";
         addName: "add";
-        addDescription: "Add a new Twitch subscription for a streamer.";
+        addDescription: "Add Twitch notifications to a channel.";
         removeName: "remove";
-        removeDescription: "Remove a Twitch subscription for a streamer.";
+        removeDescription: "Remove Twitch notifications from a channel.";
         testName: "test";
-        testDescription: "Send a test notification to check that an existing subscription works.";
+        testDescription: "Send a test notification for the selected Twitch event.";
         resetName: "reset";
-        resetDescription: "Remove all Twitch subscriptions from this server.";
+        resetDescription: "Remove Twitch subscriptions; optionally filter by streamer or event.";
         showName: "show";
-        showDescription: "Show all Twitch subscriptions for this server.";
+        showDescription: "List Twitch subscriptions; optionally filter by streamer or event.";
         optionsStreamerName: "streamer";
         optionsStreamerDescription: "The Twitch streamer to subscribe to.";
         optionsChannelName: "channel";
-        optionsChannelDescription: "The Discord channel to post notifications in.";
+        optionsChannelDescription: "Discord channel for notifications.";
         optionsTypeName: "type";
         optionsTypeDescription: "Whether to notify when the streamer goes live or offline.";
         optionsMessageName: "message";
@@ -240,6 +294,14 @@ declare module "i18next" {
         showUnknownUser: "Unknown";
         showRevoked: "⚠️ Twitch ended this subscription and I could not renew it. Remove it and add it again.";
         showEmbedTitle: "Twitch Subscriptions";
+        optionsEventName: "event";
+        optionsEventDescription: "Which Twitch event to subscribe to.";
+        events: {
+          live: "Stream goes live";
+          offline: "Stream goes offline";
+          video: "Video published";
+          clip: "Clip published";
+        };
       };
       errors: {
         genericUnknownChannel: "I'm sorry, I tried to perform an action for a channel unknown to Discord and failed, this error has been reported to the developers.";

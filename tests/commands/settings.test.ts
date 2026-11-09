@@ -1,10 +1,10 @@
 import type { GuildSubscriptionWithTwitch } from "#twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
-	buildSetupCustomId,
+	buildSettingsCustomId,
 	buildSubscriptionKey,
-	SetupInteractionHandlerName,
-} from "#utils/setupMenu";
+	SettingsInteractionHandlerName,
+} from "#utils/settingsMenu";
 import { VirtualPath } from "@sapphire/pieces";
 import { ok } from "@sapphire/result";
 import { container } from "@wolfstar/http-framework";
@@ -24,8 +24,8 @@ import {
 	PermissionFlagsBits,
 } from "discord-api-types/v10";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { UserCommand } from "../../src/commands/subscriptions/setup.ts";
-import { UserInteractionHandler } from "../../src/interaction-handlers/setup.ts";
+import { UserCommand } from "../../src/commands/subscriptions/settings.ts";
+import { UserInteractionHandler } from "../../src/interaction-handlers/settings.ts";
 
 vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 	const actual =
@@ -71,6 +71,13 @@ const SubscriptionId = 900n;
 const BotRoleId = "900000000000000001";
 
 const prismaMock = {
+	guildSocialSubscription: {
+		count: vi.fn(),
+		findMany: vi.fn(),
+		update: vi.fn(),
+		delete: vi.fn(),
+	},
+	socialSource: { deleteMany: vi.fn() },
 	guildSubscription: {
 		findMany: vi.fn(),
 		count: vi.fn(),
@@ -96,6 +103,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
 	vi.clearAllMocks();
+	prismaMock.guildSocialSubscription.count.mockResolvedValue(0);
+	prismaMock.guildSocialSubscription.findMany.mockResolvedValue([]);
 	vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(true);
 	container.prisma = prismaMock as never;
 	prismaMock.guildSubscription.findMany.mockResolvedValue([]);
@@ -109,9 +118,9 @@ beforeEach(async () => {
 	} as never);
 
 	// The handler is looked up by piece `name`, not by a decorator registry, so it must be
-	// constructed with the exact name `buildSetupCustomId` encodes in every custom_id.
+	// constructed with the exact name `buildSettingsCustomId` encodes in every custom_id.
 	const handler = new UserInteractionHandler({
-		name: SetupInteractionHandlerName,
+		name: SettingsInteractionHandlerName,
 		path: VirtualPath,
 		root: VirtualPath,
 		store: container.stores.get("interaction-handlers"),
@@ -154,7 +163,7 @@ function buildSubscription(
 }
 
 // The interaction handler re-checks Manage Server on every privileged action (a still-open menu
-// must not outlive a permission revoked after `/setup` was opened), so every fixture below grants
+// must not outlive a permission revoked after `/settings` was opened), so every fixture below grants
 // it by default; `rejects a member who lost Manage Server after opening the menu` overrides it.
 const ManagerMember = {
 	...MessageComponentButtonInteractionData.member,
@@ -173,7 +182,7 @@ function buttonInteraction(action: string, userId = OwnerId) {
 		member: ManagerMember,
 		data: {
 			...MessageComponentButtonInteractionData.data,
-			custom_id: buildSetupCustomId(userId, action),
+			custom_id: buildSettingsCustomId(userId, action),
 		},
 	};
 }
@@ -184,7 +193,7 @@ function selectInteraction(action: string, values: string[], userId = OwnerId) {
 		member: ManagerMember,
 		data: {
 			...MessageComponentStringSelectInteractionData.data,
-			custom_id: buildSetupCustomId(userId, action),
+			custom_id: buildSettingsCustomId(userId, action),
 			values,
 		},
 	};
@@ -199,7 +208,7 @@ function modalInteraction(
 		member: ManagerMember,
 		data: {
 			...ModalSubmitInteractionData.data,
-			custom_id: buildSetupCustomId(userId, "add:submit"),
+			custom_id: buildSettingsCustomId(userId, "add:submit"),
 			components: fields.map((field) => ({
 				type: ComponentType.Label,
 				component: field,
@@ -208,7 +217,7 @@ function modalInteraction(
 	};
 }
 
-describe("setup interaction handler: owner check", () => {
+describe("settings interaction handler: owner check", () => {
 	it("rejects an interaction from a user other than the menu's owner", async () => {
 		const interaction = buttonInteraction("close", OwnerId);
 		// Simulate a different user clicking the owner's menu by overriding the member.
@@ -225,7 +234,7 @@ describe("setup interaction handler: owner check", () => {
 		expect(result.json()).toMatchObject({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: "Only the member who opened this setup menu can use it.",
+				content: "Only the member who opened this settings menu can use it.",
 			},
 		});
 	});
@@ -260,13 +269,13 @@ describe("setup interaction handler: owner check", () => {
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
 				content:
-					"You no longer have the Manage Server permission in this server. Run `/setup` again once it's restored.",
+					"You no longer have the Manage Server permission in this server. Run `/settings` again once it's restored.",
 			},
 		});
 	});
 });
 
-describe("setup interaction handler: close", () => {
+describe("settings interaction handler: close", () => {
 	it("replaces the menu with the closed state", async () => {
 		const interaction = buttonInteraction("close");
 
@@ -275,11 +284,11 @@ describe("setup interaction handler: close", () => {
 		expect(result.json()).toMatchObject({
 			type: InteractionResponseType.UpdateMessage,
 		});
-		expect(JSON.stringify(result.json())).toContain("Setup closed");
+		expect(JSON.stringify(result.json())).toContain("Settings closed");
 	});
 });
 
-describe("setup interaction handler: navigate", () => {
+describe("settings interaction handler: navigate", () => {
 	it("renders the overview page", async () => {
 		prismaMock.guildSubscription.count.mockResolvedValue(3);
 		const interaction = selectInteraction("navigate", ["overview"]);
@@ -308,7 +317,9 @@ describe("setup interaction handler: navigate", () => {
 		await runner.run(interaction as never);
 
 		const serialized = JSON.stringify(patchedBody());
-		expect(serialized).toContain(buildSetupCustomId(OwnerId, "manage:select"));
+		expect(serialized).toContain(
+			buildSettingsCustomId(OwnerId, "manage:select"),
+		);
 		expect(serialized).toContain(StreamerDisplayName);
 	});
 
@@ -326,7 +337,7 @@ describe("setup interaction handler: navigate", () => {
 		await runner.run(interaction as never);
 
 		const serialized = JSON.stringify(patchedBody());
-		expect(serialized).toContain(buildSetupCustomId(OwnerId, "test:select"));
+		expect(serialized).toContain(buildSettingsCustomId(OwnerId, "test:select"));
 		expect(serialized).toContain(StreamerDisplayName);
 	});
 
@@ -336,12 +347,12 @@ describe("setup interaction handler: navigate", () => {
 		const result = await runner.run(interaction as never);
 
 		expect(JSON.stringify(result.json())).toContain(
-			"That setup section is not available.",
+			"That settings section is not available.",
 		);
 	});
 });
 
-describe("setup interaction handler: add:open", () => {
+describe("settings interaction handler: add:open", () => {
 	it("shows the add modal", async () => {
 		const interaction = buttonInteraction("add:open");
 
@@ -351,12 +362,12 @@ describe("setup interaction handler: add:open", () => {
 			type: InteractionResponseType.Modal,
 		});
 		expect(JSON.stringify(result.json())).toContain(
-			buildSetupCustomId(OwnerId, "add:submit"),
+			buildSettingsCustomId(OwnerId, "add:submit"),
 		);
 	});
 });
 
-describe("setup interaction handler: add:submit", () => {
+describe("settings interaction handler: add:submit", () => {
 	it("adds a subscription and shows a success notice", async () => {
 		vi.mocked(fetchUsers).mockResolvedValue(
 			ok({
@@ -421,7 +432,7 @@ describe("setup interaction handler: add:submit", () => {
 		const result = await runner.run(interaction as never);
 
 		expect(JSON.stringify(result.json())).toContain(
-			"This setup menu is invalid. Run",
+			"This settings menu is invalid. Run",
 		);
 	});
 
@@ -443,13 +454,13 @@ describe("setup interaction handler: add:submit", () => {
 		expect(result.json()).toMatchObject({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: "Only the member who opened this setup menu can use it.",
+				content: "Only the member who opened this settings menu can use it.",
 			},
 		});
 	});
 });
 
-describe("setup interaction handler: manage:select", () => {
+describe("settings interaction handler: manage:select", () => {
 	it("removes the matched subscriptions and shows a success notice", async () => {
 		const subscription = buildSubscription();
 		prismaMock.guildSubscription.findMany.mockResolvedValue([subscription]);
@@ -498,14 +509,14 @@ describe("setup interaction handler: manage:select", () => {
 	});
 });
 
-describe("setup interaction handler: manage:reset", () => {
+describe("settings interaction handler: manage:reset", () => {
 	it("opens the confirmation step", async () => {
 		const interaction = buttonInteraction("manage:reset:open");
 
 		const result = await runner.run(interaction as never);
 
 		expect(JSON.stringify(result.json())).toContain(
-			buildSetupCustomId(OwnerId, "manage:reset:confirm"),
+			buildSettingsCustomId(OwnerId, "manage:reset:confirm"),
 		);
 	});
 
@@ -535,7 +546,7 @@ describe("setup interaction handler: manage:reset", () => {
 	});
 });
 
-describe("setup interaction handler: test:select", () => {
+describe("settings interaction handler: test:select", () => {
 	beforeEach(() => {
 		grantChannelPermissions(
 			PermissionFlagsBits.ViewChannel |
@@ -602,26 +613,26 @@ describe("setup interaction handler: test:select", () => {
 
 		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
 		expect(JSON.stringify(result.json())).toContain(
-			"That setup section is not available.",
+			"That settings section is not available.",
 		);
 	});
 });
 
-describe("setup interaction handler: unhandled component types", () => {
+describe("settings interaction handler: unhandled component types", () => {
 	it("replies with actionUnavailable for a modal submit action it does not recognise", async () => {
 		const interaction = {
 			...ModalSubmitInteractionData,
 			member: ManagerMember,
 			data: {
 				...ModalSubmitInteractionData.data,
-				custom_id: buildSetupCustomId(OwnerId, "close"),
+				custom_id: buildSettingsCustomId(OwnerId, "close"),
 			},
 		};
 
 		const result = await runner.run(interaction as never);
 
 		expect(JSON.stringify(result.json())).toContain(
-			"This setup action is no longer available.",
+			"This settings action is no longer available.",
 		);
 	});
 
@@ -630,25 +641,25 @@ describe("setup interaction handler: unhandled component types", () => {
 			...MessageComponentButtonInteractionData,
 			data: {
 				...MessageComponentButtonInteractionData.data,
-				custom_id: SetupInteractionHandlerName,
+				custom_id: SettingsInteractionHandlerName,
 			},
 		};
 
 		const result = await runner.run(interaction as never);
 
 		expect(JSON.stringify(result.json())).toContain(
-			"This setup menu is invalid.",
+			"This settings menu is invalid.",
 		);
 	});
 });
 
-describe("setup command chatInputRun (overview, unchanged)", () => {
+describe("settings command chatInputRun (overview, unchanged)", () => {
 	function buildChatInputInteraction() {
 		return {
 			...ChatInputApplicationCommandInteractionData,
 			data: {
 				id: "0",
-				name: "setup",
+				name: "settings",
 				type: ApplicationCommandType.ChatInput,
 				options: [],
 			},
@@ -666,6 +677,212 @@ describe("setup command chatInputRun (overview, unchanged)", () => {
 		});
 		const serialized = JSON.stringify(patchedBody());
 		expect(serialized).toContain("Current notifications:** 2");
-		expect(serialized).toContain(buildSetupCustomId(OwnerId, "navigate"));
+		expect(serialized).toContain(buildSettingsCustomId(OwnerId, "navigate"));
+	});
+});
+
+describe("settings social providers", () => {
+	const sourceId = 42n;
+	function socialSubscription(channelId = BigInt(ChannelId), id = sourceId) {
+		return {
+			guildId: BigInt(GuildId),
+			channelId,
+			sourceId: id,
+			message: "News",
+			filters: {},
+			deliveryError: null,
+			source: {
+				id,
+				provider: "Rss",
+				target: "https://example.org/feed",
+				displayName: "Example feed",
+				lastFailure: null,
+			},
+		};
+	}
+	it("opens provider subscriptions from the module menu", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			socialSubscription(),
+		]);
+		await runner.run(selectInteraction("navigate", ["social:Rss"]) as never);
+		expect(JSON.stringify(patchedBody())).toContain("Example feed");
+		expect(JSON.stringify(patchedBody())).toContain("Subscriptions: 1");
+	});
+	it("shows confirmation without deleting a subscription", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			socialSubscription(),
+		]);
+		await runner.run(
+			buttonInteraction(`social:confirm:Rss:${ChannelId}:42`) as never,
+		);
+		expect(prismaMock.guildSocialSubscription.delete).not.toHaveBeenCalled();
+		expect(JSON.stringify(patchedBody())).toContain("Confirm removal");
+	});
+	it("removes only the selected subscription in the current guild", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			socialSubscription(),
+		]);
+		prismaMock.guildSocialSubscription.delete.mockResolvedValue({});
+		prismaMock.socialSource.deleteMany.mockResolvedValue({ count: 0 });
+		await runner.run(
+			buttonInteraction(`social:remove:Rss:${ChannelId}:42`) as never,
+		);
+		expect(prismaMock.guildSocialSubscription.delete).toHaveBeenCalledWith({
+			where: {
+				guildId_channelId_sourceId: {
+					guildId: BigInt(GuildId),
+					channelId: BigInt(ChannelId),
+					sourceId,
+				},
+			},
+			select: null,
+		});
+	});
+	it("does not mutate a subscription absent from the current guild", async () => {
+		await runner.run(
+			buttonInteraction(`social:remove:Rss:${ChannelId}:42`) as never,
+		);
+		expect(prismaMock.guildSocialSubscription.delete).not.toHaveBeenCalled();
+	});
+	it("saves a message without changing the subscription filters", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			socialSubscription(),
+		]);
+		prismaMock.guildSocialSubscription.update.mockResolvedValue({});
+		const interaction = modalInteraction([
+			{ custom_id: "message", value: "Updated news" },
+		]);
+		interaction.data.custom_id = buildSettingsCustomId(
+			OwnerId,
+			`social:save:Rss:${ChannelId}:42`,
+		);
+		await runner.run(interaction as never);
+		expect(prismaMock.guildSocialSubscription.update).toHaveBeenCalledWith({
+			where: {
+				guildId_channelId_sourceId: {
+					guildId: BigInt(GuildId),
+					channelId: BigInt(ChannelId),
+					sourceId,
+				},
+			},
+			data: { message: "Updated news" },
+		});
+		expect(JSON.stringify(patchedBody())).toContain("Message saved.");
+	});
+	it("paginates subscriptions beyond Discord's select limit", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue(
+			Array.from({ length: 26 }, (_, index) =>
+				socialSubscription(BigInt(ChannelId), BigInt(index + 1)),
+			),
+		);
+		await runner.run(buttonInteraction("social:page:Rss:1") as never);
+		const body = JSON.stringify(patchedBody());
+		expect(body).toContain(`${ChannelId}:26`);
+		expect(body).not.toContain(`"value":"${ChannelId}:1"`);
+		expect(body).toContain("2 / 2");
+	});
+	it("reports database failure instead of presenting an empty provider as healthy", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockRejectedValueOnce(
+			new Error("Database unavailable"),
+		);
+		await runner.run(selectInteraction("navigate", ["social:Rss"]) as never);
+		expect(JSON.stringify(patchedBody())).toContain(
+			"could not read the subscriptions",
+		);
+		expect(prismaMock.guildSocialSubscription.delete).not.toHaveBeenCalled();
+	});
+	it("counts social subscriptions in the server overview", async () => {
+		prismaMock.guildSocialSubscription.count.mockResolvedValue(4);
+		prismaMock.guildSubscription.count.mockResolvedValue(2);
+		await runner.run(selectInteraction("navigate", ["overview"]) as never);
+		expect(JSON.stringify(patchedBody())).toContain(
+			"Current notifications:** 6",
+		);
+	});
+	it("rechecks Manage Server before social mutations", async () => {
+		const interaction = buttonInteraction(`social:remove:Rss:${ChannelId}:42`);
+		interaction.member = { ...interaction.member, permissions: "0" };
+		await runner.run(interaction as never);
+		expect(prismaMock.guildSocialSubscription.delete).not.toHaveBeenCalled();
+		expect(prismaMock.guildSocialSubscription.findMany).not.toHaveBeenCalled();
+	});
+});
+
+describe("settings generated controls", () => {
+	it("opens the message editor using the button generated by a selected subscription", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			{
+				guildId: BigInt(GuildId),
+				channelId: BigInt(ChannelId),
+				sourceId: 42n,
+				message: "Existing message",
+				filters: {},
+				deliveryError: null,
+				source: {
+					id: 42n,
+					provider: "Rss",
+					target: "https://example.org/feed",
+					displayName: "Example feed",
+					lastFailure: null,
+					failureCount: 0,
+				},
+			},
+		]);
+		await runner.run(
+			selectInteraction("social:select:Rss:0", [`${ChannelId}:42`]) as never,
+		);
+		const component = patchedBody().components?.[0] as {
+			components: { components?: { custom_id: string; label: string }[] }[];
+		};
+		const edit = component.components
+			.flatMap((row) => row.components ?? [])
+			.find((control) => control.label === "Edit message")!;
+		expect(edit).toBeDefined();
+		const result = await runner.run(
+			buttonInteraction(edit.custom_id.split(".").at(-1)!) as never,
+		);
+		expect(result.json()).toMatchObject({
+			type: InteractionResponseType.Modal,
+		});
+		expect(JSON.stringify(result.json())).toContain("Existing message");
+	});
+	it("routes the generated Twitch section buttons to their pages", async () => {
+		await runner.run(selectInteraction("navigate", ["twitch"]) as never);
+		const component = patchedBody().components?.[0] as {
+			components: { components?: { custom_id: string; label: string }[] }[];
+		};
+		const add = component.components
+			.flatMap((row) => row.components ?? [])
+			.find((control) => control.label === "Twitch · Add")!;
+		const result = await runner.run(
+			buttonInteraction(add.custom_id.split(".").at(-1)!) as never,
+		);
+		expect(result.json()).toMatchObject({
+			type: InteractionResponseType.DeferredMessageUpdate,
+		});
+		const lastPatch = vi.mocked(container.rest.patch).mock.calls.at(-1)![1] as {
+			body: unknown;
+		};
+		expect(JSON.stringify(lastPatch.body)).toContain(
+			"Add a Twitch notification",
+		);
+	});
+	it("pages through Twitch subscriptions beyond the first 25", async () => {
+		prismaMock.guildSubscription.findMany.mockResolvedValue(
+			Array.from({ length: 26 }, (_, index) =>
+				buildSubscription({
+					subscriptionId: BigInt(index + 1),
+					twitchSubscription: {
+						...buildSubscription().twitchSubscription,
+						id: BigInt(index + 1),
+					},
+				}),
+			),
+		);
+		vi.mocked(fetchUsers).mockResolvedValue(ok({ data: [] }) as never);
+		await runner.run(buttonInteraction("manage:page:1") as never);
+		const body = JSON.stringify(patchedBody());
+		expect(body).toContain(`${ChannelId}:26`);
+		expect(body).not.toContain(`"value":"${ChannelId}:1"`);
 	});
 });

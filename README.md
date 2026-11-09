@@ -74,7 +74,12 @@ WebSocket connection.
   low-latency stream event delivery.
 - **Feeds and Social Accounts**: Follow any RSS or Atom feed, subreddits,
   Bluesky and Mastodon accounts, YouTube channels and Twitch videos and clips
-  with `/subscriptions social`, with keyword filters per channel.
+  with `/subscriptions <provider>`, with keyword filters per channel.
+- **Server Settings**: Open `/settings` (requires Manage Server) to configure
+  Twitch live notifications and social subscriptions. Inspect delivery errors,
+  edit social notification messages, send tests and confirm removals. Use
+  `/subscriptions <provider> add` for advanced filters, and the
+  `instagram connect` or `tiktok connect` subcommands for account authorization.
 - **HTTP-Based Architecture**: Built on `@wolfstar/http-framework`
   (Fastify-based), handling Discord interactions via HTTP endpoints instead of a
   WebSocket gateway.

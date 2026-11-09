@@ -26,9 +26,9 @@ Collisions
 ### Social Provider
 
 **Is:** one integration with an outside service, implementing `SocialProvider`.
-**Use for:** code, docs and the `provider` option of
-`/subscriptions social add`. **Never:** integration, connector, plugin (the last
-one means a framework plugin here). **Casing:** `Social Provider` in prose,
+**Use for:** code, docs and the provider groups of `/subscriptions` (for example
+`rss`, `bluesky` and `youtube`). **Never:** integration, connector, plugin (the
+last one means a framework plugin here). **Casing:** `Social Provider` in prose,
 `SocialProvider` in code, `provider` in commands.
 
 ### Target
@@ -61,18 +61,14 @@ generic name. A provider may say "post" or "video" in its own copy. **Casing:**
 
 ## Banned
 
-| Never       | Use instead                  | Why                                             |
-| ----------- | ---------------------------- | ----------------------------------------------- |
-| integration | Social Provider              | The issues use it, the code settled on provider |
-| dashboard   | `/subscriptions social show` | Staryl has no dashboard, only slash commands    |
+| Never       | Use instead     | Why                                             |
+| ----------- | --------------- | ----------------------------------------------- |
+| integration | Social Provider | The issues use it, the code settled on provider |
+| dashboard   | `/settings`     | Staryl has no dashboard, only slash commands    |
 
 ## Open questions
 
 Naming calls this file does not settle. Resolve one, fold the answer in, delete
 the entry.
 
-1. **Should "provider" stay a word members see?** Discord shows it as an option
-   name on `/subscriptions social add`.
-   - Keep it, it matches the code and needs no mapping.
-   - Rename the option to `platform`, friendlier, but one more word to keep in
-     sync.
+None. Provider selection uses the provider name as a subcommand group.

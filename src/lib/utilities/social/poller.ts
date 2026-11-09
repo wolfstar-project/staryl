@@ -318,7 +318,7 @@ export class SocialPoller {
 		const target = await delivery.prepare(key.guildId, key.channelId);
 		if (target.isErr()) {
 			// Discord being down looks exactly like a broken channel from here, so the items stay
-			// pending for a while. `/subscriptions social show` reports the reason in the meantime.
+			// pending for a while. `/settings` reports the reason in the meantime.
 			const expired = fresh.filter(
 				(item) =>
 					isPastRetryWindow(item, now) ||

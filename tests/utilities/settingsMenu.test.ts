@@ -2,15 +2,15 @@ import type { GuildSubscriptionWithTwitch } from "#twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	buildAddModal,
-	buildClosedSetupMenu,
+	buildClosedSettingsMenu,
 	buildManagePage,
-	buildSetupCustomId,
-	buildSetupMenu,
+	buildSettingsCustomId,
+	buildSettingsMenu,
 	buildSubscriptionKey,
 	buildTestPage,
-	isSetupPage,
+	isSettingsPage,
 	parseSubscriptionKey,
-} from "#utils/setupMenu";
+} from "#utils/settingsMenu";
 import { container } from "@wolfstar/http-framework";
 import {
 	ComponentType,
@@ -19,11 +19,11 @@ import {
 } from "discord-api-types/v10";
 import { describe, expect, it } from "vitest";
 
-describe("setup menu", () => {
+describe("settings menu", () => {
 	const t = container.i18n.getT("en-US");
 
 	it("builds an ephemeral Components V2 overview bound to its owner", () => {
-		const payload = buildSetupMenu(
+		const payload = buildSettingsMenu(
 			{
 				page: "overview",
 				subscriptionCount: 3,
@@ -40,32 +40,32 @@ describe("setup menu", () => {
 			content: expect.stringContaining("Current notifications:** 3"),
 		});
 		expect(JSON.stringify(payload.components)).toContain(
-			buildSetupCustomId("123456789", "navigate"),
+			buildSettingsCustomId("123456789", "navigate"),
 		);
 	});
 
 	it("renders each supported page and rejects unknown page names", () => {
 		for (const page of ["overview", "add", "manage", "test"] as const) {
-			expect(isSetupPage(page)).toBe(true);
+			expect(isSettingsPage(page)).toBe(true);
 			expect(
 				JSON.stringify(
-					buildSetupMenu({ page, subscriptionCount: 1, userId: "1" }, t),
+					buildSettingsMenu({ page, subscriptionCount: 1, userId: "1" }, t),
 				),
 			).toContain("components");
 		}
 
-		expect(isSetupPage("unknown")).toBe(false);
+		expect(isSettingsPage("unknown")).toBe(false);
 	});
 
 	it("removes all interactive controls when the menu is closed", () => {
-		const payload = buildClosedSetupMenu(t);
+		const payload = buildClosedSettingsMenu(t);
 
-		expect(JSON.stringify(payload.components)).toContain("Setup closed");
+		expect(JSON.stringify(payload.components)).toContain("Settings closed");
 		expect(JSON.stringify(payload.components)).not.toContain("custom_id");
 	});
 
 	it("interpolates the notice into the rendered page text when set", () => {
-		const payload = buildSetupMenu(
+		const payload = buildSettingsMenu(
 			{
 				page: "overview",
 				subscriptionCount: 0,
@@ -90,7 +90,7 @@ describe("buildAddModal", () => {
 
 		expect(modal.type).toBe(InteractionResponseType.Modal);
 		expect(modal.data.custom_id).toBe(
-			buildSetupCustomId("123456789", "add:submit"),
+			buildSettingsCustomId("123456789", "add:submit"),
 		);
 		expect(modal.data.title).toBe("Add a Twitch notification");
 
@@ -158,10 +158,10 @@ describe("buildManagePage", () => {
 		);
 
 		expect(JSON.stringify(rows)).not.toContain(
-			buildSetupCustomId("1", "manage:select"),
+			buildSettingsCustomId("1", "manage:select"),
 		);
 		expect(JSON.stringify(rows)).toContain(
-			buildSetupCustomId("1", "manage:reset:open"),
+			buildSettingsCustomId("1", "manage:reset:open"),
 		);
 	});
 
@@ -191,7 +191,7 @@ describe("buildManagePage", () => {
 			custom_id: string;
 			options: unknown[];
 		};
-		expect(select.custom_id).toBe(buildSetupCustomId("1", "manage:select"));
+		expect(select.custom_id).toBe(buildSettingsCustomId("1", "manage:select"));
 		expect(select.options).toHaveLength(2);
 	});
 
@@ -211,10 +211,10 @@ describe("buildManagePage", () => {
 
 		const serialized = JSON.stringify(rows);
 		expect(serialized).toContain(
-			buildSetupCustomId("1", "manage:reset:confirm"),
+			buildSettingsCustomId("1", "manage:reset:confirm"),
 		);
 		expect(serialized).not.toContain(
-			buildSetupCustomId("1", "manage:reset:open"),
+			buildSettingsCustomId("1", "manage:reset:open"),
 		);
 	});
 });
@@ -255,7 +255,7 @@ describe("buildTestPage", () => {
 			custom_id: string;
 			options: unknown[];
 		};
-		expect(select.custom_id).toBe(buildSetupCustomId("1", "test:select"));
+		expect(select.custom_id).toBe(buildSettingsCustomId("1", "test:select"));
 		expect(select.options).toHaveLength(2);
 	});
 });

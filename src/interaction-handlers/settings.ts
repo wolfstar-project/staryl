@@ -1,4 +1,4 @@
-import type { SetupMenuContext } from "#utils/setupMenu";
+import type { SettingsMenuContext } from "#utils/settingsMenu";
 import type { ModalSubmitInteraction } from "@wolfstar/http-framework";
 import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import type { APIModalSubmissionComponent } from "discord-api-types/v10";
@@ -12,16 +12,17 @@ import {
 	resetGuildSubscriptions,
 	testSubscriptionDelivery,
 } from "#twitch/subscriptions";
+import { getSettingsSubscriptionCount } from "#utils/settingsCounts";
 import {
 	buildAddModal,
-	buildClosedSetupMenu,
-	buildSetupMenu,
+	buildClosedSettingsMenu,
+	buildSettingsMenu,
 	buildSubscriptionKey,
-	isSetupPage,
+	isSettingsPage,
 	parseSubscriptionKey,
-} from "#utils/setupMenu";
+} from "#utils/settingsMenu";
+import { handleSocialSettings } from "#utils/socialSettingsActions";
 import { channelMention } from "@discordjs/formatters";
-import { Result } from "@sapphire/result";
 import { cast } from "@sapphire/utilities";
 import { InteractionHandler } from "@wolfstar/http-framework";
 import { getSupportedLanguageT } from "@wolfstar/plugin-i18next";
@@ -34,7 +35,7 @@ import {
 
 /**
  * Whether the interacting member currently holds Manage Server (or Administrator, which implies
- * it), re-checked on every privileged action instead of trusting the owner id alone: `/setup` is
+ * it), re-checked on every privileged action instead of trusting the owner id alone: `/settings` is
  * Manage Server-gated at invocation, but a still-open menu outlives that single check, so a member
  * who loses the role afterwards must not keep the ability to add, remove, reset, or test
  * subscriptions through it.
@@ -92,31 +93,55 @@ export class UserInteractionHandler extends InteractionHandler {
 		const [ownerId, action] = customIdParts;
 		if (typeof ownerId !== "string" || typeof action !== "string") {
 			return interaction.reply({
-				content: t("commands/setup:errors.invalid"),
+				content: t("commands/settings:errors.invalid"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		if (interaction.user.id !== ownerId) {
 			return interaction.reply({
-				content: t("commands/setup:errors.ownerOnly"),
+				content: t("commands/settings:errors.ownerOnly"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		if (!hasManageGuildPermission(interaction)) {
 			return interaction.reply({
-				content: t("commands/setup:errors.permissionRevoked"),
+				content: t("commands/settings:errors.permissionRevoked"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
+
+		const pageMatch = /^(manage|test):page:(\d+)$/.exec(action);
+		if (pageMatch) {
+			const deferred = await interaction.deferUpdate();
+			const loaded = await this.#loadManageContext(interaction, t);
+			return deferred.update(
+				buildSettingsMenu(
+					{
+						page: pageMatch[1] as "manage" | "test",
+						userId: ownerId,
+						subscriptionCount: loaded.count,
+						pageIndex: Number(pageMatch[2]),
+						notice: loaded.loadFailed
+							? cast<string>(t("commands/twitch:testFailed"))
+							: undefined,
+					},
+					t,
+					loaded.context,
+				),
+			);
+		}
+
+		if (action.startsWith("social:"))
+			return handleSocialSettings(interaction, ownerId, action, t);
 
 		// The modal submission for "add:submit" is routed to this same handler; every other action
 		// only ever arrives as a message component interaction.
 		if (interaction.type === InteractionType.ModalSubmit) {
 			if (action !== "add:submit") {
 				return interaction.reply({
-					content: t("commands/setup:errors.actionUnavailable"),
+					content: t("commands/settings:errors.actionUnavailable"),
 					flags: MessageFlags.Ephemeral,
 				});
 			}
@@ -124,7 +149,10 @@ export class UserInteractionHandler extends InteractionHandler {
 			return this.#handleAddSubmit(interaction, ownerId, t);
 		}
 
-		if (action === "close") return interaction.update(buildClosedSetupMenu(t));
+		if (["view:add", "view:manage", "view:test"].includes(action))
+			return this.#handleNavigate(interaction, ownerId, t, action.slice(5));
+		if (action === "close")
+			return interaction.update(buildClosedSettingsMenu(t));
 		if (action === "navigate")
 			return this.#handleNavigate(interaction, ownerId, t);
 		if (action === "add:open") {
@@ -144,7 +172,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		}
 
 		return interaction.reply({
-			content: t("commands/setup:errors.actionUnavailable"),
+			content: t("commands/settings:errors.actionUnavailable"),
 			flags: MessageFlags.Ephemeral,
 		});
 	}
@@ -153,20 +181,31 @@ export class UserInteractionHandler extends InteractionHandler {
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
 		t: TFunction<AnyNamespace>,
+		requestedPage?: string,
 	) {
 		const selectInteraction =
 			cast<InteractionHandler.SelectMenuInteraction>(interaction);
-		if (selectInteraction.data.component_type !== ComponentType.StringSelect) {
+		if (
+			!requestedPage &&
+			selectInteraction.data.component_type !== ComponentType.StringSelect
+		) {
 			return interaction.reply({
-				content: t("commands/setup:errors.actionUnavailable"),
+				content: t("commands/settings:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
 
-		const page = cast<string[]>(selectInteraction.values)[0];
-		if (page === undefined || !isSetupPage(page)) {
+		const page = requestedPage ?? cast<string[]>(selectInteraction.values)[0];
+		if (page?.startsWith("social:"))
+			return handleSocialSettings(
+				interaction,
+				ownerId,
+				`social:page:${page.slice(7)}:0`,
+				t,
+			);
+		if (page === undefined || !isSettingsPage(page)) {
 			return interaction.reply({
-				content: t("commands/setup:errors.sectionUnavailable"),
+				content: t("commands/settings:errors.sectionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
@@ -178,7 +217,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		if (page === "manage" || page === "test") {
 			const { count, context } = await this.#loadManageContext(interaction, t);
 			return deferred.update(
-				buildSetupMenu(
+				buildSettingsMenu(
 					{ page, subscriptionCount: count, userId: ownerId },
 					t,
 					context,
@@ -188,7 +227,7 @@ export class UserInteractionHandler extends InteractionHandler {
 
 		const count = await this.#getSubscriptionCount(interaction);
 		return deferred.update(
-			buildSetupMenu({ page, subscriptionCount: count, userId: ownerId }, t),
+			buildSettingsMenu({ page, subscriptionCount: count, userId: ownerId }, t),
 		);
 	}
 
@@ -221,12 +260,12 @@ export class UserInteractionHandler extends InteractionHandler {
 		if (channelId === undefined || streamerLogin.length === 0) {
 			const count = await this.#getSubscriptionCount(interaction);
 			return modalInteraction.update(
-				buildSetupMenu(
+				buildSettingsMenu(
 					{
 						page: "add",
 						subscriptionCount: count,
 						userId: ownerId,
-						notice: cast<string>(t("commands/setup:errors.invalid")),
+						notice: cast<string>(t("commands/settings:errors.invalid")),
 					},
 					t,
 				),
@@ -245,7 +284,7 @@ export class UserInteractionHandler extends InteractionHandler {
 			const notice = cast<string>(t(result.unwrapErr()));
 			const count = await this.#getSubscriptionCount(interaction);
 			return modalInteraction.update(
-				buildSetupMenu(
+				buildSettingsMenu(
 					{ page: "add", subscriptionCount: count, userId: ownerId, notice },
 					t,
 				),
@@ -257,12 +296,15 @@ export class UserInteractionHandler extends InteractionHandler {
 			type === TwitchSubscriptionType.StreamOnline
 				? "commands/twitch:addSuccessLive"
 				: "commands/twitch:addSuccessOffline",
-			undefined,
-			{ name: streamer.display_name, channel: channelMention(channelId) },
+			{
+				GREENTICK: "✅",
+				name: streamer.display_name,
+				channel: channelMention(channelId),
+			},
 		);
 		const count = await this.#getSubscriptionCount(interaction);
 		return modalInteraction.update(
-			buildSetupMenu(
+			buildSettingsMenu(
 				{ page: "add", subscriptionCount: count, userId: ownerId, notice },
 				t,
 			),
@@ -278,7 +320,7 @@ export class UserInteractionHandler extends InteractionHandler {
 			cast<InteractionHandler.SelectMenuInteraction>(interaction);
 		if (selectInteraction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
-				content: t("commands/setup:errors.actionUnavailable"),
+				content: t("commands/settings:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
@@ -287,7 +329,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		const loaded = await this.#loadManageContext(interaction, t);
 		if (loaded.loadFailed) {
 			return interaction.update(
-				buildSetupMenu(
+				buildSettingsMenu(
 					{
 						page: "manage",
 						subscriptionCount: loaded.count,
@@ -313,7 +355,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		const resetResult = await resetGuildSubscriptions(matched);
 		if (resetResult.isErr()) {
 			this.container.logger.error(
-				`[setup] Failed to remove the selected subscriptions for guild ${interaction.guildId}`,
+				`[settings] Failed to remove the selected subscriptions for guild ${interaction.guildId}`,
 				resetResult.unwrapErr(),
 			);
 		}
@@ -322,10 +364,12 @@ export class UserInteractionHandler extends InteractionHandler {
 		const notice = cast<string>(
 			resetResult.isErr()
 				? t("commands/twitch:removeFailed")
-				: t("commands/setup:manage.removeSuccess", { count: matched.length }),
+				: t("commands/settings:manage.removeSuccess", {
+						count: matched.length,
+					}),
 		);
 		return interaction.update(
-			buildSetupMenu(
+			buildSettingsMenu(
 				{
 					page: "manage",
 					subscriptionCount: refreshed.count,
@@ -345,7 +389,7 @@ export class UserInteractionHandler extends InteractionHandler {
 	) {
 		const { count, context } = await this.#loadManageContext(interaction, t);
 		return interaction.update(
-			buildSetupMenu(
+			buildSettingsMenu(
 				{
 					page: "manage",
 					subscriptionCount: count,
@@ -366,7 +410,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		const loaded = await this.#loadManageContext(interaction, t);
 		if (loaded.loadFailed) {
 			return interaction.update(
-				buildSetupMenu(
+				buildSettingsMenu(
 					{
 						page: "manage",
 						subscriptionCount: loaded.count,
@@ -384,7 +428,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		const resetResult = await resetGuildSubscriptions(context.subscriptions);
 		if (resetResult.isErr()) {
 			this.container.logger.error(
-				`[setup] Failed to reset the subscriptions for guild ${interaction.guildId}`,
+				`[settings] Failed to reset the subscriptions for guild ${interaction.guildId}`,
 				resetResult.unwrapErr(),
 			);
 		}
@@ -392,9 +436,9 @@ export class UserInteractionHandler extends InteractionHandler {
 		const refreshed = await this.#loadManageContext(interaction, t);
 		const notice = resetResult.isErr()
 			? t("commands/twitch:resetFailed")
-			: t("commands/twitch:resetSuccess", undefined, { count });
+			: t("commands/twitch:resetSuccess", { GREENTICK: "✅", count });
 		return interaction.update(
-			buildSetupMenu(
+			buildSettingsMenu(
 				{
 					page: "manage",
 					subscriptionCount: refreshed.count,
@@ -416,7 +460,7 @@ export class UserInteractionHandler extends InteractionHandler {
 			cast<InteractionHandler.SelectMenuInteraction>(interaction);
 		if (selectInteraction.data.component_type !== ComponentType.StringSelect) {
 			return interaction.reply({
-				content: t("commands/setup:errors.actionUnavailable"),
+				content: t("commands/settings:errors.actionUnavailable"),
 				flags: MessageFlags.Ephemeral,
 			});
 		}
@@ -439,7 +483,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		if (loadFailed) {
 			notice = t("commands/twitch:testFailed");
 		} else if (!subscription) {
-			notice = t("commands/setup:errors.sectionUnavailable");
+			notice = t("commands/settings:errors.sectionUnavailable");
 		} else {
 			const streamer = await getStreamerById(
 				subscription.twitchSubscription.streamerId,
@@ -455,14 +499,17 @@ export class UserInteractionHandler extends InteractionHandler {
 					deliveryResult.isErr()
 						? DeliveryErrorKeys[deliveryResult.unwrapErr()]
 						: "commands/twitch:testSuccess",
-					undefined,
-					{ channel: channelMention(subscription.channelId.toString()) },
+					{
+						REDCROSS: "❌",
+						GREENTICK: "✅",
+						channel: channelMention(subscription.channelId.toString()),
+					},
 				);
 			}
 		}
 
 		return interaction.update(
-			buildSetupMenu(
+			buildSettingsMenu(
 				{ page: "test", subscriptionCount: count, userId: ownerId, notice },
 				t,
 				context,
@@ -475,14 +522,12 @@ export class UserInteractionHandler extends InteractionHandler {
 	): Promise<number> {
 		if (!interaction.inGuild()) return 0;
 
-		const result = await Result.fromAsync(() =>
-			this.container.prisma.guildSubscription.count({
-				where: { guildId: BigInt(interaction.guildId) },
-			}),
+		const result = await getSettingsSubscriptionCount(
+			BigInt(interaction.guildId),
 		);
 		if (result.isErr()) {
 			this.container.logger.error(
-				`[setup] Failed to refresh subscriptions for guild ${interaction.guildId}`,
+				`[settings] Failed to refresh subscriptions for guild ${interaction.guildId}`,
 				result.unwrapErr(),
 			);
 		}
@@ -504,7 +549,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		t: TFunction<AnyNamespace>,
 	): Promise<{
 		count: number;
-		context: SetupMenuContext;
+		context: SettingsMenuContext;
 		loadFailed: boolean;
 	}> {
 		if (!interaction.inGuild()) {
@@ -523,7 +568,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		const subscriptionsResult = await getGuildSubscriptions(guildId);
 		if (subscriptionsResult.isErr()) {
 			this.container.logger.error(
-				`[setup] Failed to load subscriptions for guild ${interaction.guildId}`,
+				`[settings] Failed to load subscriptions for guild ${interaction.guildId}`,
 				subscriptionsResult.unwrapErr(),
 			);
 		}

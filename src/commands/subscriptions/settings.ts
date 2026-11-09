@@ -1,5 +1,9 @@
-import { buildSetupMenu, SetupInteractionHandlerName } from "#utils/setupMenu";
-import { Result } from "@sapphire/result";
+import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
+import { getSettingsSubscriptionCount } from "#utils/settingsCounts";
+import {
+	buildSettingsMenu,
+	SettingsInteractionHandlerName,
+} from "#utils/settingsMenu";
 import { cast } from "@sapphire/utilities";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import {
@@ -16,8 +20,8 @@ import {
 @RegisterCommand((builder) =>
 	applyLocalizedBuilder(
 		builder,
-		"commands/setup:name",
-		"commands/setup:description",
+		"commands/settings:name",
+		"commands/settings:description",
 	)
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
 		.setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
@@ -34,20 +38,18 @@ export class UserCommand extends Command {
 		// instead of the menu.
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 
-		const t = getSupportedLanguageT(interaction);
-		const subscriptionCountResult = await Result.fromAsync(() =>
-			this.container.prisma.guildSubscription.count({
-				where: { guildId: BigInt(interaction.guildId) },
-			}),
+		const t = cast<TFunction<AnyNamespace>>(getSupportedLanguageT(interaction));
+		const subscriptionCountResult = await getSettingsSubscriptionCount(
+			BigInt(interaction.guildId),
 		);
 		if (subscriptionCountResult.isErr()) {
 			this.container.logger.error(
-				`[${SetupInteractionHandlerName}] Failed to read subscriptions for guild ${interaction.guildId}`,
+				`[${SettingsInteractionHandlerName}] Failed to read subscriptions for guild ${interaction.guildId}`,
 				subscriptionCountResult.unwrapErr(),
 			);
 		}
 
-		const menu = buildSetupMenu(
+		const menu = buildSettingsMenu(
 			{
 				page: "overview",
 				// A failed count still needs a number to render, but must not read as "no
