@@ -13,6 +13,7 @@ import {
 	parseImageUrl,
 	parseItemUrl,
 } from "#social/notifications";
+import { parseTwitchLogin } from "#twitch/target";
 import { err, ok, Result as ResultNamespace } from "@sapphire/result";
 import { Time } from "@sapphire/time-utilities";
 import {
@@ -22,8 +23,6 @@ import {
 	TwitchBrandingColor,
 } from "@wolfstar/twitch-helpers";
 
-const LoginPattern =
-	/^(?:(?:https?:\/\/)?(?:www\.|m\.)?twitch\.tv\/)?(\w{3,25})\/?$/i;
 const PageSize = 20;
 /**
  * Helix ranks clips by views, with no way to ask for the newest. A short window and a full page keep
@@ -157,12 +156,12 @@ export function createTwitchClipsProvider(
 }
 
 async function validateTarget(input: string) {
-	const login = LoginPattern.exec(input)?.[1];
+	const login = parseTwitchLogin(input);
 	if (!login) return err<TargetError>({ _tag: "InvalidTarget" });
 
 	// `Result.fromAsync` flattens the `FetchResult` and also catches the throw for missing credentials.
 	const result = await ResultNamespace.fromAsync(() =>
-		fetchUsers({ logins: [login.toLowerCase()] }),
+		fetchUsers({ logins: [login] }),
 	);
 	if (result.isErr()) return err<TargetError>({ _tag: "TargetUnreachable" });
 

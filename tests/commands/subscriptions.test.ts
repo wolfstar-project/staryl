@@ -1483,6 +1483,43 @@ describe("Twitch media commands", () => {
 		expect(addEventSubscription).not.toHaveBeenCalled();
 		expect(patchedContent()).toContain("Success!");
 	});
+	it.each(["remove", "test"])(
+		"normalizes a channel URL before resolving the streamer for %s",
+		async (action) => {
+			prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+				subscription(),
+			]);
+			vi.mocked(fetchUsers).mockImplementation(
+				async (options) =>
+					ok({
+						data:
+							options.logins?.[0] === "coolstreamer"
+								? [
+										{
+											id: StreamerId,
+											login: "coolstreamer",
+											display_name: StreamerDisplayName,
+										},
+									]
+								: [],
+					}) as never,
+			);
+			await runner.run(
+				buildInteraction(
+					action,
+					[
+						streamerOption("https://www.twitch.tv/CoolStreamer/"),
+						channelOption(ChannelId),
+						typeOption("video"),
+					],
+					channelResolved(),
+				),
+			);
+			expect(fetchUsers).toHaveBeenCalledWith({ logins: ["coolstreamer"] });
+			expect(patchedContent()).not.toContain("could not find the streamer");
+		},
+	);
+
 	it("removes a video subscription by streamer and channel", async () => {
 		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
 			subscription(),

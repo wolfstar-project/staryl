@@ -316,7 +316,12 @@ export function buildTestPage(
 	const selectRow =
 		new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
 			new StringSelectMenuBuilder()
-				.setCustomId(buildSettingsCustomId(state.userId, "test:select"))
+				.setCustomId(
+					buildSettingsCustomId(
+						state.userId,
+						`test:select:${getSettingsPageIndex(state, subscriptions.length)}`,
+					),
+				)
 				.setPlaceholder(
 					cast<string>(t("commands/settings:test.selectPlaceholder")),
 				)

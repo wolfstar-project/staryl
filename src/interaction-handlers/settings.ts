@@ -167,8 +167,14 @@ export class UserInteractionHandler extends InteractionHandler {
 		if (action === "manage:reset:confirm") {
 			return this.#handleManageResetConfirm(interaction, ownerId, t);
 		}
-		if (action === "test:select") {
-			return this.#handleTestSelect(interaction, ownerId, t);
+		const testSelect = /^test:select(?::(\d+))?$/.exec(action);
+		if (testSelect) {
+			return this.#handleTestSelect(
+				interaction,
+				ownerId,
+				t,
+				Number(testSelect[1] ?? 0),
+			);
 		}
 
 		return interaction.reply({
@@ -455,6 +461,7 @@ export class UserInteractionHandler extends InteractionHandler {
 		interaction: InteractionHandler.Interaction,
 		ownerId: string,
 		t: TFunction<AnyNamespace>,
+		pageIndex: number,
 	) {
 		const selectInteraction =
 			cast<InteractionHandler.SelectMenuInteraction>(interaction);
@@ -510,7 +517,13 @@ export class UserInteractionHandler extends InteractionHandler {
 
 		return interaction.update(
 			buildSettingsMenu(
-				{ page: "test", subscriptionCount: count, userId: ownerId, notice },
+				{
+					page: "test",
+					subscriptionCount: count,
+					userId: ownerId,
+					notice,
+					pageIndex,
+				},
 				t,
 				context,
 			),

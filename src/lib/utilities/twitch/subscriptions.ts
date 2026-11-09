@@ -16,6 +16,7 @@ import {
 	sendOnlineNotification,
 } from "#twitch/notifications";
 import { handleSubscriptionRevoked } from "#twitch/revocations";
+import { parseTwitchLogin } from "#twitch/target";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import {
 	SlashCommandChannelOption,
@@ -321,11 +322,11 @@ export async function resolveSubscription(
 }
 
 export async function getStreamer(streamerName: string) {
+	const login = parseTwitchLogin(streamerName);
+	if (!login) return null;
 	// `Result.fromAsync` flattens the returned `FetchResult` and additionally catches the errors
 	// `fetchUsers` throws when the Twitch client credentials are missing.
-	const result = await Result.fromAsync(() =>
-		fetchUsers({ logins: [streamerName] }),
-	);
+	const result = await Result.fromAsync(() => fetchUsers({ logins: [login] }));
 	if (result.isErr()) {
 		container.logger.error(
 			`[twitch-subscriptions] Failed to look up the streamer "${streamerName}"`,

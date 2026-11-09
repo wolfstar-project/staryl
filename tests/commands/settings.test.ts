@@ -1,5 +1,6 @@
 import type { GuildSubscriptionWithTwitch } from "#twitch/subscriptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
+import { SocialProviders } from "#social/registry";
 import {
 	buildSettingsCustomId,
 	buildSubscriptionKey,
@@ -23,7 +24,15 @@ import {
 	MessageFlags,
 	PermissionFlagsBits,
 } from "discord-api-types/v10";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { UserCommand } from "../../src/commands/subscriptions/settings.ts";
 import { UserInteractionHandler } from "../../src/interaction-handlers/settings.ts";
 
@@ -40,6 +49,10 @@ vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 		getRequest: vi.fn(),
 	};
 });
+
+const publicFetchMock = vi.hoisted(() => vi.fn());
+vi.mock("#social/publicFetch", () => ({ fetchPublicUrl: publicFetchMock }));
+afterEach(() => vi.restoreAllMocks());
 
 const apiMock = vi.hoisted(() => ({
 	guilds: {
@@ -72,6 +85,8 @@ const BotRoleId = "900000000000000001";
 
 const prismaMock = {
 	guildSocialSubscription: {
+		findFirst: vi.fn(),
+		create: vi.fn(),
 		count: vi.fn(),
 		findMany: vi.fn(),
 		update: vi.fn(),
@@ -103,6 +118,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
 	vi.clearAllMocks();
+	prismaMock.guildSocialSubscription.findFirst.mockResolvedValue(null);
+	prismaMock.guildSocialSubscription.create.mockResolvedValue({});
 	prismaMock.guildSocialSubscription.count.mockResolvedValue(0);
 	prismaMock.guildSocialSubscription.findMany.mockResolvedValue([]);
 	vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(true);
@@ -884,5 +901,92 @@ describe("settings generated controls", () => {
 		const body = JSON.stringify(patchedBody());
 		expect(body).toContain(`${ChannelId}:26`);
 		expect(body).not.toContain(`"value":"${ChannelId}:1"`);
+	});
+});
+
+describe("settings review regressions", () => {
+	it("keeps the Twitch test page after choosing a notification on page two", async () => {
+		prismaMock.guildSubscription.findMany.mockResolvedValue(
+			Array.from({ length: 26 }, (_, index) =>
+				buildSubscription({
+					subscriptionId: BigInt(index + 1),
+					twitchSubscription: {
+						...buildSubscription().twitchSubscription,
+						id: BigInt(index + 1),
+					},
+				}),
+			),
+		);
+		vi.mocked(fetchUsers).mockResolvedValue(ok({ data: [] }) as never);
+		await runner.run(buttonInteraction("test:page:1") as never);
+		const component = patchedBody().components?.[0] as {
+			components: { components?: { custom_id: string }[] }[];
+		};
+		const select = component.components
+			.flatMap((row) => row.components ?? [])
+			.find((control) => control.custom_id.includes("test:select"))!;
+		const result = await runner.run(
+			selectInteraction(select.custom_id.split(".").at(-1)!, [
+				buildSubscriptionKey(BigInt(ChannelId), 26n),
+			]) as never,
+		);
+		expect(JSON.stringify(result.json())).toContain("2 / 2");
+	});
+	it("renders the actual X account limit in the settings add notice", async () => {
+		const provider = SocialProviders.find((entry) => entry.name === "X")!;
+		vi.spyOn(provider, "getAuthRequirements").mockReturnValue({
+			variables: [],
+			satisfied: true,
+		});
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue(
+			["first", "second"].map((target, index) => ({
+				guildId: BigInt(GuildId),
+				channelId: BigInt(ChannelId),
+				sourceId: BigInt(index + 1),
+				source: {
+					id: BigInt(index + 1),
+					provider: "X",
+					target,
+					displayName: target,
+					lastFailure: null,
+					failureCount: 0,
+				},
+			})),
+		);
+		const interaction = modalInteraction([
+			{ custom_id: "target", value: "third" },
+			{ custom_id: "channel", values: [ChannelId] },
+		]);
+		interaction.data.custom_id = buildSettingsCustomId(OwnerId, "social:add:X");
+		await runner.run(interaction as never);
+		const notice = JSON.stringify(patchedBody());
+		expect(notice).toContain("maximum of 2 X accounts");
+		expect(notice).not.toContain("{{maximum}}");
+	});
+	it("escapes a feed title in the settings success notice", async () => {
+		publicFetchMock.mockResolvedValue(
+			ok({
+				status: 200,
+				url: "https://example.com/feed",
+				headers: {},
+				body: "<rss><channel><title>[a](https://example.com)</title></channel></rss>",
+			}),
+		);
+		const interaction = modalInteraction([
+			{ custom_id: "target", value: "https://example.com/feed" },
+			{ custom_id: "channel", values: [ChannelId] },
+		]);
+		interaction.data.custom_id = buildSettingsCustomId(
+			OwnerId,
+			"social:add:Rss",
+		);
+		await runner.run(interaction as never);
+		const component = patchedBody().components?.[0] as {
+			components: { content?: string }[];
+		};
+		const notice = component.components
+			.map((entry) => entry.content ?? "")
+			.join("\n");
+		expect(notice).toContain("\\[a\\](https://example.com)");
 	});
 });

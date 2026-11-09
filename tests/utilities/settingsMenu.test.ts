@@ -255,7 +255,7 @@ describe("buildTestPage", () => {
 			custom_id: string;
 			options: unknown[];
 		};
-		expect(select.custom_id).toBe(buildSettingsCustomId("1", "test:select"));
+		expect(select.custom_id).toBe(buildSettingsCustomId("1", "test:select:0"));
 		expect(select.options).toHaveLength(2);
 	});
 });

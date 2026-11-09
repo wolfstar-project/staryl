@@ -4,8 +4,10 @@ import type {
 } from "@wolfstar/http-framework";
 import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import { DefaultSocialFilters } from "#social/filters";
+import { escapeInlineText } from "#social/notifications";
 import {
 	addSocialSubscription,
+	MaximumXAccountsPerGuild,
 	getGuildSocialSubscriptions,
 	removeSocialSubscription,
 	testSocialSubscription,
@@ -180,11 +182,16 @@ export async function handleSocialSettings(
 					filters: DefaultSocialFilters,
 				});
 				notice = result.isErr()
-					? cast<string>(t(result.unwrapErr()))
+					? cast<string>(
+							t(result.unwrapErr(), {
+								REDCROSS: "❌",
+								maximum: MaximumXAccountsPerGuild,
+							}),
+						)
 					: cast<string>(
 							t("commands/social:addSuccess", {
 								GREENTICK: "✅",
-								name: result.unwrap().displayName,
+								name: escapeInlineText(result.unwrap().displayName),
 								channel: `<#${channelId}>`,
 							}),
 						);
