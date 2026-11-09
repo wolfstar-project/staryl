@@ -18,23 +18,13 @@ import type { APIChannel } from "discord-api-types/v10";
 import { getActiveFilters } from "#social/filters";
 import { isNsfwChannel, socialDelivery } from "#social/notifications";
 import { parseXHandle } from "#social/providers/x";
-import { getSocialProvider, SocialProviders } from "#social/registry";
+import { getSocialProvider } from "#social/registry";
 import { MaximumFetchedItems, toSeenId } from "#social/seen";
 import { SlashCommandStringOption } from "@discordjs/builders";
 import { err, ok, Result } from "@sapphire/result";
 import { cast, cutText } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
-import {
-	applyLocalizedBuilder,
-	createSelectMenuChoiceName,
-} from "@wolfstar/plugin-i18next";
-
-/**
- * The name of the subcommand group holding the social subcommands.
- *
- * Must match the group declared on the parent command.
- */
-export const SocialGroupName = "social";
+import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
 
 /**
  * A guild can follow this many sources. Each one costs requests to a third party on a timer, so
@@ -105,25 +95,6 @@ const TargetErrorKeys = {
 	TargetUnsupported: "commands/social:addTargetUnsupported",
 	TargetUnreachable: "commands/social:addTargetUnreachable",
 } as const satisfies Record<TargetError["_tag"], AddSocialSubscriptionError>;
-
-export function createProviderOption() {
-	return applyLocalizedBuilder(
-		new SlashCommandStringOption(),
-		"commands/social:optionsProviderName",
-		"commands/social:optionsProviderDescription",
-	)
-		.setRequired(true)
-		.addChoices(
-			...SocialProviders.map(({ name }) =>
-				createSelectMenuChoiceName(
-					cast<"commands/social:providerRss">(
-						`commands/social:provider${name}`,
-					),
-					{ value: name },
-				),
-			),
-		);
-}
 
 export function createSourceOption() {
 	return applyLocalizedBuilder(

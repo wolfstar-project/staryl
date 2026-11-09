@@ -1,14 +1,18 @@
-import type { TwitchSubscriptionOptions } from "#twitch/subscriptions";
+import type { TwitchEventOptions } from "#utils/twitchCommandOptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	addSubscription,
 	createChannelOption,
 	createStreamerOption,
-	createTypeChoiceOption,
 	MaximumMessageLength,
 	SubscriptionsCommandName,
 	TwitchGroupName,
 } from "#twitch/subscriptions";
+import {
+	createTwitchEventOption,
+	getTwitchLiveType,
+} from "#utils/twitchCommandOptions";
+import { runTwitchMediaAction } from "#utils/twitchMediaCommands";
 import { channelMention } from "@discordjs/formatters";
 import {
 	applyLocalizedBuilder,
@@ -31,7 +35,7 @@ import { MessageFlags } from "discord-api-types/v10";
 		)
 			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
-			.addStringOption(createTypeChoiceOption().setRequired(true))
+			.addStringOption(createTwitchEventOption())
 			.addStringOption((option) =>
 				applyLocalizedBuilder(
 					option,
@@ -40,15 +44,42 @@ import { MessageFlags } from "discord-api-types/v10";
 				)
 					.setMaxLength(MaximumMessageLength)
 					.setRequired(false),
+			)
+			.addStringOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsKeywordsName",
+					"commands/social:optionsKeywordsDescription",
+				).setMaxLength(500),
+			)
+			.addStringOption((option) =>
+				applyLocalizedBuilder(
+					option,
+					"commands/social:optionsExcludeKeywordsName",
+					"commands/social:optionsExcludeKeywordsDescription",
+				).setMaxLength(500),
 			),
 )
 export class UserCommand extends Command {
 	public override async chatInputRun(
 		interaction: Command.ChatInputInteraction,
-		options: TwitchSubscriptionOptions,
+		options: TwitchEventOptions,
 	) {
+		if (options.event === "video" || options.event === "clip") {
+			return runTwitchMediaAction(this, interaction, options, "add");
+		}
+
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
-		const { channel, type, message } = options;
+		if (options.keywords || options.exclude_keywords)
+			return deferred.update({
+				content: await resolveKey(
+					interaction,
+					"commands/social:addFilterUnsupported",
+				),
+			});
+
+		const { channel, message } = options;
+		const type = getTwitchLiveType(options.event);
 
 		const guildId = BigInt(interaction.guildId!);
 		const channelId = BigInt(channel.id);
@@ -58,7 +89,7 @@ export class UserCommand extends Command {
 			channelId,
 			options.streamer,
 			type,
-			message,
+			message ?? null,
 		);
 		if (result.isErr()) {
 			return deferred.update({
@@ -72,8 +103,11 @@ export class UserCommand extends Command {
 			type === TwitchSubscriptionType.StreamOnline
 				? "commands/twitch:addSuccessLive"
 				: "commands/twitch:addSuccessOffline",
-			undefined,
-			{ name: streamer.display_name, channel: channelMention(channel.id) },
+			{
+				GREENTICK: "✅",
+				name: streamer.display_name,
+				channel: channelMention(channel.id),
+			},
 		);
 
 		return deferred.update({ content });

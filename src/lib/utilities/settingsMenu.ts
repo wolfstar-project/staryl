@@ -3,6 +3,7 @@ import type { MessageActionRowComponentBuilder } from "@discordjs/builders";
 import type { ModalResponseData } from "@wolfstar/http-framework";
 import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
 import { TwitchSubscriptionType } from "#generated/prisma";
+import { SocialProviders } from "#social/registry";
 import {
 	getSubscriptionStatus,
 	MaximumMessageLength,
@@ -24,19 +25,15 @@ import {
 	TextInputStyle,
 } from "discord-api-types/v10";
 
-export const SetupInteractionHandlerName = "setup";
+export const SettingsInteractionHandlerName = "settings";
 
-/**
- * Discord rejects a string select with more than 25 options, so Manage/Test cap the subscriptions
- * they render to the first {@link MaximumSelectOptions}; subscriptions beyond that stay reachable
- * through `/subscriptions twitch remove|reset|test`, which have no such limit.
- */
 export const MaximumSelectOptions = 25;
 
-export type SetupPage = "overview" | "add" | "manage" | "test";
+export type SettingsPage = "overview" | "twitch" | "add" | "manage" | "test";
 
-export interface SetupMenuState {
-	page: SetupPage;
+export interface SettingsMenuState {
+	page: SettingsPage;
+	pageIndex?: number;
 	subscriptionCount: number;
 	userId: string;
 	/** Pre-rendered banner text interpolated into the page body; empty when there is nothing to show. */
@@ -45,23 +42,24 @@ export interface SetupMenuState {
 	confirmingReset?: boolean;
 }
 
-export interface SetupMenuPayload {
+export interface SettingsMenuPayload {
 	components: ReturnType<ContainerBuilder["toJSON"]>[];
 	flags: MessageFlags.IsComponentsV2;
+	allowed_mentions?: { parse: [] };
 }
 
 /**
  * The subscription data a menu page needs to render its options. Defaults to empty so callers on
- * pages that don't need subscription data (Overview, Add) can call {@link buildSetupMenu} with just
+ * pages that don't need subscription data (Overview, Add) can call {@link buildSettingsMenu} with just
  * a state and a `t` function.
  */
-export interface SetupMenuContext {
+export interface SettingsMenuContext {
 	subscriptions: GuildSubscriptionWithTwitch[];
 	streamerNames: ReadonlyMap<string, string>;
 	statuses: { live: string; offline: string };
 }
 
-const EmptySetupMenuContext: SetupMenuContext = {
+const EmptySettingsMenuContext: SettingsMenuContext = {
 	subscriptions: [],
 	streamerNames: new Map(),
 	statuses: { live: "", offline: "" },
@@ -71,23 +69,24 @@ const EmptySetupMenuContext: SetupMenuContext = {
  * The JSON shape produced by an {@link ActionRowBuilder} holding message (not modal) components,
  * i.e. what {@link ContainerBuilder.addActionRowComponents} accepts back.
  */
-type SetupMenuActionRow = ReturnType<
+type SettingsMenuActionRow = ReturnType<
 	ActionRowBuilder<MessageActionRowComponentBuilder>["toJSON"]
 >;
 
-const SetupPages: ReadonlySet<SetupPage> = new Set([
+const SettingsPages: ReadonlySet<SettingsPage> = new Set([
+	"twitch",
 	"overview",
 	"add",
 	"manage",
 	"test",
 ]);
 
-export function isSetupPage(value: string): value is SetupPage {
-	return SetupPages.has(value as SetupPage);
+export function isSettingsPage(value: string): value is SettingsPage {
+	return SettingsPages.has(value as SettingsPage);
 }
 
-export function buildSetupCustomId(userId: string, action: string): string {
-	return `${SetupInteractionHandlerName}.${userId}.${action}`;
+export function buildSettingsCustomId(userId: string, action: string): string {
+	return `${SettingsInteractionHandlerName}.${userId}.${action}`;
 }
 
 /**
@@ -134,24 +133,24 @@ export function buildAddModal(
 	t: TFunction<AnyNamespace>,
 ): ModalResponseData {
 	const modal = new ModalBuilder()
-		.setCustomId(buildSetupCustomId(userId, "add:submit"))
-		.setTitle(cast<string>(t("commands/setup:modal.title")))
+		.setCustomId(buildSettingsCustomId(userId, "add:submit"))
+		.setTitle(cast<string>(t("commands/settings:modal.title")))
 		.addLabelComponents(
 			(label) =>
 				label
-					.setLabel(cast<string>(t("commands/setup:modal.streamer.label")))
+					.setLabel(cast<string>(t("commands/settings:modal.streamer.label")))
 					.setTextInputComponent((input) =>
 						input
 							.setCustomId("streamer")
 							.setStyle(TextInputStyle.Short)
 							.setRequired(true)
 							.setPlaceholder(
-								cast<string>(t("commands/setup:modal.streamer.placeholder")),
+								cast<string>(t("commands/settings:modal.streamer.placeholder")),
 							),
 					),
 			(label) =>
 				label
-					.setLabel(cast<string>(t("commands/setup:modal.channel.label")))
+					.setLabel(cast<string>(t("commands/settings:modal.channel.label")))
 					.setChannelSelectMenuComponent((select) =>
 						select
 							.setCustomId("channel")
@@ -163,25 +162,27 @@ export function buildAddModal(
 					),
 			(label) =>
 				label
-					.setLabel(cast<string>(t("commands/setup:modal.type.label")))
+					.setLabel(cast<string>(t("commands/settings:modal.type.label")))
 					.setStringSelectMenuComponent((select) =>
 						select
 							.setCustomId("type")
 							.setRequired(true)
 							.addOptions(
 								{
-									label: cast<string>(t("commands/setup:modal.type.online")),
+									label: cast<string>(t("commands/settings:modal.type.online")),
 									value: TwitchSubscriptionType.StreamOnline,
 								},
 								{
-									label: cast<string>(t("commands/setup:modal.type.offline")),
+									label: cast<string>(
+										t("commands/settings:modal.type.offline"),
+									),
 									value: TwitchSubscriptionType.StreamOffline,
 								},
 							),
 					),
 			(label) =>
 				label
-					.setLabel(cast<string>(t("commands/setup:modal.message.label")))
+					.setLabel(cast<string>(t("commands/settings:modal.message.label")))
 					.setTextInputComponent((input) =>
 						input
 							.setCustomId("message")
@@ -189,7 +190,7 @@ export function buildAddModal(
 							.setRequired(false)
 							.setMaxLength(MaximumMessageLength)
 							.setPlaceholder(
-								cast<string>(t("commands/setup:modal.message.placeholder")),
+								cast<string>(t("commands/settings:modal.message.placeholder")),
 							),
 					),
 		);
@@ -236,23 +237,27 @@ function buildSubscriptionOptions(
  * isn't completely inert (harmless: {@link resetGuildSubscriptions} on an empty list is a no-op).
  */
 export function buildManagePage(
-	state: SetupMenuState,
+	state: SettingsMenuState,
 	subscriptions: GuildSubscriptionWithTwitch[],
 	streamerNames: ReadonlyMap<string, string>,
 	statuses: { live: string; offline: string },
 	t: TFunction<AnyNamespace>,
-): SetupMenuActionRow[] {
-	const rows: SetupMenuActionRow[] = [];
+): SettingsMenuActionRow[] {
+	const rows: SettingsMenuActionRow[] = [];
 
 	if (subscriptions.length > 0) {
-		const selectable = subscriptions.slice(0, MaximumSelectOptions);
+		const selectable = subscriptions.slice(
+			getSettingsPageIndex(state, subscriptions.length) * MaximumSelectOptions,
+			(getSettingsPageIndex(state, subscriptions.length) + 1) *
+				MaximumSelectOptions,
+		);
 		rows.push(
 			new ActionRowBuilder<MessageActionRowComponentBuilder>()
 				.setComponents(
 					new StringSelectMenuBuilder()
-						.setCustomId(buildSetupCustomId(state.userId, "manage:select"))
+						.setCustomId(buildSettingsCustomId(state.userId, "manage:select"))
 						.setPlaceholder(
-							cast<string>(t("commands/setup:manage.selectPlaceholder")),
+							cast<string>(t("commands/settings:manage.selectPlaceholder")),
 						)
 						.setMinValues(1)
 						.setMaxValues(selectable.length)
@@ -268,15 +273,19 @@ export function buildManagePage(
 	if (state.confirmingReset) {
 		buttonsRow.addComponents(
 			new ButtonBuilder()
-				.setCustomId(buildSetupCustomId(state.userId, "manage:reset:confirm"))
-				.setLabel(cast<string>(t("commands/setup:manage.resetConfirmButton")))
+				.setCustomId(
+					buildSettingsCustomId(state.userId, "manage:reset:confirm"),
+				)
+				.setLabel(
+					cast<string>(t("commands/settings:manage.resetConfirmButton")),
+				)
 				.setStyle(ButtonStyle.Danger),
 		);
 	} else {
 		buttonsRow.addComponents(
 			new ButtonBuilder()
-				.setCustomId(buildSetupCustomId(state.userId, "manage:reset:open"))
-				.setLabel(cast<string>(t("commands/setup:manage.resetButton")))
+				.setCustomId(buildSettingsCustomId(state.userId, "manage:reset:open"))
+				.setLabel(cast<string>(t("commands/settings:manage.resetButton")))
 				.setStyle(ButtonStyle.Danger)
 				.setDisabled(subscriptions.length === 0),
 		);
@@ -291,21 +300,30 @@ export function buildManagePage(
  * immediately (mirrors the existing `/subscriptions twitch test` subcommand), so there are no buttons.
  */
 export function buildTestPage(
-	state: SetupMenuState,
+	state: SettingsMenuState,
 	subscriptions: GuildSubscriptionWithTwitch[],
 	streamerNames: ReadonlyMap<string, string>,
 	statuses: { live: string; offline: string },
 	t: TFunction<AnyNamespace>,
-): SetupMenuActionRow[] {
+): SettingsMenuActionRow[] {
 	if (subscriptions.length === 0) return [];
 
-	const selectable = subscriptions.slice(0, MaximumSelectOptions);
+	const selectable = subscriptions.slice(
+		getSettingsPageIndex(state, subscriptions.length) * MaximumSelectOptions,
+		(getSettingsPageIndex(state, subscriptions.length) + 1) *
+			MaximumSelectOptions,
+	);
 	const selectRow =
 		new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
 			new StringSelectMenuBuilder()
-				.setCustomId(buildSetupCustomId(state.userId, "test:select"))
+				.setCustomId(
+					buildSettingsCustomId(
+						state.userId,
+						`test:select:${getSettingsPageIndex(state, subscriptions.length)}`,
+					),
+				)
 				.setPlaceholder(
-					cast<string>(t("commands/setup:test.selectPlaceholder")),
+					cast<string>(t("commands/settings:test.selectPlaceholder")),
 				)
 				.setMinValues(1)
 				.setMaxValues(1)
@@ -318,11 +336,31 @@ export function buildTestPage(
 }
 
 function buildPageRows(
-	state: SetupMenuState,
-	context: SetupMenuContext,
+	state: SettingsMenuState,
+	context: SettingsMenuContext,
 	t: TFunction<AnyNamespace>,
-): SetupMenuActionRow[] {
+): SettingsMenuActionRow[] {
 	switch (state.page) {
+		case "twitch":
+			return [
+				new ActionRowBuilder<MessageActionRowComponentBuilder>()
+					.addComponents(
+						...(["add", "manage", "test"] as const).map((page) =>
+							new ButtonBuilder()
+								.setCustomId(
+									buildSettingsCustomId(state.userId, `view:${page}`),
+								)
+								.setLabel(
+									cast<string>(
+										t(`commands/settings:menu.options.${page}.label`),
+									),
+								)
+								.setStyle(ButtonStyle.Secondary),
+						),
+					)
+					.toJSON(),
+			];
+
 		case "manage":
 			return buildManagePage(
 				state,
@@ -344,9 +382,9 @@ function buildPageRows(
 				new ActionRowBuilder<MessageActionRowComponentBuilder>()
 					.addComponents(
 						new ButtonBuilder()
-							.setCustomId(buildSetupCustomId(state.userId, "add:open"))
+							.setCustomId(buildSettingsCustomId(state.userId, "add:open"))
 							.setLabel(
-								cast<string>(t("commands/setup:menu.options.add.label")),
+								cast<string>(t("commands/settings:menu.options.add.label")),
 							)
 							.setStyle(ButtonStyle.Secondary),
 					)
@@ -357,65 +395,19 @@ function buildPageRows(
 	}
 }
 
-export function buildSetupMenu(
-	state: SetupMenuState,
+export function buildSettingsMenu(
+	state: SettingsMenuState,
 	t: TFunction<AnyNamespace>,
-	context: SetupMenuContext = EmptySetupMenuContext,
-): SetupMenuPayload {
+	context: SettingsMenuContext = EmptySettingsMenuContext,
+): SettingsMenuPayload {
 	const container = new ContainerBuilder()
 		.setAccentColor(9_520_895)
 		.addTextDisplayComponents((textDisplay) =>
 			textDisplay.setContent(renderPage(state, t)),
 		)
 		.addSeparatorComponents((separator) => separator)
-		.addActionRowComponents((row) =>
-			row.setComponents(
-				new StringSelectMenuBuilder()
-					.setCustomId(buildSetupCustomId(state.userId, "navigate"))
-					.setPlaceholder(cast<string>(t("commands/setup:menu.placeholder")))
-					.addOptions(
-						{
-							label: cast<string>(
-								t("commands/setup:menu.options.overview.label"),
-							),
-							value: "overview",
-							description: cast<string>(
-								t("commands/setup:menu.options.overview.description"),
-							),
-							emoji: { name: "🏠" },
-							default: state.page === "overview",
-						},
-						{
-							label: cast<string>(t("commands/setup:menu.options.add.label")),
-							value: "add",
-							description: cast<string>(
-								t("commands/setup:menu.options.add.description"),
-							),
-							emoji: { name: "➕" },
-							default: state.page === "add",
-						},
-						{
-							label: cast<string>(
-								t("commands/setup:menu.options.manage.label"),
-							),
-							value: "manage",
-							description: cast<string>(
-								t("commands/setup:menu.options.manage.description"),
-							),
-							emoji: { name: "⚙️" },
-							default: state.page === "manage",
-						},
-						{
-							label: cast<string>(t("commands/setup:menu.options.test.label")),
-							value: "test",
-							description: cast<string>(
-								t("commands/setup:menu.options.test.description"),
-							),
-							emoji: { name: "🧪" },
-							default: state.page === "test",
-						},
-					),
-			),
+		.addActionRowComponents(
+			buildSettingsNavigation(state.userId, state.page, t),
 		);
 
 	const pageRows = buildPageRows(state, context, t);
@@ -423,11 +415,50 @@ export function buildSetupMenu(
 		container.addActionRowComponents(...pageRows);
 	}
 
+	if (
+		(state.page === "manage" || state.page === "test") &&
+		context.subscriptions.length > MaximumSelectOptions
+	) {
+		const page = getSettingsPageIndex(state, context.subscriptions.length);
+		const pages = Math.ceil(
+			context.subscriptions.length / MaximumSelectOptions,
+		);
+		container.addActionRowComponents((row) =>
+			row.addComponents(
+				new ButtonBuilder()
+					.setCustomId(
+						buildSettingsCustomId(
+							state.userId,
+							`${state.page}:page:${Math.max(0, page - 1)}`,
+						),
+					)
+					.setLabel(cast<string>(t("commands/settings:social.previous")))
+					.setStyle(ButtonStyle.Secondary)
+					.setDisabled(page === 0),
+				new ButtonBuilder()
+					.setCustomId(buildSettingsCustomId(state.userId, "pageIndicator"))
+					.setLabel(`${page + 1} / ${pages}`)
+					.setStyle(ButtonStyle.Secondary)
+					.setDisabled(true),
+				new ButtonBuilder()
+					.setCustomId(
+						buildSettingsCustomId(
+							state.userId,
+							`${state.page}:page:${page + 1}`,
+						),
+					)
+					.setLabel(cast<string>(t("commands/settings:social.next")))
+					.setStyle(ButtonStyle.Secondary)
+					.setDisabled(page === pages - 1),
+			),
+		);
+	}
+
 	container.addActionRowComponents((row) =>
 		row.setComponents(
 			new ButtonBuilder()
-				.setCustomId(buildSetupCustomId(state.userId, "close"))
-				.setLabel(cast<string>(t("commands/setup:menu.close")))
+				.setCustomId(buildSettingsCustomId(state.userId, "close"))
+				.setLabel(cast<string>(t("commands/settings:menu.close")))
 				.setEmoji({ name: "⏹️" })
 				.setStyle(ButtonStyle.Secondary),
 		),
@@ -436,32 +467,78 @@ export function buildSetupMenu(
 	return {
 		components: [container.toJSON()],
 		flags: MessageFlags.IsComponentsV2,
+		allowed_mentions: { parse: [] },
 	};
 }
 
-export function buildClosedSetupMenu(
+export function buildClosedSettingsMenu(
 	t: TFunction<AnyNamespace>,
-): SetupMenuPayload {
+): SettingsMenuPayload {
 	const container = new ContainerBuilder()
 		.setAccentColor(5_793_266)
 		.addTextDisplayComponents((textDisplay) =>
-			textDisplay.setContent(cast<string>(t("commands/setup:closed"))),
+			textDisplay.setContent(cast<string>(t("commands/settings:closed"))),
 		);
 
 	return {
 		components: [container.toJSON()],
 		flags: MessageFlags.IsComponentsV2,
+		allowed_mentions: { parse: [] },
 	};
 }
 
 function renderPage(
-	{ page, subscriptionCount, notice }: SetupMenuState,
+	{ page, subscriptionCount, notice }: SettingsMenuState,
 	t: TFunction<AnyNamespace>,
 ): string {
 	return cast<string>(
-		t(`commands/setup:pages.${page}`, {
+		t(`commands/settings:pages.${page}`, {
 			count: subscriptionCount,
 			notice: notice ?? "",
 		}),
 	);
+}
+
+export function buildSettingsNavigation(
+	userId: string,
+	page: string,
+	t: TFunction<AnyNamespace>,
+) {
+	return new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+		new StringSelectMenuBuilder()
+			.setCustomId(buildSettingsCustomId(userId, "navigate"))
+			.setPlaceholder(cast<string>(t("commands/settings:menu.placeholder")))
+			.addOptions(
+				...(["overview", "twitch"] as const).map((value) => ({
+					label: cast<string>(
+						t(`commands/settings:menu.options.${value}.label`),
+					),
+					value,
+					default:
+						value === page ||
+						(value === "twitch" && ["add", "manage", "test"].includes(page)),
+				})),
+				...SocialProviders.map(({ name }) => ({
+					label: cast<string>(
+						t(
+							cast<"commands/social:providerRss">(
+								`commands/social:provider${name}`,
+							),
+						),
+					),
+					value: `social:${name}`,
+					default: page === `social:${name}`,
+				})),
+			),
+	);
+}
+
+function getSettingsPageIndex(state: SettingsMenuState, count: number) {
+	const requested = state.pageIndex ?? 0;
+	return Number.isSafeInteger(requested)
+		? Math.max(
+				0,
+				Math.min(requested, Math.ceil(count / MaximumSelectOptions) - 1),
+			)
+		: 0;
 }

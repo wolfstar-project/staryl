@@ -1,8 +1,7 @@
-import type { TwitchSubscriptionOptions } from "#twitch/subscriptions";
+import type { TwitchEventOptions } from "#utils/twitchCommandOptions";
 import {
 	createChannelOption,
 	createStreamerOption,
-	createTypeChoiceOption,
 	DeliveryErrorKeys,
 	getStreamer,
 	resolveSubscription,
@@ -10,6 +9,11 @@ import {
 	testSubscriptionDelivery,
 	TwitchGroupName,
 } from "#twitch/subscriptions";
+import {
+	createTwitchEventOption,
+	getTwitchLiveType,
+} from "#utils/twitchCommandOptions";
+import { runTwitchMediaAction } from "#utils/twitchMediaCommands";
 import { channelMention } from "@discordjs/formatters";
 import { isNullish } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
@@ -34,16 +38,20 @@ import { MessageFlags } from "discord-api-types/v10";
 		)
 			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
-			.addStringOption(createTypeChoiceOption().setRequired(true)),
+			.addStringOption(createTwitchEventOption()),
 )
 export class UserCommand extends Command {
 	public override async chatInputRun(
 		interaction: Command.ChatInputInteraction,
-		options: TwitchSubscriptionOptions,
+		options: TwitchEventOptions,
 	) {
+		if (options.event === "video" || options.event === "clip") {
+			return runTwitchMediaAction(this, interaction, options, "test");
+		}
+
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		container.logger.debug(
-			`[twitch-test] Invoked in guild ${interaction.guildId} for streamer "${options.streamer}", channel ${options.channel.id}, type ${options.type}`,
+			`[twitch-test] Invoked in guild ${interaction.guildId} for streamer "${options.streamer}", channel ${options.channel.id}, type ${options.event}`,
 		);
 
 		const streamer = await getStreamer(options.streamer);
@@ -59,7 +67,8 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const { channel, type: subscriptionType } = options;
+		const { channel } = options;
+		const subscriptionType = getTwitchLiveType(options.event);
 		container.logger.debug(
 			`[twitch-test] Resolved streamer ${streamer.login} (${streamer.id})`,
 		);
@@ -104,8 +113,7 @@ export class UserCommand extends Command {
 			deliveryResult.isErr()
 				? DeliveryErrorKeys[deliveryResult.unwrapErr()]
 				: "commands/twitch:testSuccess",
-			undefined,
-			{ channel: channelMention(channel.id) },
+			{ REDCROSS: "❌", GREENTICK: "✅", channel: channelMention(channel.id) },
 		);
 		return deferred.update({ content });
 	}

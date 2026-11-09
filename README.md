@@ -73,8 +73,14 @@ WebSocket connection.
 - **EventSub Integration**: Uses Twitch EventSub webhooks for reliable,
   low-latency stream event delivery.
 - **Feeds and Social Accounts**: Follow any RSS or Atom feed, subreddits,
-  Bluesky and Mastodon accounts, YouTube channels and Twitch videos and clips
-  with `/subscriptions social`, with keyword filters per channel.
+  Bluesky and Mastodon accounts, and YouTube channels with
+  `/subscriptions <provider> add`, with keyword filters per channel. Add Twitch
+  videos and clips with `/subscriptions twitch add event:video` or `event:clip`.
+- **Server Settings**: Open `/settings` (requires Manage Server) to configure
+  Twitch live notifications and social subscriptions. Inspect delivery errors,
+  edit social notification messages, send tests and confirm removals. Use
+  `/subscriptions <provider> add` for advanced filters, and the
+  `instagram connect` or `tiktok connect` subcommands for account authorization.
 - **HTTP-Based Architecture**: Built on `@wolfstar/http-framework`
   (Fastify-based), handling Discord interactions via HTTP endpoints instead of a
   WebSocket gateway.

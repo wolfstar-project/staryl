@@ -5,7 +5,6 @@ import { UserCommand } from "../../src/commands/subscriptions/social/show.ts";
 const subscriptions = vi.hoisted(() => vi.fn());
 vi.mock("#social/subscriptions", () => ({
 	getGuildSocialSubscriptions: subscriptions,
-	SocialGroupName: "social",
 }));
 vi.mock("#social/registry", () => ({
 	getSocialProvider: () => ({
@@ -54,6 +53,7 @@ it("splits a full unavailable guild list into private messages within Discord's 
 	});
 	const interaction = {
 		guildId: "1",
+		data: { options: [{ type: 2, name: "instagram" }] },
 		defer: vi.fn().mockResolvedValue({ update }),
 		followup,
 	};

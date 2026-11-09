@@ -17,7 +17,7 @@ import { createYouTubeProvider } from "#social/providers/youtube";
 import { createSocialStore } from "#social/store";
 import { container } from "@wolfstar/http-framework";
 
-/** Every integration. Adding one here is what exposes it to `/subscriptions social add`. */
+/** Providers used by the poller and settings. Public command groups live in subscriptionProviders. */
 export const SocialProviders: readonly SocialProvider[] = [
 	createRssProvider(),
 	createRedditProvider(),

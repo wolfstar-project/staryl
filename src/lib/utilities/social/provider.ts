@@ -95,7 +95,7 @@ export interface NotifiedSource {
 /**
  * The contract of a social integration. Implementing it and adding the instance to
  * `SocialProviders` is all a new integration needs: the poller, the filters, delivery and the
- * `/subscriptions social` commands work from this interface alone.
+ * `/subscriptions <provider>` commands work from this interface alone.
  *
  * Expected failures are returned, never thrown. A method that throws anyway is treated as
  * `Unavailable` for that one source, so a bug in a provider cannot stop the others.

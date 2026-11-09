@@ -19,11 +19,11 @@ it.each(["success", "Denied", "NotConfigured"])(
 		const update = vi.fn();
 		const interaction = {
 			guildId: "1",
+			data: { options: [{ type: 2, name: "instagram" }] },
 			user: { id: "manager" },
 			defer: vi.fn().mockResolvedValue({ update }),
 		};
 		await UserCommand.prototype.chatInputRun(interaction as never, {
-			provider: "Instagram",
 			channel: { id: "2" } as never,
 		});
 		expect(update).toHaveBeenCalledWith({

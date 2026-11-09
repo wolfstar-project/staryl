@@ -17,8 +17,8 @@ export class UserRoute extends Route {
 			.status(result.unwrapOr(false) ? 200 : 400)
 			.text(
 				result.unwrapOr(false)
-					? "Connected. Return to Discord and use /subscriptions social show."
-					: "Connection failed or expired. Start /subscriptions social connect again.",
+					? "Connected. Return to Discord and use /subscriptions tiktok show."
+					: "Connection failed or expired. Start /subscriptions tiktok connect again.",
 			);
 	}
 }

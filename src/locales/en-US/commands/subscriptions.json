@@ -1,4 +1,20 @@
 {
 	"name": "subscriptions",
-	"description": "Manage the notification subscriptions for your server."
+	"description": "Manage the notification subscriptions for your server.",
+	"groupRssName": "rss",
+	"groupRssDescription": "Manage RSS and Atom subscriptions.",
+	"groupRedditName": "reddit",
+	"groupRedditDescription": "Manage Reddit subscriptions.",
+	"groupBlueskyName": "bluesky",
+	"groupBlueskyDescription": "Manage Bluesky subscriptions.",
+	"groupMastodonName": "mastodon",
+	"groupMastodonDescription": "Manage Mastodon subscriptions.",
+	"groupYoutubeName": "youtube",
+	"groupYoutubeDescription": "Manage YouTube subscriptions.",
+	"groupXName": "x",
+	"groupXDescription": "Manage X (Twitter) subscriptions.",
+	"groupInstagramName": "instagram",
+	"groupInstagramDescription": "Manage Instagram subscriptions.",
+	"groupTiktokName": "tiktok",
+	"groupTiktokDescription": "Manage TikTok subscriptions."
 }
