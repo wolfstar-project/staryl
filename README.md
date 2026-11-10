@@ -147,12 +147,12 @@ These include, but are not limited to:
 
 <div id="-translating-starly">
 
-## 🉑 Translating Starly <a href="https://translation.wolfstar.rocks" target="_blank"><img src="https://support.crowdin.com/assets/logos/crowdin-core-logo.png" align="right" width="30%"></a>
+## 🉑 Translating Starly
 
-We use **Crowdin** to translate Starly's messages into different languages. If
-you'd like to help by contributing new translations or improving existing ones,
-[**click here**](https://translation.wolfstar.rocks). Thanks for any
-contributions!
+We use [**Tolgee**](https://tolgee.io) to translate Starly's messages into
+different languages. If you'd like to help by contributing new translations or
+improving existing ones, [**click here**](https://translation.wolfstar.rocks).
+Thanks for any contributions!
 
 </div>
 
