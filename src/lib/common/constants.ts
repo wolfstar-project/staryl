@@ -8,6 +8,9 @@ export enum BrandingColors {
 }
 
 export enum SocialColors {
+	TikTok = 0x000000,
+	Instagram = 0xe1306c,
+	X = 0x1da1f2,
 	Rss = 0xf26522,
 	Reddit = 0xff4500,
 	Bluesky = 0x1185fe,

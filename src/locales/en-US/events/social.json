@@ -1,6 +1,9 @@
 {
 	"blueskyFooter": "Staryl Bluesky Notifications",
 	"blueskyHeading": "New post by {{name}}",
+	"instagramFooter": "Staryl Instagram Notifications",
+	"instagramHeading": "New post by {{name}}",
+	"instagramReelHeading": "New reel by {{name}}",
 	"mastodonFooter": "Staryl Mastodon Notifications",
 	"mastodonHeading": "New post by {{name}}",
 	"openArticle": "Read",
@@ -10,9 +13,13 @@
 	"rssFooter": "Staryl Feed Notifications",
 	"rssHeading": "New in {{name}}",
 	"testNotice": "🧪 **Test notification** — this is a preview requested by a server manager, showing the newest item.",
+	"tiktokFooter": "Staryl TikTok Notifications",
+	"tiktokHeading": "New video from {{name}}",
 	"twitchClipHeading": "New clip of {{name}}",
 	"twitchVideoHeading": "New video from {{name}}",
 	"watchVideo": "Watch",
+	"xFooter": "Staryl X Notifications",
+	"xHeading": "New post by {{name}}",
 	"youtubeFooter": "Staryl YouTube Notifications",
 	"youtubeHeading": "New video from {{name}}",
 	"youtubeHeadingShort": "New Short from {{name}}"

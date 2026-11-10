@@ -38,10 +38,16 @@ import {
 } from "vitest";
 import { UserCommand as ParentCommand } from "../../src/commands/subscriptions/parent.ts";
 import { UserCommand as AddCommand } from "../../src/commands/subscriptions/social/add.ts";
+import { UserCommand as ConnectCommand } from "../../src/commands/subscriptions/social/connect.ts";
 import { UserCommand as RemoveCommand } from "../../src/commands/subscriptions/social/remove.ts";
 import { UserCommand as ResetCommand } from "../../src/commands/subscriptions/social/reset.ts";
 import { UserCommand as ShowCommand } from "../../src/commands/subscriptions/social/show.ts";
 import { UserCommand as TestCommand } from "../../src/commands/subscriptions/social/test.ts";
+import { UserCommand as TwitchAddCommand } from "../../src/commands/subscriptions/twitch/add.ts";
+import { UserCommand as TwitchRemoveCommand } from "../../src/commands/subscriptions/twitch/remove.ts";
+import { UserCommand as TwitchResetCommand } from "../../src/commands/subscriptions/twitch/reset.ts";
+import { UserCommand as TwitchShowCommand } from "../../src/commands/subscriptions/twitch/show.ts";
+import { UserCommand as TwitchTestCommand } from "../../src/commands/subscriptions/twitch/test.ts";
 
 const fetchMock = vi.hoisted(() => vi.fn());
 
@@ -60,7 +66,7 @@ const Rss = readFileSync(
 	"utf8",
 );
 const CommandName = "subscriptions";
-const GroupName = "social";
+const GroupName = "rss";
 const GuildId = "737141877803057244";
 const ChannelId = "800000000000000001";
 const FeedUrl = "https://example.com/feed.xml";
@@ -84,6 +90,12 @@ const { runner } = createTestHarness({
 
 beforeAll(async () => {
 	for (const Child of [
+		TwitchAddCommand,
+		TwitchRemoveCommand,
+		TwitchShowCommand,
+		TwitchResetCommand,
+		TwitchTestCommand,
+		ConnectCommand,
 		AddCommand,
 		RemoveCommand,
 		ResetCommand,
@@ -125,6 +137,7 @@ beforeEach(() => {
 function buildInteraction(
 	subcommand: string,
 	options: APIApplicationCommandInteractionDataBasicOption[] = [],
+	group = GroupName,
 ): APIChatInputApplicationCommandInteraction {
 	return {
 		...ChatInputApplicationCommandInteractionData,
@@ -136,7 +149,7 @@ function buildInteraction(
 			options: [
 				{
 					type: ApplicationCommandOptionType.SubcommandGroup,
-					name: GroupName,
+					name: group,
 					options: [
 						{
 							type: ApplicationCommandOptionType.Subcommand,
@@ -166,12 +179,7 @@ const channelOption = {
 } as const;
 
 function addOptions(...extra: ReturnType<typeof string>[]) {
-	return [
-		string("provider", "Rss"),
-		string("target", FeedUrl),
-		channelOption,
-		...extra,
-	];
+	return [string("target", FeedUrl), channelOption, ...extra];
 }
 
 function reply() {
@@ -264,11 +272,11 @@ describe("subscriptions social add", () => {
 
 	it("says so when a provider has no credentials", async () => {
 		await runner.run(
-			buildInteraction("add", [
-				string("provider", "Reddit"),
-				string("target", "typescript"),
-				channelOption,
-			]),
+			buildInteraction(
+				"add",
+				[string("target", "typescript"), channelOption],
+				"reddit",
+			),
 		);
 
 		expect(reply().content).toContain("not available");
@@ -747,4 +755,125 @@ describe("subscriptions social registration", () => {
 			"test",
 		]);
 	});
+});
+
+describe("provider command boundaries", () => {
+	function blueskySubscription() {
+		return makeSubscription({
+			sourceId: 6n,
+			source: {
+				...makeSubscription().source,
+				id: 6n,
+				provider: "Bluesky",
+				displayName: "Other account",
+			},
+		});
+	}
+	it("resets only subscriptions belonging to the selected provider", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			makeSubscription(),
+			blueskySubscription(),
+		]);
+		await runner.run(buildInteraction("reset"));
+		expect(
+			prismaMock.guildSocialSubscription.delete,
+		).toHaveBeenCalledExactlyOnceWith({
+			where: {
+				guildId_channelId_sourceId: {
+					guildId: BigInt(GuildId),
+					channelId: BigInt(ChannelId),
+					sourceId: 5n,
+				},
+			},
+			select: null,
+		});
+	});
+	it("does not remove a source from another provider even when its id is known", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			blueskySubscription(),
+		]);
+		await runner.run(
+			buildInteraction("remove", [string("source", "6"), channelOption]),
+		);
+		expect(prismaMock.guildSocialSubscription.delete).not.toHaveBeenCalled();
+		expect(reply().content).toContain("does not follow");
+	});
+	it("does not test a source from another provider", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			blueskySubscription(),
+		]);
+		await runner.run(
+			buildInteraction("test", [string("source", "6"), channelOption]),
+		);
+		expect(apiMock.channels.createMessage).not.toHaveBeenCalled();
+		expect(reply().content).toContain("does not follow");
+	});
+	it("routes the same shared show action in different provider groups", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockResolvedValue([
+			makeSubscription(),
+			blueskySubscription(),
+		]);
+		await runner.run(buildInteraction("show", [], "bluesky"));
+		const text = JSON.stringify(reply().embeds);
+		expect(text).toContain("Other account");
+		expect(text).not.toContain("Example");
+	});
+	it("offers only filters supported by the selected provider", () => {
+		const command = applicationCommandRegistry
+			.get(ParentCommand)!
+			.chatInput!.toJSON();
+		const groups = command.options as {
+			name: string;
+			options: { name: string; options?: { name: string }[] }[];
+		}[];
+		const optionsFor = (group: string) =>
+			groups
+				.find((entry) => entry.name === group)!
+				.options.find((entry) => entry.name === "add")!
+				.options!.map((option) => option.name);
+		expect(optionsFor("rss")).toContain("keywords");
+		expect(optionsFor("rss")).not.toContain("provider");
+		expect(optionsFor("rss")).not.toContain("flairs");
+		expect(optionsFor("reddit")).toContain("flairs");
+		expect(optionsFor("youtube")).toContain("shorts");
+		expect(groups.some((group) => group.name === "social")).toBe(false);
+	});
+});
+
+it("keeps all provider groups within Discord's command registration size limit", () => {
+	const command = applicationCommandRegistry
+		.get(ParentCommand)!
+		.chatInput!.toJSON();
+	function textSize(node: unknown): number {
+		if (Array.isArray(node))
+			return node.reduce((size, child) => size + textSize(child), 0);
+		if (!node || typeof node !== "object") return 0;
+		const object = node as Record<string, unknown>;
+		const fields = ["name", "description", "value"];
+		const own = fields.reduce((size, field) => {
+			const value = object[field];
+			const localized = object[`${field}_localizations`];
+			const lengths = [
+				typeof value === "string" ? value.length : 0,
+				...(localized && typeof localized === "object"
+					? Object.values(localized).map((translation) =>
+							typeof translation === "string" ? translation.length : 0,
+						)
+					: []),
+			];
+			return size + Math.max(...lengths);
+		}, 0);
+		return (
+			own +
+			Object.entries(object).reduce(
+				(size, [key, value]) =>
+					size +
+					(fields.includes(key) || key.endsWith("_localizations")
+						? 0
+						: textSize(value)),
+				0,
+			)
+		);
+	}
+	expect(textSize(command)).toBeLessThanOrEqual(8000);
 });

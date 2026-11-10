@@ -1,9 +1,8 @@
-import type { TwitchSubscriptionOptions } from "#twitch/subscriptions";
+import type { TwitchEventOptions } from "#utils/twitchCommandOptions";
 import { TwitchSubscriptionType } from "#generated/prisma";
 import {
 	createChannelOption,
 	createStreamerOption,
-	createTypeChoiceOption,
 	deleteSubscription,
 	getStreamer,
 	removeSubscription,
@@ -11,6 +10,11 @@ import {
 	SubscriptionsCommandName,
 	TwitchGroupName,
 } from "#twitch/subscriptions";
+import {
+	createTwitchEventOption,
+	getTwitchLiveType,
+} from "#utils/twitchCommandOptions";
+import { runTwitchMediaAction } from "#utils/twitchMediaCommands";
 import { channelMention } from "@discordjs/formatters";
 import { Result } from "@sapphire/result";
 import { isNullish } from "@sapphire/utilities";
@@ -35,13 +39,17 @@ import { MessageFlags } from "discord-api-types/v10";
 		)
 			.addStringOption(createStreamerOption(true))
 			.addChannelOption(createChannelOption().setRequired(true))
-			.addStringOption(createTypeChoiceOption().setRequired(true)),
+			.addStringOption(createTwitchEventOption()),
 )
 export class UserCommand extends Command {
 	public override async chatInputRun(
 		interaction: Command.ChatInputInteraction,
-		options: TwitchSubscriptionOptions,
+		options: TwitchEventOptions,
 	) {
+		if (options.event === "video" || options.event === "clip") {
+			return runTwitchMediaAction(this, interaction, options, "remove");
+		}
+
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 		const streamer = await getStreamer(options.streamer);
 		if (isNullish(streamer)) {
@@ -53,7 +61,8 @@ export class UserCommand extends Command {
 			});
 		}
 
-		const { channel, type: subscriptionType } = options;
+		const { channel } = options;
+		const subscriptionType = getTwitchLiveType(options.event);
 
 		const subscriptionResult = await resolveSubscription(
 			interaction,
@@ -87,7 +96,11 @@ export class UserCommand extends Command {
 			subscriptionType === TwitchSubscriptionType.StreamOnline
 				? "commands/twitch:removeSuccessLive"
 				: "commands/twitch:removeSuccessOffline",
-			{ name: streamer.display_name, channel: channelMention(channel.id) },
+			{
+				GREENTICK: "✅",
+				name: streamer.display_name,
+				channel: channelMention(channel.id),
+			},
 		);
 
 		return deferred.update({ content });

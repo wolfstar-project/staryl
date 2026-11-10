@@ -33,6 +33,7 @@ export interface ResolvedTarget {
 /** Optional facts a filter can act on. A provider sets the ones it knows about. */
 export interface SocialItemTraits {
 	isReply?: boolean;
+	isReel?: boolean;
 	isRepost?: boolean;
 	isShort?: boolean;
 	isNsfw?: boolean;
@@ -60,6 +61,8 @@ export type FetchOutcome =
 			_tag: "Items";
 			/** Newest first, as every source already lists them. */
 			items: SocialItem[];
+			/** Reading succeeded, but independent maintenance needs backoff and health reporting. */
+			failure?: ProviderFailure;
 			/** Handed back on the next {@link SocialProvider.fetchLatest} call for this source. */
 			state: Prisma.InputJsonValue | null;
 	  };
@@ -92,7 +95,7 @@ export interface NotifiedSource {
 /**
  * The contract of a social integration. Implementing it and adding the instance to
  * `SocialProviders` is all a new integration needs: the poller, the filters, delivery and the
- * `/subscriptions social` commands work from this interface alone.
+ * `/subscriptions <provider>` commands work from this interface alone.
  *
  * Expected failures are returned, never thrown. A method that throws anyway is treated as
  * `Unavailable` for that one source, so a bug in a provider cannot stop the others.
@@ -105,6 +108,8 @@ export interface SocialProvider {
 	readonly concurrency: number;
 	/** The requests allowed per {@link rateLimitScope} and time window. */
 	readonly rateLimit: { limit: number; windowMs: number };
+	/** Providers that budget every API request share that one budget with commands; the poller only schedules them. */
+	readonly rateLimitOwner?: "provider" | "poller";
 	/** The filters this provider has the data for. `add` refuses any other. */
 	readonly supportedFilters: ReadonlySet<SocialFilterName>;
 	/** Sources sharing a scope share a budget, such as one API token or one remote host. */
@@ -115,7 +120,10 @@ export interface SocialProvider {
 	fetchLatest(
 		target: string,
 		state: Prisma.JsonValue | null,
+		context?: { checkRequested: boolean },
 	): Promise<Result<FetchOutcome, ProviderFailure>>;
+	/** Runs only after the source and its first subscription have been saved. */
+	onSubscribed?(target: string): Promise<Result<void, ProviderFailure>>;
 	formatNotification(
 		item: SocialItem,
 		source: NotifiedSource,

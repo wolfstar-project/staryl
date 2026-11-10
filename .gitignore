@@ -40,3 +40,7 @@ plans/
 
 src/tsconfig.tsbuildinfo
 tsconfig.base.tsbuildinfo
+
+# Tolgee
+.tolgee-pull/
+.tolgee-report.md

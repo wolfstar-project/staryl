@@ -3,18 +3,21 @@ import type { SocialProvider } from "#social/provider";
 import { socialDelivery } from "#social/notifications";
 import { SocialPoller } from "#social/poller";
 import { createBlueskyProvider } from "#social/providers/bluesky";
+import { createInstagramProvider } from "#social/providers/instagram";
 import { createMastodonProvider } from "#social/providers/mastodon";
 import { createRedditProvider } from "#social/providers/reddit";
 import { createRssProvider } from "#social/providers/rss";
+import { createTikTokProvider } from "#social/providers/tiktok";
 import {
 	createTwitchClipsProvider,
 	createTwitchVideosProvider,
 } from "#social/providers/twitch";
+import { createXProvider } from "#social/providers/x";
 import { createYouTubeProvider } from "#social/providers/youtube";
 import { createSocialStore } from "#social/store";
 import { container } from "@wolfstar/http-framework";
 
-/** Every integration. Adding one here is what exposes it to `/subscriptions social add`. */
+/** Providers used by the poller and settings. Public command groups live in subscriptionProviders. */
 export const SocialProviders: readonly SocialProvider[] = [
 	createRssProvider(),
 	createRedditProvider(),
@@ -23,6 +26,9 @@ export const SocialProviders: readonly SocialProvider[] = [
 	createYouTubeProvider(),
 	createTwitchVideosProvider(),
 	createTwitchClipsProvider(),
+	createXProvider(),
+	createInstagramProvider(),
+	createTikTokProvider(),
 ];
 
 export function getSocialProvider(name: SocialProviderName) {

@@ -3,11 +3,13 @@ import type {
 	GuildSocialSubscription,
 	Prisma,
 	SocialDeliveryError,
-	SocialProviderName,
 	SocialSource,
 } from "#lib/setup/prisma";
 import type { CheckPlan } from "#social/schedule";
-import { Prisma as PrismaNamespace } from "#generated/prisma";
+import {
+	Prisma as PrismaNamespace,
+	SocialProviderName,
+} from "#generated/prisma";
 
 export type SocialSourceWithSubscriptions = SocialSource & {
 	subscriptions: GuildSocialSubscription[];
@@ -19,6 +21,7 @@ export type SubscriptionKey = Pick<
 >;
 
 export interface SubscriptionUpdate {
+	lastNotifiedId?: string;
 	seenItemIds?: string[];
 	deliveryError?: SocialDeliveryError | null;
 }
@@ -44,13 +47,16 @@ export interface SocialStore {
 	 * it, a process holding an old read could check again a source another one just finished.
 	 */
 	claimSource(
-		source: Pick<SocialSource, "id" | "claimedUntil" | "lastCheckedAt">,
+		source: Pick<
+			SocialSource,
+			"id" | "claimedUntil" | "lastCheckedAt" | "provider" | "checkRequested"
+		>,
 		leaseUntil: Date,
 	): Promise<boolean>;
 	/** Extends a held claim, answering `false` when the source now belongs to another process. */
 	renewClaim(id: bigint, lease: Date, leaseUntil: Date): Promise<boolean>;
 	/** Puts a source off without counting it as checked. */
-	deferSource(id: bigint, until: Date): Promise<void>;
+	deferSource(id: bigint, until: Date, retryRead?: boolean): Promise<void>;
 	/** Stores a check and releases the claim. Does nothing for a claim that was lost in the meantime. */
 	recordCheck(id: bigint, lease: Date, record: CheckRecord): Promise<void>;
 	updateSubscription(
@@ -76,10 +82,20 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 				take: limit,
 			});
 		},
-		async claimSource({ id, claimedUntil, lastCheckedAt }, leaseUntil) {
+		async claimSource(
+			{ id, claimedUntil, lastCheckedAt, provider, checkRequested },
+			leaseUntil,
+		) {
 			const { count } = await prisma.socialSource.updateMany({
 				where: { id, claimedUntil, lastCheckedAt },
-				data: { claimedUntil: leaseUntil, checkRequested: false },
+				data: {
+					claimedUntil: leaseUntil,
+					checkRequested: false,
+					// Persist a full-read marker before consuming a push, so failure or process death cannot lose it.
+					...(provider === SocialProviderName.YouTube && checkRequested
+						? { state: PrismaNamespace.DbNull }
+						: {}),
+				},
 			});
 			return count === 1;
 		},
@@ -90,10 +106,14 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 			});
 			return count === 1;
 		},
-		async deferSource(id, until) {
+		async deferSource(id, until, retryRead = false) {
 			await prisma.socialSource.updateMany({
 				where: { id },
-				data: { nextCheckAt: until, checkRequested: false },
+				data: {
+					nextCheckAt: until,
+					checkRequested: false,
+					...(retryRead ? { state: PrismaNamespace.DbNull } : {}),
+				},
 			});
 		},
 		async recordCheck(id, lease, { state, ...record }) {

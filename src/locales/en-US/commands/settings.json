@@ -1,0 +1,111 @@
+{
+	"name": "settings",
+	"description": "Manage this server\u2019s Twitch and social notification settings.",
+	"menu": {
+		"placeholder": "Choose what you want to configure",
+		"close": "Close settings",
+		"options": {
+			"overview": {
+				"label": "General",
+				"description": "View the settings status"
+			},
+			"add": {
+				"label": "Twitch \u00b7 Add",
+				"description": "Subscribe to a Twitch streamer"
+			},
+			"manage": {
+				"label": "Twitch \u00b7 Manage",
+				"description": "Review, remove, or reset subscriptions"
+			},
+			"test": {
+				"label": "Twitch \u00b7 Test",
+				"description": "Verify the real delivery path"
+			},
+			"twitch": {
+				"label": "Twitch live",
+				"description": "Configure live and offline notifications"
+			}
+		}
+	},
+	"modal": {
+		"title": "Add a Twitch notification",
+		"streamer": {
+			"label": "Streamer",
+			"placeholder": "e.g. shroud"
+		},
+		"channel": {
+			"label": "Notification channel"
+		},
+		"type": {
+			"label": "Notify when",
+			"online": "Stream goes online",
+			"offline": "Stream goes offline"
+		},
+		"message": {
+			"label": "Custom message (optional)",
+			"placeholder": "Required for offline notifications"
+		}
+	},
+	"manage": {
+		"selectPlaceholder": "Select notifications to remove immediately",
+		"removeButton": "Remove selected",
+		"resetButton": "Reset all",
+		"resetConfirmButton": "Confirm reset all",
+		"empty": "No notifications configured yet.",
+		"removeSuccess_one": "Removed {{count}} notification.",
+		"removeSuccess_other": "Removed {{count}} notifications."
+	},
+	"test": {
+		"selectPlaceholder": "Select a notification to test",
+		"empty": "No notifications configured yet."
+	},
+	"pages": {
+		"overview": "{{notice}}## Server settings\nManage Twitch live notifications and subscriptions to feeds, videos and social accounts.\n**Current notifications:** {{count}}\nChoose Twitch or a social provider below. Each subscription keeps its own Discord channel, message and filters.\nUse `/subscriptions <provider> add` for advanced filters and `/subscriptions instagram connect` or `/subscriptions tiktok connect` to authorize Instagram or TikTok.",
+		"add": "{{notice}}## Add a Twitch notification\nPress **Add notification** below and fill in:\n- the **streamer** to follow;\n- the Discord **channel** that receives the notification;\n- whether to notify when the stream goes **online** or **offline**;\n- an optional custom message (required for offline notifications).",
+		"manage_one": "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notification.\nSelect one or more below to remove them, or reset everything.",
+		"manage_other": "{{notice}}## Manage Twitch notifications\nThis server currently has **{{count}}** configured notifications.\nSelect one or more below to remove them, or reset everything.",
+		"test": "{{notice}}## Test a notification\nSelect a notification below to send a preview through the same delivery path used by real Twitch events, so you can verify the channel and bot permissions.",
+		"twitch": "{{notice}}## Server settings \u203a Twitch live\nAdd subscriptions for live or offline events, manage existing subscriptions or send a test notification. Videos and clips have their own provider sections."
+	},
+	"closed": "## Settings closed\nRun `/settings` whenever you need it again.",
+	"errors": {
+		"invalid": "This settings menu is invalid. Run `/settings` to open a new one.",
+		"ownerOnly": "Only the member who opened this settings menu can use it.",
+		"permissionRevoked": "You no longer have the Manage Server permission in this server. Run `/settings` again once it's restored.",
+		"actionUnavailable": "This settings action is no longer available. Run `/settings` again.",
+		"sectionUnavailable": "That settings section is not available."
+	},
+	"social": {
+		"title": "Server settings",
+		"add": "Add subscription",
+		"edit": "Edit message",
+		"test": "Send test",
+		"remove": "Remove",
+		"confirm": "Confirm removal",
+		"refresh": "Refresh",
+		"previous": "Previous",
+		"next": "Next",
+		"target": "Target",
+		"message": "Message",
+		"filters": "Filters",
+		"status": "Status",
+		"active": "Active",
+		"defaultMessage": "Default message",
+		"select": "Choose a subscription to inspect or edit",
+		"count": "Subscriptions: {{count}}",
+		"connect": "To authorize your account and choose a channel, use `/subscriptions {{provider}} connect`.",
+		"saved": "Message saved.",
+		"removed": "Subscription removed.",
+		"confirmNotice": "Remove this subscription? Confirm below, or choose another subscription to cancel.",
+		"noFilters": "All items"
+	},
+	"filterLabels": {
+		"includeKeywords": "Include keywords",
+		"excludeKeywords": "Exclude keywords",
+		"excludeReplies": "Exclude replies",
+		"excludeReposts": "Exclude reposts",
+		"shorts": "Shorts",
+		"flairs": "Flairs",
+		"minimumScore": "Minimum score"
+	}
+}

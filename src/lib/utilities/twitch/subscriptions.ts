@@ -16,6 +16,7 @@ import {
 	sendOnlineNotification,
 } from "#twitch/notifications";
 import { handleSubscriptionRevoked } from "#twitch/revocations";
+import { parseTwitchLogin } from "#twitch/target";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import {
 	SlashCommandChannelOption,
@@ -27,7 +28,6 @@ import { cast, isNullish, isNullishOrEmpty } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 import {
 	applyLocalizedBuilder,
-	createSelectMenuChoiceName,
 	getSupportedLanguageT as resolveKey,
 } from "@wolfstar/plugin-i18next";
 import {
@@ -119,21 +119,6 @@ export interface TwitchChannelSearchResult {
 	display_name: string;
 	id: string;
 	is_live: boolean;
-}
-
-export function createTypeChoiceOption() {
-	return applyLocalizedBuilder(
-		new SlashCommandStringOption(),
-		"commands/twitch:optionsTypeName",
-		"commands/twitch:optionsTypeDescription",
-	).addChoices(
-		createSelectMenuChoiceName("commands/twitch:optionsTypeChoiceOnline", {
-			value: "StreamOnline",
-		}),
-		createSelectMenuChoiceName("commands/twitch:optionsTypeChoiceOffline", {
-			value: "StreamOffline",
-		}),
-	);
 }
 
 export function createChannelOption() {
@@ -337,11 +322,11 @@ export async function resolveSubscription(
 }
 
 export async function getStreamer(streamerName: string) {
+	const login = parseTwitchLogin(streamerName);
+	if (!login) return null;
 	// `Result.fromAsync` flattens the returned `FetchResult` and additionally catches the errors
 	// `fetchUsers` throws when the Twitch client credentials are missing.
-	const result = await Result.fromAsync(() =>
-		fetchUsers({ logins: [streamerName] }),
-	);
+	const result = await Result.fromAsync(() => fetchUsers({ logins: [login] }));
 	if (result.isErr()) {
 		container.logger.error(
 			`[twitch-subscriptions] Failed to look up the streamer "${streamerName}"`,

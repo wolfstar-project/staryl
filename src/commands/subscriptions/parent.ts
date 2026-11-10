@@ -1,6 +1,7 @@
 import type { TwitchChannelSearchResult } from "#twitch/subscriptions";
 import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
 import { getGuildSocialSubscriptions } from "#social/subscriptions";
+import { getSubscriptionProviders } from "#utils/subscriptionProviders";
 import { cutText } from "@sapphire/utilities";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
@@ -39,8 +40,57 @@ import {
 		.addSubcommandGroup((group) =>
 			applyLocalizedBuilder(
 				group,
-				"commands/social:name",
-				"commands/social:description",
+				"commands/subscriptions:groupRssName",
+				"commands/subscriptions:groupRssDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupRedditName",
+				"commands/subscriptions:groupRedditDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupBlueskyName",
+				"commands/subscriptions:groupBlueskyDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupMastodonName",
+				"commands/subscriptions:groupMastodonDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupYoutubeName",
+				"commands/subscriptions:groupYoutubeDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupXName",
+				"commands/subscriptions:groupXDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupInstagramName",
+				"commands/subscriptions:groupInstagramDescription",
+			),
+		)
+		.addSubcommandGroup((group) =>
+			applyLocalizedBuilder(
+				group,
+				"commands/subscriptions:groupTiktokName",
+				"commands/subscriptions:groupTiktokDescription",
 			),
 		),
 )
@@ -87,8 +137,10 @@ export class UserCommand extends Subcommand {
 		const sources = new Map(
 			result
 				.unwrap()
-				.filter(({ source }) =>
-					source.displayName.toLowerCase().includes(needle),
+				.filter(
+					({ source }) =>
+						getSubscriptionProviders(interaction).includes(source.provider) &&
+						source.displayName.toLowerCase().includes(needle),
 				)
 				.map(({ source }) => [source.id, source]),
 		);

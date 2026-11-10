@@ -87,7 +87,7 @@
   a target channel, etc.) lives in a `#utils/*` or `#twitch/*` module returning
   `Result<T, E>` instead of a private listener method; the listener becomes a
   thin loop that calls the module and logs on `isErr()`. This also lets a
-  command (e.g. `/subscriptions twitch test`, `/setup`) reuse the exact same
+  command (e.g. `/subscriptions twitch test`, `/settings`) reuse the exact same
   delivery path as the listeners. See
   `src/lib/utilities/twitch/notifications.ts` (imported as
   `#twitch/notifications`) / `tests/utilities/twitchNotifications.test.ts`.
@@ -100,7 +100,7 @@
 - **Social Providers**: Feeds and social accounts implement the `SocialProvider`
   contract in `src/lib/utilities/social/provider.ts`. `SocialPoller` owns the
   schedule, backoff, rate limit budgets, filters, deduplication and delivery,
-  and `/subscriptions social` owns the commands, so a new integration is one
+  and `/subscriptions <provider>` owns the commands. A new provider needs one
   file under `src/lib/utilities/social/providers/` plus one entry in
   `SocialProviders` (and its enum value, locale strings and
   `commands/social:provider<Name>` label). Only use a data source its terms
@@ -127,8 +127,8 @@
   component's `custom_id` (e.g. `[ownerId, action]`) rather than server-side
   session storage, and re-check permissions on every action instead of trusting
   the id captured at the initial command invocation, since the component can
-  outlive that check. See `src/interaction-handlers/setup.ts`, which backs the
-  `/setup` menu built by `src/lib/utilities/setupMenu.ts`.
+  outlive that check. See `src/interaction-handlers/settings.ts`, which backs
+  the `/settings` menu built by `src/lib/utilities/settingsMenu.ts`.
 
 ### Directory Structure
 
@@ -141,7 +141,7 @@
 - `src/lib/utilities/social/` - The social provider contract, the poller, the
   store and the providers themselves (`providers/`), aliased as `#social/*`
 - `src/interaction-handlers/` - `InteractionHandler` pieces that route a
-  command's own message-component/modal interactions (e.g. `/setup`'s menu)
+  command's own message-component/modal interactions (e.g. `/settings`'s menu)
 - `src/listeners/` - Event listeners for Twitch stream events
 - `src/lib/setup/` - Application initialization (env, Prisma, the shared
   `@discordjs/core` REST `api()` client, logger)
@@ -202,12 +202,23 @@ different groups from colliding in the command store.
 
 A command that doesn't need subcommands at all — typically a Manage Server-gated
 command whose flow is an interactive menu rather than a set of arguments, e.g.
-`/setup` (`src/commands/subscriptions/setup.ts`) — skips the subcommand pattern
-entirely: it's a single `Command` class with `@RegisterCommand`, deferring the
-reply and handing off to a `buildXMenu(...)`-style helper (see
-`src/lib/utilities/setupMenu.ts`) whose result is then driven by an
+`/settings` (`src/commands/subscriptions/settings.ts`) — skips the subcommand
+pattern entirely: it's a single `Command` class with `@RegisterCommand`,
+deferring the reply and handing off to a `buildXMenu(...)`-style helper (see
+`src/lib/utilities/settingsMenu.ts`) whose result is then driven by an
 `InteractionHandler` (see Interaction Handlers above and Interaction Handler
 Structure below).
+
+Provider groups (`rss`, `reddit`, `bluesky`, `mastodon`, `youtube`, `x`,
+`instagram`, `tiktok`) use the shared command implementations in
+`src/lib/commands/provider*.ts`. Thin pieces under
+`commands/subscriptions/social/` register those implementations through
+`RegisterProviderSubcommand`; they scope reads, autocomplete, tests and removals
+to the incoming provider group. Declare a new public group in
+`#utils/subscriptionProviders` and the parent builder. Instagram and TikTok
+expose `connect` instead of `add`. Twitch uses an `event` option (`live`,
+`offline`, `video`, `clip`); videos and clips reuse the provider services, while
+live and offline events keep EventSub.
 
 ### Interaction Handler Structure
 
@@ -376,11 +387,11 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
   pieces _are_ directly testable — `@wolfstar/http-framework-test-utils` can
   dispatch component/modal interactions through them, so routing/branching can
   stay in the handler; add or update its test under `tests/commands/` alongside
-  the command that triggers it (see `tests/commands/setup.test.ts`, which
+  the command that triggers it (see `tests/commands/settings.test.ts`, which
   exercises both `UserCommand` and `UserInteractionHandler`). Still pull out
   reusable menu-building/state logic into a `#utils/*` module for its own unit
-  tests — see `src/lib/utilities/setupMenu.ts` /
-  `tests/utilities/setupMenu.test.ts`
+  tests — see `src/lib/utilities/settingsMenu.ts` /
+  `tests/utilities/settingsMenu.test.ts`
 
 **When in doubt:** Copy existing patterns from similar files (e.g.,
 `src/listeners/twitch/`, `src/commands/`) before inventing new ones.

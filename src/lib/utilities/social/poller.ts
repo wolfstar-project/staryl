@@ -1,8 +1,5 @@
 // oxlint-disable no-await-in-loop -- each worker checks its sources one at a time on purpose
-import type {
-	GuildSocialSubscription,
-	SocialProviderName,
-} from "#lib/setup/prisma";
+import type { GuildSocialSubscription } from "#lib/setup/prisma";
 import type { SocialDelivery } from "#social/notifications";
 import type {
 	FetchOutcome,
@@ -11,6 +8,7 @@ import type {
 	SocialProvider,
 } from "#social/provider";
 import type { SocialSourceWithSubscriptions, SocialStore } from "#social/store";
+import { SocialProviderName } from "#generated/prisma";
 import { evaluateItem, parseSocialFilters } from "#social/filters";
 import { isNsfwChannel, parseItemUrl } from "#social/notifications";
 import { MaximumBackoff, planNextCheck } from "#social/schedule";
@@ -157,7 +155,12 @@ export class SocialPoller {
 		if (resumeAt !== null) {
 			// Moved out of the way instead of left due: the queue is oldest first, so sources waiting
 			// on one slow host would otherwise fill every batch and starve the whole provider.
-			await store.deferSource(source.id, new Date(resumeAt));
+			if (
+				source.provider === SocialProviderName.YouTube &&
+				source.checkRequested
+			)
+				await store.deferSource(source.id, new Date(resumeAt), true);
+			else await store.deferSource(source.id, new Date(resumeAt));
 			return;
 		}
 
@@ -180,7 +183,12 @@ export class SocialPoller {
 		};
 
 		const result = await this.#fetch(provider, source);
-		const failure = result.isErr() ? result.unwrapErr() : null;
+		const value = result.isOk() ? result.unwrap() : null;
+		const failure = result.isErr()
+			? result.unwrapErr()
+			: value?._tag === "Items"
+				? (value.failure ?? null)
+				: null;
 		if (failure) this.#pauseScope(failure, scope, provider, now);
 
 		const plan = planNextCheck({
@@ -191,7 +199,6 @@ export class SocialPoller {
 			random: this.#random(),
 		});
 		const lastCheckedAt = new Date(now);
-		const value = result.isOk() ? result.unwrap() : null;
 		if (value?._tag !== "Items") {
 			await store.recordCheck(source.id, lease, { ...plan, lastCheckedAt });
 			return;
@@ -234,7 +241,9 @@ export class SocialPoller {
 		source: SocialSourceWithSubscriptions,
 	): Promise<Result<FetchOutcome, ProviderFailure>> {
 		try {
-			return await provider.fetchLatest(source.target, source.state);
+			return await provider.fetchLatest(source.target, source.state, {
+				checkRequested: source.checkRequested,
+			});
 		} catch (error) {
 			this.#options.logger.error(
 				`[social-poller] ${provider.name} threw while fetching source ${source.id}`,
@@ -250,6 +259,7 @@ export class SocialPoller {
 		const pausedUntil = this.#pausedScopes.get(scope) ?? 0;
 		if (pausedUntil > now) return pausedUntil + spread;
 		this.#pausedScopes.delete(scope);
+		if (provider.rateLimitOwner === "provider") return null;
 
 		const { windowMs, limit } = provider.rateLimit;
 		const key = `${limit}/${windowMs}`;
@@ -290,7 +300,12 @@ export class SocialPoller {
 		holdsClaim: () => Promise<boolean>,
 	) {
 		const { store, delivery, logger } = this.#options;
-		const fresh = findFreshItems(items, subscription.seenItemIds);
+		const fresh = findFreshItems(
+			items,
+			subscription.lastNotifiedId
+				? [...subscription.seenItemIds, subscription.lastNotifiedId]
+				: subscription.seenItemIds,
+		);
 		if (fresh.length === 0) return false;
 
 		const key = {
@@ -303,7 +318,7 @@ export class SocialPoller {
 		const target = await delivery.prepare(key.guildId, key.channelId);
 		if (target.isErr()) {
 			// Discord being down looks exactly like a broken channel from here, so the items stay
-			// pending for a while. `/subscriptions social show` reports the reason in the meantime.
+			// pending for a while. `/settings` reports the reason in the meantime.
 			const expired = fresh.filter(
 				(item) =>
 					isPastRetryWindow(item, now) ||
@@ -374,7 +389,11 @@ export class SocialPoller {
 
 			this.#refusals.delete(attempt);
 			seenItemIds = mergeSeenIds(seenItemIds, [item]);
-			await store.updateSubscription(key, { seenItemIds, deliveryError });
+			await store.updateSubscription(key, {
+				seenItemIds,
+				deliveryError,
+				...(sent.isOk() ? { lastNotifiedId: toSeenId(item) } : {}),
+			});
 		}
 
 		return pending;

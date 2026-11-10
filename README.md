@@ -73,8 +73,14 @@ WebSocket connection.
 - **EventSub Integration**: Uses Twitch EventSub webhooks for reliable,
   low-latency stream event delivery.
 - **Feeds and Social Accounts**: Follow any RSS or Atom feed, subreddits,
-  Bluesky and Mastodon accounts, YouTube channels and Twitch videos and clips
-  with `/subscriptions social`, with keyword filters per channel.
+  Bluesky and Mastodon accounts, and YouTube channels with
+  `/subscriptions <provider> add`, with keyword filters per channel. Add Twitch
+  videos and clips with `/subscriptions twitch add event:video` or `event:clip`.
+- **Server Settings**: Open `/settings` (requires Manage Server) to configure
+  Twitch live notifications and social subscriptions. Inspect delivery errors,
+  edit social notification messages, send tests and confirm removals. Use
+  `/subscriptions <provider> add` for advanced filters, and the
+  `instagram connect` or `tiktok connect` subcommands for account authorization.
 - **HTTP-Based Architecture**: Built on `@wolfstar/http-framework`
   (Fastify-based), handling Discord interactions via HTTP endpoints instead of a
   WebSocket gateway.
@@ -121,6 +127,18 @@ These include, but are not limited to:
 - **Reddit** (optional): Reddit's Data API Terms require an approved app, so
   Reddit subscriptions stay off until `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`
   and `REDDIT_USERNAME` are set.
+- **Instagram** (optional): Professional account owners authorize Instagram
+  Login. Set `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`,
+  `INSTAGRAM_REDIRECT_URI` and a stable `SOCIAL_TOKEN_KEY`. See
+  [owner connections](docs/social-oauth.md).
+- **TikTok** (optional): Creator-authorized Display API access requires approved
+  Login Kit and Display API products. Configure the `TIKTOK_*` settings in
+  `src/.env.local`, including `TIKTOK_APP_APPROVED=true` after approval.
+- **YouTube** (optional): Set `YOUTUBE_API_KEY`, `YOUTUBE_WEBSUB_SECRET` and
+  `YOUTUBE_WEBSUB_CALLBACK` for Data API metadata and verified WebSub pushes.
+- **X** (optional): Official API with billed reads. Set `X_API_KEY`,
+  `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_SECRET` in `src/.env.local`.
+  The root `.env.example` also lists the new social integration settings.
 - **Twitch EventSub**: Requires a publicly accessible HTTPS endpoint for webhook
   delivery.
 - Other external APIs, each requiring their own individual API keys.
@@ -129,12 +147,12 @@ These include, but are not limited to:
 
 <div id="-translating-starly">
 
-## 🉑 Translating Starly <a href="https://translation.wolfstar.rocks" target="_blank"><img src="https://support.crowdin.com/assets/logos/crowdin-core-logo.png" align="right" width="30%"></a>
+## 🉑 Translating Starly
 
-We use **Crowdin** to translate Starly's messages into different languages. If
-you'd like to help by contributing new translations or improving existing ones,
-[**click here**](https://translation.wolfstar.rocks). Thanks for any
-contributions!
+We use [**Tolgee**](https://tolgee.io) to translate Starly's messages into
+different languages. If you'd like to help by contributing new translations or
+improving existing ones, [**join our support server**][discord-link] and let us
+know. Thanks for any contributions!
 
 </div>
 
