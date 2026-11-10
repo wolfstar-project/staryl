@@ -151,8 +151,8 @@ These include, but are not limited to:
 
 We use [**Tolgee**](https://tolgee.io) to translate Starly's messages into
 different languages. If you'd like to help by contributing new translations or
-improving existing ones, [**click here**](https://translation.wolfstar.rocks).
-Thanks for any contributions!
+improving existing ones, [**join our support server**][discord-link] and let us
+know. Thanks for any contributions!
 
 </div>
 
