@@ -218,8 +218,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@wolfstar/http-framework@6.5.1)
       '@wolfstar/plugin-subcommands-advanced':
-        specifier: ^2.3.0
-        version: 2.3.0(@wolfstar/http-framework@6.5.1)
+        specifier: ^3.0.1
+        version: 3.0.1(@wolfstar/http-framework@6.5.1)
       '@wolfstar/safe-fetch':
         specifier: ^1.1.10
         version: 1.1.10
@@ -1835,13 +1835,13 @@ packages:
       winston:
         optional: true
 
-  '@wolfstar/plugin-subcommands-advanced@2.3.0':
-    resolution: {integrity: sha512-N05+RphEVhEgHIqPP01ENzMB4JbXlmCGeX2807Quj94UpEI4tTKCPPvrG6IboHqafIt0R2v1qd4HC3xxyt21oQ==}
-    engines: {node: '>=20.0.0'}
+  '@wolfstar/plugin-subcommands-advanced@3.0.1':
+    resolution: {integrity: sha512-ecb82g96d+YEDxDQ0iskX5pENKChQEBMHGVnlbKZQikvgrwomNXgdjn/4lqDeCv22vNPNI2LAgALC8ud5Lh1qQ==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       '@wolfstar/http-framework': ^6.5.1
-      '@wolfstar/kit': ^0.2.0
-      '@wolfstar/schema': ^0.9.0
+      '@wolfstar/kit': ^0.2.0 || ^0.3.0
+      '@wolfstar/schema': ^0.9.0 || ^0.12.0
     peerDependenciesMeta:
       '@wolfstar/kit':
         optional: true
@@ -5331,7 +5331,7 @@ snapshots:
     dependencies:
       '@wolfstar/http-framework': 6.5.1(@types/react@19.3.0)(acorn@8.19.0)(magicast@0.5.5)(oxc-parser@0.152.0)(rolldown@1.2.15)(tsdown@0.23.3)(typescript@7.0.2)(vite@8.3.5)
 
-  '@wolfstar/plugin-subcommands-advanced@2.3.0(@wolfstar/http-framework@6.5.1)':
+  '@wolfstar/plugin-subcommands-advanced@3.0.1(@wolfstar/http-framework@6.5.1)':
     dependencies:
       '@discordjs/builders': 1.14.1
       '@discordjs/collection': 2.1.1
