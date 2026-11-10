@@ -16,7 +16,7 @@ jobs:
   sync-translations:
     permissions:
       contents: read # checkout repository; the sync branch is pushed with WOLFSTAR_TOKEN
-    uses: wolfstar-project/.github/.github/workflows/reusable-tolgee-sync.yml@0a65e26dd292ea41e046e8d75ae681918a0ec046 # main
+    uses: wolfstar-project/.github/.github/workflows/reusable-tolgee-sync.yml@0a65e26dd292ea41e046e8d75ae681918a0ec046
     with:
       operating-system: ubuntu-26.04-arm
       # root only, no scripts
