@@ -19,6 +19,14 @@ when the schema changes).
   `prisma db push` during development.
 - Plans produced by **prometheus** are stored under `.atlas/plans/`.
 - Conventional Commits are required.
+- Translations: [Tolgee](https://tolgee.io) (migrated from Crowdin). Config in
+  `.tolgeerc.cjs`; `src/locales/en-US` is push-only (`pnpm tolgee:push`).
+  `pnpm tolgee:pull` pulls into `.tolgee-pull/` and
+  `scripts/tolgee-pull-remap.ts` merges it onto `src/locales/{locale}` (drops
+  untranslated values, rejects placeholder mismatches, lowercases command names,
+  keeps the committed key order). `.github/workflows/tolgee-sync.yml` runs it
+  nightly through the reusable workflow in `wolfstar-project/.github`; don't
+  hand-edit non-`en-US` locale files. Needs `TOLGEE_API_KEY` for push/pull.
 - Unit tests use **Vitest**; run with `pnpm test` (or `pnpm test:watch`). CI
   runs `pnpm lint`, `pnpm build`, and `pnpm test`.
 
