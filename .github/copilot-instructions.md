@@ -37,7 +37,7 @@
 | Directories      | kebab-case      | `feature-name/`                                        |
 | TypeScript files | camelCase       | `twitchStreamOnline.ts`                                |
 | Variables        | camelCase       | `guildId`, `streamerId`                                |
-| Constants        | PascalCase enum | `Colors.Amber`, `StarylEvents.TwitchStreamOnline`      |
+| Constants        | PascalCase enum | `Colors.Amber`, `Events.TwitchStreamOnline`            |
 | Path constants   | PascalCase      | `PathRoot`, `PathSrc`                                  |
 | Types/Interfaces | PascalCase      | `GuildSubscription`, `DetailedMentionExtractionResult` |
 | Classes          | PascalCase      | `UserCommand`, `UserRoute`                             |
@@ -72,8 +72,8 @@
 - **Database**: PostgreSQL with Prisma ORM. Models use `@@map()` for snake_case
   table names, `@map()` for snake_case column names
 - **Event System**: Twitch EventSub webhooks trigger internal events
-  (`StarylEvents.TwitchStreamOnline`, `StarylEvents.TwitchStreamOffline`) that
-  listeners handle
+  (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
+  handle
 - **i18n**: Multi-language support via `@wolfstar/plugin-i18next`, with keys
   type-checked through the augmentation generated in `src/@types/i18next.d.ts`.
   It installs an `InternationalizationHandler` on `container.i18n` and loads the
@@ -150,7 +150,10 @@
 
 ### Directory Structure
 
-- `src/main.ts` - Application entry point
+- `src/main.ts` - Application entry point: `initializeApp()`, `createClient()`,
+  `loadAll()`, then the banner
+- `src/lib/Client.ts` - Builds the client (`createClient()`) and loads, listens
+  and starts the social poller (`loadAll()`)
 - `src/routes/` - HTTP API endpoints (`@wolfstar/plugin-api` `Route` pieces,
   e.g. Twitch EventSub webhooks)
 - `src/middlewares/` - HTTP API middlewares (`@wolfstar/plugin-api` `Middleware`

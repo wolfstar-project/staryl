@@ -1,4 +1,4 @@
-export enum StarylEvents {
+export enum Events {
 	ServerRequest = "serverRequest",
 	TwitchStreamHookedAnalytics = "twitchStreamHookedAnalytics",
 	TwitchStreamOffline = "twitchStreamOffline",

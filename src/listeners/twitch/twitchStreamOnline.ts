@@ -4,7 +4,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { streamNotificationDrip } from "#twitch";
 import { sendOnlineNotification } from "#twitch/notifications";
 import { getStreamerById } from "#twitch/subscriptions";
-import { StarylEvents } from "#types";
+import { Events } from "#types";
 import { Time } from "@sapphire/time-utilities";
 import { isNullish } from "@sapphire/utilities";
 import { ApplyOptions } from "@wolfstar/decorators";
@@ -16,7 +16,7 @@ const AvatarLookupDeadline = Time.Second * 2;
 
 @ApplyOptions<Listener.Options>({
 	emitter: "client",
-	event: StarylEvents.TwitchStreamOnline,
+	event: Events.TwitchStreamOnline,
 })
 export class UserListener extends Listener {
 	public async run(data: TwitchEventSubOnlineEvent) {

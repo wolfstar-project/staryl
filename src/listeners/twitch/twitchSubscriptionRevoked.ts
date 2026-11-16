@@ -1,12 +1,12 @@
 import type { TwitchEventSubResult } from "@wolfstar/twitch-helpers";
 import { handleSubscriptionRevoked } from "#twitch/revocations";
-import { StarylEvents } from "#types";
+import { Events } from "#types";
 import { ApplyOptions } from "@wolfstar/decorators";
 import { Listener } from "@wolfstar/http-framework";
 
 @ApplyOptions<Listener.Options>({
 	emitter: "client",
-	event: StarylEvents.TwitchSubscriptionRevoked,
+	event: Events.TwitchSubscriptionRevoked,
 })
 export class UserListener extends Listener {
 	public async run(subscription: TwitchEventSubResult) {

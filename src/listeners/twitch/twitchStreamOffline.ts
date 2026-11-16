@@ -2,7 +2,7 @@
 import type { TwitchEventSubEvent } from "@wolfstar/twitch-helpers";
 import { streamNotificationDrip } from "#twitch";
 import { sendOfflineNotification } from "#twitch/notifications";
-import { StarylEvents } from "#types";
+import { Events } from "#types";
 import { isNullishOrEmpty } from "@sapphire/utilities";
 import { ApplyOptions } from "@wolfstar/decorators";
 import { Listener } from "@wolfstar/http-framework";
@@ -10,7 +10,7 @@ import { TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
 @ApplyOptions<Listener.Options>({
 	emitter: "client",
-	event: StarylEvents.TwitchStreamOffline,
+	event: Events.TwitchStreamOffline,
 })
 export class UserListener extends Listener {
 	public async run(data: TwitchEventSubEvent) {

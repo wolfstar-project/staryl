@@ -1,5 +1,5 @@
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
-import { StarylEvents } from "#types";
+import { Events } from "#types";
 import { container } from "@wolfstar/http-framework";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UserRoute } from "../../src/routes/twitch/event_sub_verify.post.ts";
@@ -45,7 +45,7 @@ describe("POST /twitch/event_sub_verify", () => {
 		await send("revocation", { subscription });
 
 		expect(emit).toHaveBeenCalledWith(
-			StarylEvents.TwitchSubscriptionRevoked,
+			Events.TwitchSubscriptionRevoked,
 			subscription,
 		);
 	});
