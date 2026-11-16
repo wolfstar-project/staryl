@@ -150,10 +150,7 @@
 
 ### Directory Structure
 
-- `src/main.ts` - Application entry point: `initializeApp()`, `createClient()`,
-  `loadAll()`, then the banner
-- `src/lib/Client.ts` - Builds the client (`createClient()`) and loads, listens
-  and starts the social poller (`loadAll()`)
+- `src/main.ts` - Application entry point
 - `src/routes/` - HTTP API endpoints (`@wolfstar/plugin-api` `Route` pieces,
   e.g. Twitch EventSub webhooks)
 - `src/middlewares/` - HTTP API middlewares (`@wolfstar/plugin-api` `Middleware`
