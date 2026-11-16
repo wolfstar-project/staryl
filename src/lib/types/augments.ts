@@ -5,9 +5,15 @@ import type {
 	TwitchEventSubOnlineEvent,
 	TwitchEventSubResult,
 } from "@wolfstar/twitch-helpers";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 declare module "@wolfstar/http-framework" {
 	interface Client {
+		emit(
+			event: StarylEvents.ServerRequest,
+			request: IncomingMessage,
+			response: ServerResponse,
+		): boolean;
 		emit(
 			event: StarylEvents.TwitchStreamHookedAnalytics,
 			status: TwitchStreamStatus,
