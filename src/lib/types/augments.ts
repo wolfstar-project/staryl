@@ -45,6 +45,8 @@ declare module "@wolfstar/env-utilities" {
 		INTERNAL_RING_URL: string;
 		INTERNAL_RING_TOKEN: string;
 
+		DATABASE_URL: string;
+
 		REDDIT_CLIENT_ID: string;
 		REDDIT_CLIENT_SECRET: string;
 		REDDIT_USERNAME: string;
