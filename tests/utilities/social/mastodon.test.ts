@@ -297,3 +297,67 @@ describe("rateLimitScope", () => {
 		);
 	});
 });
+
+describe("searchTargets", () => {
+	it("searches the largest server when no server is named", async () => {
+		fetchMock.mockResolvedValueOnce(
+			respond({
+				accounts: [Account, { acct: "alice@example.social", display_name: "" }],
+			}),
+		);
+
+		const result = await provider.searchTargets!("@masto");
+
+		expect(result.unwrap()).toEqual([
+			{
+				name: "Mastodon (@Mastodon@mastodon.social)",
+				value: "@Mastodon@mastodon.social",
+			},
+			{ name: "@alice@example.social", value: "@alice@example.social" },
+		]);
+		expect(fetchMock.mock.calls[0][0]).toBe(
+			"https://mastodon.social/api/v2/search?q=masto&type=accounts&limit=10",
+		);
+	});
+
+	it("searches the server named after the @", async () => {
+		fetchMock.mockResolvedValueOnce(
+			respond({ accounts: [{ acct: "bob", display_name: "Bob" }] }),
+		);
+
+		const result = await provider.searchTargets!("bob@Fosstodon.org");
+
+		expect(result.unwrap()).toEqual([
+			{ name: "Bob (@bob@fosstodon.org)", value: "@bob@fosstodon.org" },
+		]);
+		expect(String(fetchMock.mock.calls[0][0])).toMatch(
+			/^https:\/\/fosstodon\.org\/api\/v2\/search\?q=bob&/,
+		);
+	});
+
+	it("drops accounts a server answered with an unusable address", async () => {
+		fetchMock.mockResolvedValueOnce(
+			respond({ accounts: [{ acct: "evil/../path" }, "nonsense", null] }),
+		);
+
+		const result = await provider.searchTargets!("evil");
+
+		expect(result.unwrap()).toEqual([]);
+	});
+
+	it("reports a server that refuses anonymous searches", async () => {
+		fetchMock.mockResolvedValueOnce(respond("", { status: 401 }));
+
+		const result = await provider.searchTargets!("bob");
+
+		expect(result.isErr()).toBe(true);
+	});
+
+	it("reports a server that cannot be reached", async () => {
+		fetchMock.mockResolvedValueOnce(err({ _tag: "Timeout" }));
+
+		const result = await provider.searchTargets!("bob@slow.example");
+
+		expect(result.unwrapErr()).toEqual({ _tag: "Unavailable" });
+	});
+});

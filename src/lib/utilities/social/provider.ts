@@ -24,6 +24,14 @@ export type TargetError =
 	| { _tag: "TargetUnsupported" }
 	| { _tag: "TargetUnreachable" };
 
+/** One account offered while a member types the target of `add`. */
+export interface TargetSuggestion {
+	/** What the member reads in the list. */
+	name: string;
+	/** What `validateTarget` receives when the member picks it. */
+	value: string;
+}
+
 export interface ResolvedTarget {
 	/** The canonical key of the source: the same account always resolves to the same value. */
 	target: string;
@@ -115,6 +123,13 @@ export interface SocialProvider {
 	/** Sources sharing a scope share a budget, such as one API token or one remote host. */
 	rateLimitScope(target: string): string;
 	getAuthRequirements(): AuthRequirements;
+	/**
+	 * Lists accounts matching what a member is typing, for the autocomplete of `add`. Left out when
+	 * the service has no search a provider may afford to call on every keystroke.
+	 */
+	searchTargets?(
+		query: string,
+	): Promise<Result<TargetSuggestion[], ProviderFailure>>;
 	/** Turns what a member typed into a canonical target, or says why it cannot be linked. */
 	validateTarget(input: string): Promise<Result<ResolvedTarget, TargetError>>;
 	fetchLatest(

@@ -3,6 +3,7 @@ import type {
 	SocialItem,
 	SocialProvider,
 	TargetError,
+	TargetSuggestion,
 } from "#social/provider";
 import type { Result } from "@sapphire/result";
 import type { TwitchHelixResponse } from "@wolfstar/twitch-helpers";
@@ -24,6 +25,8 @@ import {
 } from "@wolfstar/twitch-helpers";
 
 const PageSize = 20;
+/** Discord shows at most 25 choices. */
+const SearchSize = 25;
 /**
  * Helix ranks clips by views, with no way to ask for the newest. A short window and a full page keep
  * a clip made minutes ago from losing out to the most watched ones of the day.
@@ -47,6 +50,11 @@ interface TwitchVideo {
 	duration: string;
 }
 
+interface TwitchChannel {
+	broadcaster_login: string;
+	display_name: string;
+}
+
 interface TwitchClip {
 	id: string;
 	title: string;
@@ -67,6 +75,7 @@ const CommonOptions = {
 		variables: ["TWITCH_CLIENT_ID", "TWITCH_CLIENT_SECRET"],
 		satisfied: areTwitchClientCredentialsSet(),
 	}),
+	searchTargets,
 	validateTarget,
 } satisfies Partial<SocialProvider>;
 
@@ -153,6 +162,22 @@ export function createTwitchClipsProvider(
 			});
 		},
 	};
+}
+
+async function searchTargets(
+	query: string,
+): Promise<Result<TargetSuggestion[], ProviderFailure>> {
+	const result = await get<TwitchChannel>(
+		`search/channels?query=${encodeURIComponent(query)}&first=${SearchSize}`,
+	);
+	if (result.isErr()) return err(result.unwrapErr());
+
+	return ok(
+		result.unwrap().data.map((channel) => ({
+			name: channel.display_name,
+			value: channel.broadcaster_login,
+		})),
+	);
 }
 
 async function validateTarget(input: string) {

@@ -738,6 +738,113 @@ describe("subscriptions social autocomplete", () => {
 	});
 });
 
+describe("subscriptions social target autocomplete", () => {
+	function buildTargetAutocomplete(group: string, query: string) {
+		return {
+			...ApplicationCommandAutocompleteInteractionData,
+			guild_id: GuildId,
+			data: {
+				id: "0",
+				name: CommandName,
+				type: ApplicationCommandType.ChatInput,
+				options: [
+					{
+						type: ApplicationCommandOptionType.SubcommandGroup,
+						name: group,
+						options: [
+							{
+								type: ApplicationCommandOptionType.Subcommand,
+								name: "add",
+								options: [
+									{
+										type: ApplicationCommandOptionType.String,
+										name: "target",
+										value: query,
+										focused: true,
+									},
+								],
+							},
+						],
+					},
+				],
+			},
+		};
+	}
+
+	it("searches the network of the selected group", async () => {
+		fetchMock.mockResolvedValue(
+			ok({
+				status: 200,
+				url: "https://mastodon.social/",
+				headers: {},
+				body: JSON.stringify({
+					accounts: [{ acct: "Mastodon", display_name: "Mastodon" }],
+				}),
+			}),
+		);
+
+		const result = await runner.run(
+			buildTargetAutocomplete("mastodon", "masto") as never,
+		);
+
+		expect(result.json()).toMatchObject({
+			type: 8,
+			data: {
+				choices: [
+					{
+						name: "Mastodon (@Mastodon@mastodon.social)",
+						value: "@Mastodon@mastodon.social",
+					},
+				],
+			},
+		});
+	});
+
+	it("offers nothing for a network without an account search", async () => {
+		const result = await runner.run(
+			buildTargetAutocomplete(GroupName, "example") as never,
+		);
+
+		expect(result.json()).toMatchObject({ type: 8, data: { choices: [] } });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("offers nothing when the search fails", async () => {
+		fetchMock.mockResolvedValue(err({ _tag: "Timeout" }));
+
+		const result = await runner.run(
+			buildTargetAutocomplete("mastodon", "masto") as never,
+		);
+
+		expect(result.json()).toMatchObject({ type: 8, data: { choices: [] } });
+	});
+});
+
+describe("subscriptions add target option", () => {
+	function getTargetOption(group: string) {
+		const { options } = applicationCommandRegistry
+			.get(ParentCommand)!
+			.chatInput!.toJSON();
+		const add = (
+			options!.find((option) => option.name === group) as {
+				options: {
+					name: string;
+					options: { name: string; autocomplete?: boolean }[];
+				}[];
+			}
+		).options.find((option) => option.name === "add")!;
+		return add.options.find((option) => option.name === "target")!;
+	}
+
+	it("suggests accounts where the network can be searched", () => {
+		expect(getTargetOption("bluesky").autocomplete).toBe(true);
+	});
+
+	it("stays free text where it cannot", () => {
+		expect(getTargetOption("rss").autocomplete).toBeFalsy();
+	});
+});
+
 describe("subscriptions social registration", () => {
 	it("registers the group under the parent command", () => {
 		const { options } = applicationCommandRegistry

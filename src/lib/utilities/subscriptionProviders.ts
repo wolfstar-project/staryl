@@ -9,14 +9,64 @@ import { ApplicationCommandOptionType } from "discord-api-types/v10";
 
 /** Public groups are independent of the services used to deliver their notifications. */
 export const SubscriptionProviderGroups = [
-	{ group: "rss", provider: "Rss" },
-	{ group: "reddit", provider: "Reddit" },
-	{ group: "bluesky", provider: "Bluesky" },
-	{ group: "mastodon", provider: "Mastodon" },
-	{ group: "youtube", provider: "YouTube" },
-	{ group: "x", provider: "X" },
-	{ group: "instagram", provider: "Instagram" },
-	{ group: "tiktok", provider: "TikTok" },
+	{
+		group: "rss",
+		provider: "Rss",
+		name: "commands/subscriptions:groupRssName",
+		description: "commands/subscriptions:groupRssDescription",
+	},
+	{
+		group: "reddit",
+		provider: "Reddit",
+		name: "commands/subscriptions:groupRedditName",
+		description: "commands/subscriptions:groupRedditDescription",
+	},
+	{
+		group: "bluesky",
+		provider: "Bluesky",
+		name: "commands/subscriptions:groupBlueskyName",
+		description: "commands/subscriptions:groupBlueskyDescription",
+	},
+	{
+		group: "mastodon",
+		provider: "Mastodon",
+		name: "commands/subscriptions:groupMastodonName",
+		description: "commands/subscriptions:groupMastodonDescription",
+	},
+	{
+		group: "youtube",
+		provider: "YouTube",
+		name: "commands/subscriptions:groupYoutubeName",
+		description: "commands/subscriptions:groupYoutubeDescription",
+	},
+	{
+		group: "x",
+		provider: "X",
+		name: "commands/subscriptions:groupXName",
+		description: "commands/subscriptions:groupXDescription",
+	},
+	{
+		group: "instagram",
+		provider: "Instagram",
+		name: "commands/subscriptions:groupInstagramName",
+		description: "commands/subscriptions:groupInstagramDescription",
+	},
+	{
+		group: "tiktok",
+		provider: "TikTok",
+		name: "commands/subscriptions:groupTiktokName",
+		description: "commands/subscriptions:groupTiktokDescription",
+	},
+] as const;
+
+/** Every group of `/subscriptions`, in the order Discord lists them. */
+export const SubscriptionGroups = [
+	{
+		group: "twitch",
+		name: "commands/twitch:name",
+		description: "commands/twitch:description",
+	},
+	...SubscriptionProviderGroups,
 ] as const;
 
 export type TwitchEvent = "live" | "offline" | "video" | "clip";

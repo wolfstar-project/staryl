@@ -290,3 +290,32 @@ describe("rateLimitScope", () => {
 		expect(provider.rateLimitScope("a")).toBe(provider.rateLimitScope("b"));
 	});
 });
+
+describe("searchTargets", () => {
+	it("offers matching subreddits", async () => {
+		respond(
+			listing(
+				{ display_name: "typescript" },
+				{ display_name: "TypeScriptGames" },
+			),
+		);
+
+		const result = await makeProvider().searchTargets!("type script");
+
+		expect(result.unwrap()).toEqual([
+			{ name: "r/typescript", value: "typescript" },
+			{ name: "r/TypeScriptGames", value: "TypeScriptGames" },
+		]);
+		expect(String(fetchMock.mock.calls[1][0])).toBe(
+			"https://oauth.reddit.com/subreddits/search?q=type%20script&limit=10&raw_json=1",
+		);
+	});
+
+	it("reports an answer that is not a listing", async () => {
+		respond(json({ kind: "t5" }));
+
+		const result = await makeProvider().searchTargets!("typescript");
+
+		expect(result.unwrapErr()).toEqual({ _tag: "InvalidResponse" });
+	});
+});

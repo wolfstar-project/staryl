@@ -4,6 +4,7 @@ import type { TwitchEvent } from "#utils/subscriptionProviders";
 import type { SlashCommandSubcommandBuilder } from "@discordjs/builders";
 import { DefaultSocialFilters, parseKeywordList } from "#social/filters";
 import { escapeInlineText } from "#social/notifications";
+import { getSocialProvider } from "#social/registry";
 import {
 	addSocialSubscription,
 	MaximumXAccountsPerGuild,
@@ -42,7 +43,8 @@ export const buildProviderAddCommand = (
 					"commands/social:optionsTargetDescription",
 				)
 					.setMaxLength(500)
-					.setRequired(true),
+					.setRequired(true)
+					.setAutocomplete(Boolean(getSocialProvider(provider)?.searchTargets)),
 			)
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption((option) =>
