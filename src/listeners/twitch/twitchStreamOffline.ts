@@ -2,11 +2,17 @@
 import type { TwitchEventSubEvent } from "@wolfstar/twitch-helpers";
 import { streamNotificationDrip } from "#twitch";
 import { sendOfflineNotification } from "#twitch/notifications";
+import { StarylEvents } from "#types";
 import { isNullishOrEmpty } from "@sapphire/utilities";
+import { ApplyOptions } from "@wolfstar/decorators";
 import { Listener } from "@wolfstar/http-framework";
 import { TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
-export default class extends Listener {
+@ApplyOptions<Listener.Options>({
+	emitter: "client",
+	event: StarylEvents.TwitchStreamOffline,
+})
+export class UserListener extends Listener {
 	public async run(data: TwitchEventSubEvent) {
 		const date = new Date();
 		this.container.logger.debug(
