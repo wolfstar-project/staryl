@@ -202,9 +202,11 @@ export class UserCommand extends Command {
 
 Commands with many subcommands split them into one class per file with
 `@wolfstar/plugin-subcommands-advanced`, as `/subscriptions` does. The parent
-declares the subcommand groups and keeps the autocomplete (which the plugin does
-not route to children); each child registers itself onto the parent and
-implements `chatInputRun`. Shared helpers live in a `#twitch/*` module — see
+declares the subcommand groups from `SubscriptionGroups` and keeps the
+autocomplete, because the plugin does not route it to children. The parent holds
+no provider code: it hands each autocomplete to
+`#utils/subscriptionAutocomplete`. Each child registers itself onto the parent
+and implements `chatInputRun`. Shared helpers live in a `#twitch/*` module — see
 `src/lib/utilities/twitch/subscriptions.ts` — and the parent/group names come
 from the constants exported there, so the parent's builder and the children's
 decorators cannot drift apart.
@@ -235,10 +237,15 @@ Provider groups (`rss`, `reddit`, `bluesky`, `mastodon`, `youtube`, `x`,
 `commands/subscriptions/social/` register those implementations through
 `RegisterProviderSubcommand`; they scope reads, autocomplete, tests and removals
 to the incoming provider group. Declare a new public group in
-`#utils/subscriptionProviders` and the parent builder. Instagram and TikTok
-expose `connect` instead of `add`. Twitch uses an `event` option (`live`,
-`offline`, `video`, `clip`); videos and clips reuse the provider services, while
-live and offline events keep EventSub.
+`SubscriptionProviderGroups` (`#utils/subscriptionProviders`); the parent
+builder reads it. The `target` option of `add` suggests accounts when the
+provider implements `searchTargets` and has its credentials (Bluesky, Mastodon,
+Reddit). Twitch's `add` names the option `streamer`, and it suggests channels
+through the same search. `#utils/subscriptionAutocomplete` waits for two
+characters, caches each search for a minute, and gives up after 2.5 seconds.
+Instagram and TikTok expose `connect` instead of `add`. Twitch uses an `event`
+option (`live`, `offline`, `video`, `clip`); videos and clips reuse the provider
+services, while live and offline events keep EventSub.
 
 ### Interaction Handler Structure
 

@@ -4,6 +4,7 @@ import type {
 	SocialItem,
 	SocialProvider,
 	TargetError,
+	TargetSuggestion,
 } from "#social/provider";
 import type {
 	PublicFetcher,
@@ -26,7 +27,13 @@ import { Time } from "@sapphire/time-utilities";
 import { isObject } from "@sapphire/utilities";
 
 const StatusPageSize = 30;
+const SearchSize = 10;
+/** Under Discord's 3 seconds for an autocomplete answer, since the server is whatever a member typed. */
+const SearchTimeout = Time.Second * 2;
+const DefaultSearchHost = "mastodon.social";
 const AddressPattern = /^@?([\w.-]+)@([a-z\d-]+(?:\.[a-z\d-]+)+)$/i;
+const SearchPattern = /^@?([\w.-]+)(?:@([a-z\d-]+(?:\.[a-z\d-]+)+))?$/i;
+const AcctPattern = /^[\w.-]+(?:@[a-z\d-]+(?:\.[a-z\d-]+)+)?$/i;
 const ProfileUrlPattern =
 	/^https?:\/\/([a-z\d-]+(?:\.[a-z\d-]+)+)\/@([\w.-]+)\/?$/i;
 
@@ -81,6 +88,33 @@ export function createMastodonProvider(
 		]),
 		rateLimitScope: (target) => target.split("/")[0],
 		getAuthRequirements: () => ({ variables: [], satisfied: true }),
+
+		async searchTargets(query) {
+			const { username, host } = parseSearch(query);
+			const result = await fetchUrl(
+				`https://${host}/api/v2/search?q=${encodeURIComponent(username)}&type=accounts&limit=${SearchSize}`,
+				{
+					headers: {
+						accept: "application/json",
+						"user-agent": SocialUserAgent,
+					},
+					timeoutMs: SearchTimeout,
+				},
+			);
+			if (result.isErr()) return err(toProviderFailure(result.unwrapErr()));
+
+			const response = result.unwrap();
+			if (response.status < 200 || response.status >= 300) {
+				return err(toStatusFailure(response));
+			}
+
+			const accounts = parseJson<{ accounts?: unknown }>(
+				response.body,
+			)?.accounts;
+			if (!Array.isArray(accounts)) return err({ _tag: "InvalidResponse" });
+
+			return ok(accounts.flatMap((account) => toSuggestion(account, host)));
+		},
 
 		async validateTarget(input) {
 			const address = parseAddress(input);
@@ -138,6 +172,30 @@ function parseAddress(input: string) {
 
 	const url = ProfileUrlPattern.exec(input);
 	return url ? { username: url[2], host: url[1].toLowerCase() } : null;
+}
+
+/** A search names its server after the `@`; without one, the largest server knows the most accounts. */
+function parseSearch(query: string) {
+	const address = SearchPattern.exec(query.trim());
+	return address?.[2]
+		? { username: address[1], host: address[2].toLowerCase() }
+		: { username: query.trim().replace(/^@/, ""), host: DefaultSearchHost };
+}
+
+/** Any server can answer a search, so each account is checked before it becomes a choice. */
+function toSuggestion(account: unknown, host: string): TargetSuggestion[] {
+	if (!isObject(account)) return [];
+
+	const { acct, display_name: displayName } = account as Record<
+		string,
+		unknown
+	>;
+	if (typeof acct !== "string" || !AcctPattern.test(acct)) return [];
+
+	// A local account comes back without its server.
+	const address = `@${acct.includes("@") ? acct : `${acct}@${host}`}`;
+	const name = readText(displayName);
+	return [{ name: name ? `${name} (${address})` : address, value: address }];
 }
 
 function readAccount(

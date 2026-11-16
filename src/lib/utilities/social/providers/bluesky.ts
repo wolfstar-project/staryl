@@ -17,6 +17,7 @@ import { Time } from "@sapphire/time-utilities";
 
 const ApiOrigin = "https://public.api.bsky.app/xrpc";
 const FeedSize = 30;
+const SearchSize = 10;
 const ProfileUrlPattern = /^https?:\/\/bsky\.app\/profile\/([^/?#]+)/i;
 const IdentifierPattern =
 	/^(?:did:[a-z]+:[\w.:%-]+|[a-z\d-]+(?:\.[a-z\d-]+)+)$/i;
@@ -99,6 +100,28 @@ export function createBlueskyProvider(
 		]),
 		rateLimitScope: () => "bluesky",
 		getAuthRequirements: () => ({ variables: [], satisfied: true }),
+
+		async searchTargets(query) {
+			const result = await get<{ actors?: BlueskyAuthor[] }>(
+				"app.bsky.actor.searchActorsTypeahead",
+				{ q: query.replace(/^@/, ""), limit: String(SearchSize) },
+			);
+			if (result.isErr()) return err(result.unwrapErr());
+
+			const { actors } = result.unwrap();
+			if (!Array.isArray(actors)) return err({ _tag: "InvalidResponse" });
+
+			return ok(
+				actors
+					.filter((actor) => !hasOptedOut(actor))
+					.map((actor) => ({
+						name: actor.displayName
+							? `${actor.displayName} (@${actor.handle})`
+							: `@${actor.handle}`,
+						value: actor.handle,
+					})),
+			);
+		},
 
 		async validateTarget(input) {
 			const actor = parseActor(input);

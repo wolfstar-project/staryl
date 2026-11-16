@@ -242,3 +242,41 @@ describe("fetchLatest", () => {
 		expect(result.unwrapErr()).toEqual(failure);
 	});
 });
+
+describe("searchTargets", () => {
+	it("offers matching accounts by handle", async () => {
+		fetchMock.mockResolvedValueOnce(
+			json({ actors: [Author, { did: "did:plc:b", handle: "bob.test" }] }),
+		);
+
+		const result = await provider.searchTargets!("@ali");
+
+		expect(result.unwrap()).toEqual([
+			{ name: "Alice (@alice.bsky.social)", value: "alice.bsky.social" },
+			{ name: "@bob.test", value: "bob.test" },
+		]);
+		expect(String(fetchMock.mock.calls[0][0])).toContain(
+			"app.bsky.actor.searchActorsTypeahead?q=ali&",
+		);
+	});
+
+	it("leaves out an account that opted out of logged-out viewers", async () => {
+		fetchMock.mockResolvedValueOnce(
+			json({
+				actors: [{ ...Author, labels: [{ val: "!no-unauthenticated" }] }],
+			}),
+		);
+
+		const result = await provider.searchTargets!("alice");
+
+		expect(result.unwrap()).toEqual([]);
+	});
+
+	it("reports an answer without a list of accounts", async () => {
+		fetchMock.mockResolvedValueOnce(json({}));
+
+		const result = await provider.searchTargets!("alice");
+
+		expect(result.unwrapErr()).toEqual({ _tag: "InvalidResponse" });
+	});
+});

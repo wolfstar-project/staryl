@@ -22,6 +22,7 @@ const TokenUrl = "https://www.reddit.com/api/v1/access_token";
 const TokenMargin = Time.Minute;
 /** Reddit's maximum. A post waiting on a score threshold is lost once it scrolls out of this. */
 const ListingSize = 100;
+const SearchSize = 10;
 const SubredditPattern =
 	/^(?:(?:https?:\/\/)?(?:[\w-]+\.)?reddit\.com)?\/?(?:r\/)?(\w{2,21})\/?$/i;
 
@@ -163,6 +164,27 @@ export function createRedditProvider(
 			variables: CredentialVariables,
 			satisfied: CredentialVariables.every((name) => Boolean(env[name])),
 		}),
+
+		async searchTargets(query) {
+			const result = await get(
+				`/subreddits/search?q=${encodeURIComponent(query)}&limit=${SearchSize}&raw_json=1`,
+			);
+			if (result.isErr()) return err(result.unwrapErr());
+
+			const listing = result.unwrap() as {
+				data?: { children?: { data?: { display_name?: string } }[] };
+			};
+			const children = listing.data?.children;
+			if (!Array.isArray(children)) return err({ _tag: "InvalidResponse" });
+
+			return ok(
+				children.flatMap(({ data }) =>
+					data?.display_name
+						? [{ name: `r/${data.display_name}`, value: data.display_name }]
+						: [],
+				),
+			);
+		},
 
 		async validateTarget(input) {
 			const name = SubredditPattern.exec(input)?.[1];

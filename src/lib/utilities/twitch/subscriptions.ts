@@ -114,13 +114,6 @@ export interface TwitchStreamerFilterOptions {
 	streamer?: string;
 }
 
-export interface TwitchChannelSearchResult {
-	broadcaster_login: string;
-	display_name: string;
-	id: string;
-	is_live: boolean;
-}
-
 export function createChannelOption() {
 	return applyLocalizedBuilder(
 		new SlashCommandChannelOption(),
