@@ -122,10 +122,10 @@
   owner's account instead of reading a public feed or app-level API. Each
   implements `ConnectedAccountApi` (`#social/connectedAccounts`): `authorize`
   builds the provider's consent URL, `exchange`/`refresh` trade codes and
-  refresh tokens, and `media` reads the account's posts. The OAuth callback is
-  a `Route` under `src/routes/social/<provider>/callback.get.ts`. Tokens are
-  never stored in the clear: `sealSocialToken`/`openSocialToken` wrap them in
-  an authenticated AES-256-GCM envelope keyed by `SOCIAL_TOKEN_KEY` (32 bytes,
+  refresh tokens, and `media` reads the account's posts. The OAuth callback is a
+  `Route` under `src/routes/social/<provider>/callback.get.ts`. Tokens are never
+  stored in the clear: `sealSocialToken`/`openSocialToken` wrap them in an
+  authenticated AES-256-GCM envelope keyed by `SOCIAL_TOKEN_KEY` (32 bytes,
   hex-encoded) before they reach `SocialConnection.credentials`, and opening
   with the wrong key fails closed. `/subscriptions <provider> connect` (not
   `add`) starts this flow — see `docs/social-oauth.md`.
