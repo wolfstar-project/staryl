@@ -1,13 +1,31 @@
+import type { SocialProvider, TargetSuggestion } from "#social/provider";
 import type { Command } from "@wolfstar/http-framework";
 import { getSocialProvider } from "#social/registry";
 import { getGuildSocialSubscriptions } from "#social/subscriptions";
 import { getSubscriptionProviders } from "#utils/subscriptionProviders";
+import { Time } from "@sapphire/time-utilities";
 import { cutText } from "@sapphire/utilities";
 import { container } from "@wolfstar/http-framework";
 
 /** Discord's limits on one autocomplete answer. */
 const MaximumChoices = 25;
 const MaximumChoiceLength = 100;
+
+/** One letter matches too much to be worth a request. */
+const MinimumQueryLength = 2;
+/** Discord drops an answer after 3 seconds, so a slower search is given up on to answer in time. */
+const SearchDeadline = Time.Second * 2.5;
+/**
+ * Every keystroke would be a request otherwise, and they all share the budget of the provider with the poller,
+ * Reddit's one app credential among them.
+ */
+const SearchCacheLifetime = Time.Minute;
+const MaximumCachedSearches = 500;
+
+const searchCache = new Map<
+	string,
+	{ expiresAt: number; suggestions: TargetSuggestion[] }
+>();
 
 /** The options naming an account to follow. The Twitch live commands still call it `streamer`. */
 const TargetOptionNames: ReadonlySet<string> = new Set(["target", "streamer"]);
@@ -75,27 +93,18 @@ async function autocompleteTarget(
 	query: string,
 ) {
 	const trimmed = query.trim();
-	if (!trimmed) return interaction.replyEmpty();
+	if (trimmed.length < MinimumQueryLength) return interaction.replyEmpty();
 
 	const provider = getSubscriptionProviders(interaction)
 		.map(getSocialProvider)
-		.find(
-			(entry) => entry?.searchTargets && entry.getAuthRequirements().satisfied,
-		);
-	if (!provider?.searchTargets) return interaction.replyEmpty();
+		.find(canSearchTargets);
+	if (!provider) return interaction.replyEmpty();
 
-	const result = await provider.searchTargets(trimmed);
-	if (result.isErr()) {
-		// Searches run on every keystroke, so a failure here is expected noise, not an incident.
-		container.logger.debug(
-			`[subscriptions] ${provider.name} account search failed: ${result.unwrapErr()._tag}`,
-		);
-		return interaction.replyEmpty();
-	}
+	const suggestions = await searchTargets(provider, trimmed);
+	if (suggestions === null) return interaction.replyEmpty();
 
 	return interaction.reply({
-		choices: result
-			.unwrap()
+		choices: suggestions
 			// A longer value cannot be sent back as a choice; the member can still type it.
 			.filter(({ value }) => value.length <= MaximumChoiceLength)
 			.slice(0, MaximumChoices)
@@ -104,4 +113,56 @@ async function autocompleteTarget(
 				value,
 			})),
 	});
+}
+
+/** Whether `add` can suggest accounts of this provider: it has a search, and the credentials the search needs. */
+export function canSearchTargets(
+	provider: SocialProvider | undefined,
+): provider is SocialProvider &
+	Required<Pick<SocialProvider, "searchTargets">> {
+	return (
+		provider?.searchTargets !== undefined &&
+		provider.getAuthRequirements().satisfied
+	);
+}
+
+/** Answers from the cache when the same search ran recently, or `null` when the search failed or ran out of time. */
+async function searchTargets(
+	provider: SocialProvider & Required<Pick<SocialProvider, "searchTargets">>,
+	query: string,
+) {
+	const key = `${provider.name}:${query.toLowerCase()}`;
+	const now = Date.now();
+	const cached = searchCache.get(key);
+	if (cached && cached.expiresAt > now) return cached.suggestions;
+
+	const result = await withDeadline(
+		provider.searchTargets(query),
+		SearchDeadline,
+	);
+	if (result === null || result.isErr()) {
+		// Searches run on every keystroke, so a failure here is expected noise, not an incident.
+		container.logger.debug(
+			`[subscriptions] ${provider.name} account search failed: ${result?.unwrapErr()._tag ?? "too slow"}`,
+		);
+		return null;
+	}
+
+	const suggestions = result.unwrap();
+	searchCache.delete(key);
+	searchCache.set(key, { expiresAt: now + SearchCacheLifetime, suggestions });
+	// A Map keeps insertion order, so the first key is the oldest search:
+	if (searchCache.size > MaximumCachedSearches) {
+		searchCache.delete(searchCache.keys().next().value!);
+	}
+	return suggestions;
+}
+
+/** Settles with `null` once the time is up, leaving the promise to finish unobserved. */
+function withDeadline<T>(promise: Promise<T>, milliseconds: number) {
+	let timer: NodeJS.Timeout | undefined;
+	const deadline = new Promise<null>((resolve) => {
+		timer = setTimeout(resolve, milliseconds, null);
+	});
+	return Promise.race([promise, deadline]).finally(() => clearTimeout(timer));
 }

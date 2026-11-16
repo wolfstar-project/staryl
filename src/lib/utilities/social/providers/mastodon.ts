@@ -28,6 +28,8 @@ import { isObject } from "@sapphire/utilities";
 
 const StatusPageSize = 30;
 const SearchSize = 10;
+/** Under Discord's 3 seconds for an autocomplete answer, since the server is whatever a member typed. */
+const SearchTimeout = Time.Second * 2;
 const DefaultSearchHost = "mastodon.social";
 const AddressPattern = /^@?([\w.-]+)@([a-z\d-]+(?:\.[a-z\d-]+)+)$/i;
 const SearchPattern = /^@?([\w.-]+)(?:@([a-z\d-]+(?:\.[a-z\d-]+)+))?$/i;
@@ -96,6 +98,7 @@ export function createMastodonProvider(
 						accept: "application/json",
 						"user-agent": SocialUserAgent,
 					},
+					timeoutMs: SearchTimeout,
 				},
 			);
 			if (result.isErr()) return err(toProviderFailure(result.unwrapErr()));

@@ -813,11 +813,53 @@ describe("subscriptions social target autocomplete", () => {
 		fetchMock.mockResolvedValue(err({ _tag: "Timeout" }));
 
 		const result = await runner.run(
-			buildTargetAutocomplete("mastodon", "masto") as never,
+			buildTargetAutocomplete("mastodon", "unreachable") as never,
 		);
 
 		expect(result.json()).toMatchObject({ type: 8, data: { choices: [] } });
 	});
+
+	it("waits for a second character before it searches", async () => {
+		const result = await runner.run(
+			buildTargetAutocomplete("mastodon", "m") as never,
+		);
+
+		expect(result.json()).toMatchObject({ type: 8, data: { choices: [] } });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("reuses a recent search instead of asking the network again", async () => {
+		fetchMock.mockResolvedValue(
+			ok({
+				status: 200,
+				url: "https://mastodon.social/",
+				headers: {},
+				body: JSON.stringify({ accounts: [{ acct: "Cached" }] }),
+			}),
+		);
+
+		await runner.run(buildTargetAutocomplete("mastodon", "cached") as never);
+		const result = await runner.run(
+			buildTargetAutocomplete("mastodon", "Cached ") as never,
+		);
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(result.json()).toMatchObject({
+			data: { choices: [{ value: "@Cached@mastodon.social" }] },
+		});
+	});
+
+	it("answers before Discord stops waiting when the network is slow", async () => {
+		fetchMock.mockReturnValue(new Promise(() => {}));
+
+		const started = Date.now();
+		const result = await runner.run(
+			buildTargetAutocomplete("mastodon", "slow") as never,
+		);
+
+		expect(result.json()).toMatchObject({ type: 8, data: { choices: [] } });
+		expect(Date.now() - started).toBeLessThan(3000);
+	}, 10_000);
 });
 
 describe("subscriptions add target option", () => {
@@ -842,6 +884,10 @@ describe("subscriptions add target option", () => {
 
 	it("stays free text where it cannot", () => {
 		expect(getTargetOption("rss").autocomplete).toBeFalsy();
+	});
+
+	it("stays free text where the search lacks its credentials", () => {
+		expect(getTargetOption("reddit").autocomplete).toBeFalsy();
 	});
 });
 

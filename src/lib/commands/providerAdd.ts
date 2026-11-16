@@ -13,6 +13,7 @@ import {
 	createChannelOption,
 	MaximumMessageLength,
 } from "#twitch/subscriptions";
+import { canSearchTargets } from "#utils/subscriptionAutocomplete";
 import {
 	getSubscriptionProviders,
 	filterProviderOptions,
@@ -44,7 +45,7 @@ export const buildProviderAddCommand = (
 				)
 					.setMaxLength(500)
 					.setRequired(true)
-					.setAutocomplete(Boolean(getSocialProvider(provider)?.searchTargets)),
+					.setAutocomplete(canSearchTargets(getSocialProvider(provider))),
 			)
 			.addChannelOption(createChannelOption().setRequired(true))
 			.addStringOption((option) =>

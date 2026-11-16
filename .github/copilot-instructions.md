@@ -237,7 +237,10 @@ Provider groups (`rss`, `reddit`, `bluesky`, `mastodon`, `youtube`, `x`,
 to the incoming provider group. Declare a new public group in
 `SubscriptionProviderGroups` (`#utils/subscriptionProviders`); the parent
 builder reads it. The `target` option of `add` suggests accounts when the
-provider implements `searchTargets` (Bluesky, Mastodon, Reddit, Twitch).
+provider implements `searchTargets` and has its credentials (Bluesky, Mastodon,
+Reddit). Twitch's `add` names the option `streamer`, and it suggests channels
+through the same search. `#utils/subscriptionAutocomplete` waits for two
+characters, caches each search for a minute, and gives up after 2.5 seconds.
 Instagram and TikTok expose `connect` instead of `add`. Twitch uses an `event`
 option (`live`, `offline`, `video`, `clip`); videos and clips reuse the provider
 services, while live and offline events keep EventSub.
