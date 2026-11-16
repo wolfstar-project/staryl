@@ -109,8 +109,26 @@
   `fetchPublicUrl`, which refuses private addresses, including after a redirect
   or a DNS change. See `GLOSSARY.md` for the vocabulary. Providers: RSS and
   Atom, Reddit (needs `REDDIT_*`), Bluesky, Mastodon, YouTube (optional
-  `YOUTUBE_*`) and Twitch videos and clips. Going live stays on EventSub in
+  `YOUTUBE_*`), X (needs `X_API_KEY`/`X_API_SECRET`/`X_ACCESS_TOKEN`/
+  `X_ACCESS_SECRET`), Instagram and TikTok (owner-authorized, see Connected
+  Accounts below), and Twitch videos and clips. Going live stays on EventSub in
   `src/listeners/twitch/`, because that is a push the poller would only delay.
+  `FetchOutcome`'s `Items` case carries an optional `failure`, letting a fetch
+  that produced items also report degraded health; `onSubscribed?(target)` on
+  `SocialProvider` runs once, after the source and its first subscription are
+  saved, for a provider that needs a side effect only once a member actually
+  subscribes (e.g. YouTube's WebSub verification request).
+- **Connected Accounts (OAuth)**: Instagram and TikTok authorize a specific
+  owner's account instead of reading a public feed or app-level API. Each
+  implements `ConnectedAccountApi` (`#social/connectedAccounts`): `authorize`
+  builds the provider's consent URL, `exchange`/`refresh` trade codes and
+  refresh tokens, and `media` reads the account's posts. The OAuth callback is a
+  `Route` under `src/routes/social/<provider>/callback.get.ts`. Tokens are never
+  stored in the clear: `sealSocialToken`/`openSocialToken` wrap them in an
+  authenticated AES-256-GCM envelope keyed by `SOCIAL_TOKEN_KEY` (32 bytes,
+  hex-encoded) before they reach `SocialConnection.credentials`, and opening
+  with the wrong key fails closed. `/subscriptions <provider> connect` (not
+  `add`) starts this flow — see `docs/social-oauth.md`.
 - **YouTube Push**: `src/routes/youtube/websub.{get,post}.ts` receive WebSub
   pushes, but a push never posts anything: it only requests a check, and the
   regular check reads the feed. Leases renew during those checks, and a forged

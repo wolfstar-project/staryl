@@ -95,9 +95,15 @@ NODE_OPTIONS='--unhandled-rejections=warn' pnpm start
 warn mode. Real Discord/Twitch keys are needed for slash-command registration
 and EventSub webhooks.
 
-RSS, Bluesky, Mastodon and YouTube subscriptions need no credentials at all.
-Reddit stays off without `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` and
-`REDDIT_USERNAME`, and `YOUTUBE_*` is optional.
+RSS, Bluesky and Mastodon subscriptions need no credentials at all. Reddit stays
+off without `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` and `REDDIT_USERNAME`,
+and `YOUTUBE_*` is optional. X, Instagram and TikTok also need credentials:
+`X_API_KEY`/`X_API_SECRET`/`X_ACCESS_TOKEN`/`X_ACCESS_SECRET` for X's official
+API, and an approved OAuth app plus a stable 32-byte-hex `SOCIAL_TOKEN_KEY`
+(encrypts stored owner tokens, see `docs/social-oauth.md`) for Instagram
+(`INSTAGRAM_APP_ID`/`INSTAGRAM_APP_SECRET`/ `INSTAGRAM_REDIRECT_URI`) and TikTok
+(`TIKTOK_CLIENT_KEY`/
+`TIKTOK_CLIENT_SECRET`/`TIKTOK_REDIRECT_URI`/`TIKTOK_APP_APPROVED`).
 
 ### Running the app
 
