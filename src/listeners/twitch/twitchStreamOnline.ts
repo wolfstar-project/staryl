@@ -4,15 +4,21 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { streamNotificationDrip } from "#twitch";
 import { sendOnlineNotification } from "#twitch/notifications";
 import { getStreamerById } from "#twitch/subscriptions";
+import { Events } from "#types";
 import { Time } from "@sapphire/time-utilities";
 import { isNullish } from "@sapphire/utilities";
+import { ApplyOptions } from "@wolfstar/decorators";
 import { Listener } from "@wolfstar/http-framework";
 import { fetchStream, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
 
 /** How long the notification waits for the optional avatar before it goes out without one. */
 const AvatarLookupDeadline = Time.Second * 2;
 
-export default class extends Listener {
+@ApplyOptions<Listener.Options>({
+	emitter: "client",
+	event: Events.TwitchStreamOnline,
+})
+export class UserListener extends Listener {
 	public async run(data: TwitchEventSubOnlineEvent) {
 		this.container.logger.debug(
 			`[twitch-stream-online] Received event for ${data.broadcaster_user_login} (${data.broadcaster_user_id}), started at ${data.started_at}`,

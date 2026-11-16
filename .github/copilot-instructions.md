@@ -37,7 +37,7 @@
 | Directories      | kebab-case      | `feature-name/`                                        |
 | TypeScript files | camelCase       | `twitchStreamOnline.ts`                                |
 | Variables        | camelCase       | `guildId`, `streamerId`                                |
-| Constants        | PascalCase enum | `Colors.Amber`, `StarylEvents.TwitchStreamOnline`      |
+| Constants        | PascalCase enum | `Colors.Amber`, `Events.TwitchStreamOnline`            |
 | Path constants   | PascalCase      | `PathRoot`, `PathSrc`                                  |
 | Types/Interfaces | PascalCase      | `GuildSubscription`, `DetailedMentionExtractionResult` |
 | Classes          | PascalCase      | `UserCommand`, `UserRoute`                             |
@@ -72,8 +72,8 @@
 - **Database**: PostgreSQL with Prisma ORM. Models use `@@map()` for snake_case
   table names, `@map()` for snake_case column names
 - **Event System**: Twitch EventSub webhooks trigger internal events
-  (`StarylEvents.TwitchStreamOnline`, `StarylEvents.TwitchStreamOffline`) that
-  listeners handle
+  (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
+  handle
 - **i18n**: Multi-language support via `@wolfstar/plugin-i18next`, with keys
   type-checked through the augmentation generated in `src/@types/i18next.d.ts`.
   It installs an `InternationalizationHandler` on `container.i18n` and loads the
@@ -160,7 +160,9 @@
   store and the providers themselves (`providers/`), aliased as `#social/*`
 - `src/interaction-handlers/` - `InteractionHandler` pieces that route a
   command's own message-component/modal interactions (e.g. `/settings`'s menu)
-- `src/listeners/` - Event listeners for Twitch stream events
+- `src/listeners/` - Event listeners: `twitch/` for Twitch stream events,
+  `server/` for the development request log. Each piece names its emitter and
+  event with `@ApplyOptions<Listener.Options>`.
 - `src/lib/setup/` - Application initialization (env, Prisma, the shared
   `@discordjs/core` REST `api()` client, logger)
 - `src/lib/utilities/` - Helper functions (Discord API, mention parsing); Twitch
@@ -363,7 +365,7 @@ Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`,
 - `@wolfstar/http-framework` - Discord HTTP interaction framework
 - `@wolfstar/decorators` - Utility decorators (`ApplyOptions`, `Requires*`)
   split out of `@wolfstar/http-framework` as of http-framework 6; only
-  `ApplyOptions` is used here (`src/middlewares/requestLogger.ts`)
+  `ApplyOptions` is used here (middlewares and listeners)
 - `@wolfstar/plugin-i18next` - i18next-powered internationalization plugin for
   the HTTP framework
 - `@wolfstar/twitch-helpers` - Twitch EventSub types, helpers, and signature

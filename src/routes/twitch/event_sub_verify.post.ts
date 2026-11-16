@@ -3,7 +3,7 @@ import type {
 	TwitchEventSubResult,
 	TwitchEventSubVerificationMessage,
 } from "@wolfstar/twitch-helpers";
-import { StarylEvents, TwitchStreamStatus } from "#types";
+import { Events, TwitchStreamStatus } from "#types";
 import { cast, isObject } from "@sapphire/utilities";
 import { Route } from "@wolfstar/plugin-api";
 import { checkSignature, TwitchEventSubTypes } from "@wolfstar/twitch-helpers";
@@ -92,7 +92,7 @@ export class UserRoute extends Route {
 			request.headers["twitch-eventsub-message-type"] === RevocationMessageType
 		) {
 			this.container.client.emit(
-				StarylEvents.TwitchSubscriptionRevoked,
+				Events.TwitchSubscriptionRevoked,
 				subscription as TwitchEventSubResult,
 			);
 		}
@@ -103,16 +103,16 @@ export class UserRoute extends Route {
 			const { client } = this.container;
 			if (type === TwitchEventSubTypes.StreamOnline) {
 				client.emit(
-					StarylEvents.TwitchStreamHookedAnalytics,
+					Events.TwitchStreamHookedAnalytics,
 					TwitchStreamStatus.Online,
 				);
-				client.emit(StarylEvents.TwitchStreamOnline, event);
+				client.emit(Events.TwitchStreamOnline, event);
 			} else {
 				client.emit(
-					StarylEvents.TwitchStreamHookedAnalytics,
+					Events.TwitchStreamHookedAnalytics,
 					TwitchStreamStatus.Offline,
 				);
-				client.emit(StarylEvents.TwitchStreamOffline, event);
+				client.emit(Events.TwitchStreamOffline, event);
 			}
 		}
 
