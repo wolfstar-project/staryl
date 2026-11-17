@@ -21,7 +21,11 @@ ENV LOG_LEVEL=info
 ENV FORCE_COLOR=true
 
 RUN apk add --no-cache dumb-init g++ make python3
-RUN corepack enable
+# Node 25 and later no longer ship Corepack, so `corepack enable` exits 127 and no image builds.
+# pnpm comes from its official image instead: a standalone binary, pinned to `packageManager` in
+# package.json, with no npm install and nothing fetched at run time. Keep the two in step.
+COPY --from=ghcr.io/pnpm/pnpm:12.20.0-alpine /opt/pnpm /opt/pnpm
+ENV PATH="/opt/pnpm:$PATH"
 
 COPY --chown=node:node pnpm-lock.yaml .
 COPY --chown=node:node pnpm-workspace.yaml .
