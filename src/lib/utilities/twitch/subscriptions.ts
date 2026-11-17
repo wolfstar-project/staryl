@@ -18,6 +18,7 @@ import {
 import { handleSubscriptionRevoked } from "#twitch/revocations";
 import { parseTwitchLogin } from "#twitch/target";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
+import { readGuildLimits } from "#utils/ring";
 import {
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
@@ -55,6 +56,7 @@ export type AddSubscriptionErrorKey =
 	| "commands/twitch:streamerNotFound"
 	| "commands/twitch:addFailedDatabase"
 	| "commands/twitch:addDuplicated"
+	| "commands/twitch:addLimitReached"
 	| "commands/twitch:addFailedTwitch";
 
 /**
@@ -156,25 +158,41 @@ export function getSubscriptionStatus(
 		: statuses.offline;
 }
 
-export function createGuildSubscription(
+/**
+ * Stores a guild subscription and, in the same write, connects or creates its shared
+ * `TwitchSubscription`, unless the guild already has `limit` Twitch live notifications. The
+ * count and the insert share a lock on the guild, so adds running at once cannot each see room
+ * for one more and overshoot the limit together. Answers whether it inserted.
+ */
+export function createGuildSubscriptionWithinLimit(
 	guildId: bigint,
 	channelId: bigint,
 	message: string | null,
 	twitchSubscription: Prisma.TwitchSubscriptionCreateNestedOneWithoutGuildSubscriptionInput,
+	limit: number,
 ) {
-	return container.prisma.guildSubscription.create({
-		data: {
-			channelId,
-			message: message ?? undefined,
-			guild: {
-				connectOrCreate: {
-					where: { id: guildId },
-					create: { id: guildId },
+	return container.prisma.$transaction(async (transaction) => {
+		await transaction.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(${guildId})`;
+		const count = await transaction.guildSubscription.count({
+			where: { guildId },
+		});
+		if (count >= limit) return false;
+
+		await transaction.guildSubscription.create({
+			data: {
+				channelId,
+				message: message ?? undefined,
+				guild: {
+					connectOrCreate: {
+						where: { id: guildId },
+						create: { id: guildId },
+					},
 				},
+				twitchSubscription,
 			},
-			twitchSubscription,
-		},
-		select: null,
+			select: null,
+		});
+		return true;
 	});
 }
 
@@ -459,6 +477,24 @@ export async function addSubscription(
 		return err("commands/twitch:addMessageForOfflineRequired");
 	}
 
+	// Each streamer and event of a channel counts once, as the list shows them. Ring sets the
+	// limit, or the free value when it does not answer. Checked before the streamer is looked up, so a full
+	// guild costs no request to Twitch, and again with the insert, which is what holds against parallel adds.
+	const countResult = await Result.fromAsync(() =>
+		container.prisma.guildSubscription.count({ where: { guildId } }),
+	);
+	if (countResult.isErr()) {
+		container.logger.error(
+			"[twitch-subscriptions] Failed to count the guild subscriptions",
+			countResult.unwrapErr(),
+		);
+		return err("commands/twitch:addFailedDatabase");
+	}
+	const { maximumTwitchSubscriptions } = await readGuildLimits(guildId);
+	if (countResult.unwrap() >= maximumTwitchSubscriptions) {
+		return err("commands/twitch:addLimitReached");
+	}
+
 	const lookup = await lookupStreamer(streamerLogin);
 	if (lookup.isErr()) {
 		return err("commands/twitch:addFailedTwitch");
@@ -516,9 +552,13 @@ export async function addSubscription(
 		}
 
 		const createdResult = await Result.fromAsync(() =>
-			createGuildSubscription(guildId, channelId, message, {
-				connect: { id: streamerForType.id },
-			}),
+			createGuildSubscriptionWithinLimit(
+				guildId,
+				channelId,
+				message,
+				{ connect: { id: streamerForType.id } },
+				maximumTwitchSubscriptions,
+			),
 		);
 		if (createdResult.isErr()) {
 			container.logger.error(
@@ -527,6 +567,7 @@ export async function addSubscription(
 			);
 			return err("commands/twitch:addFailedDatabase");
 		}
+		if (!createdResult.unwrap()) return err("commands/twitch:addLimitReached");
 	} else {
 		// Only this branch talks to Twitch; the branch above merely connects an already existing
 		// subscription, so it must stay reachable when the EventSub variables are unset.
@@ -561,14 +602,34 @@ export async function addSubscription(
 		// A single nested write so the `TwitchSubscription` row cannot be created without the
 		// `GuildSubscription` row that owns it.
 		const createdResult = await Result.fromAsync(() =>
-			createGuildSubscription(guildId, channelId, message, {
-				create: {
-					streamerId: streamer.id,
-					subscriptionId: subscription.id,
-					subscriptionType: type,
+			createGuildSubscriptionWithinLimit(
+				guildId,
+				channelId,
+				message,
+				{
+					create: {
+						streamerId: streamer.id,
+						subscriptionId: subscription.id,
+						subscriptionType: type,
+					},
 				},
-			}),
+				maximumTwitchSubscriptions,
+			),
 		);
+		// Another add filled the guild while Twitch was asked. The new EventSub subscription has no
+		// row to deliver to, and Twitch answers 409 to a duplicate, so it goes.
+		if (createdResult.isOk() && !createdResult.unwrap()) {
+			const revertedResult = await Result.fromAsync(() =>
+				removeEventSubscription(subscription.id),
+			);
+			revertedResult.inspectErr((error) =>
+				container.logger.error(
+					`[twitch-subscriptions] The guild filled up while adding streamer ${streamer.id}; could not remove the EventSub subscription "${subscription.id}", which must be removed manually.`,
+					error,
+				),
+			);
+			return err("commands/twitch:addLimitReached");
+		}
 		if (createdResult.isErr()) {
 			container.logger.error(
 				"[twitch-subscriptions] Failed to store the subscription, reverting the EventSub subscription",

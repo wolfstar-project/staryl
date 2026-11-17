@@ -16,6 +16,7 @@ const AddErrors = {
 	"commands/twitch:addMessageForOfflineRequired": [422, "message-required"],
 	"commands/twitch:streamerNotFound": [422, "streamer-not-found"],
 	"commands/twitch:addDuplicated": [409, "duplicate"],
+	"commands/twitch:addLimitReached": [422, "limit-reached"],
 	// Twitch refused, or the bot has no EventSub credentials. A 4xx, so the caller tells it apart
 	// from Staryl being down.
 	"commands/twitch:addFailedTwitch": [422, "twitch-failed"],

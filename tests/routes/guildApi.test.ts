@@ -57,6 +57,7 @@ const prismaMock = {
 	$transaction: vi.fn(),
 	guild: { findUnique: vi.fn(), upsert: vi.fn() },
 	guildSubscription: {
+		count: vi.fn(),
 		create: vi.fn(),
 		delete: vi.fn(),
 		findMany: vi.fn(),
@@ -191,6 +192,7 @@ beforeEach(() => {
 	} as never);
 	vi.mocked(removeEventSubscription).mockResolvedValue(undefined as never);
 	prismaMock.guildSubscription.create.mockResolvedValue({});
+	prismaMock.guildSubscription.count.mockResolvedValue(0);
 	prismaMock.guildSubscription.delete.mockResolvedValue({});
 	prismaMock.guildSubscription.findUnique.mockResolvedValue(null);
 	prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
@@ -252,6 +254,25 @@ describe("GET /guilds/:guild/notifications", () => {
 			subscriptions: [],
 			twitch: [],
 		});
+	});
+
+	it("gives each provider its own maximum, from the free values while Ring is not set up", async () => {
+		const { body } = await call(GetRoute);
+		const state = body as {
+			limits: { subscriptions: number; twitchLive: number };
+			providers: { name: string; maximum: number }[];
+		};
+
+		const maximum = (name: string) =>
+			state.providers.find((provider) => provider.name === name)?.maximum;
+		expect(maximum("YouTube")).toBe(10);
+		expect(maximum("Reddit")).toBe(30);
+		expect(maximum("Rss")).toBe(25);
+		expect(state.limits.twitchLive).toBe(15);
+		// No total of its own: the most a guild can hold is what its providers allow together.
+		expect(state.limits.subscriptions).toBe(
+			state.providers.reduce((total, provider) => total + provider.maximum, 0),
+		);
 	});
 
 	it("says whether a Twitch live subscription can be added", async () => {
@@ -525,6 +546,17 @@ describe("POST /guilds/:guild/subscriptions", () => {
 		});
 	});
 
+	it("counts only the provider being added against its limit", async () => {
+		prismaMock.guildSocialSubscription.count.mockResolvedValue(24);
+
+		const answer = await call(AddRoute, { body });
+
+		expect(answer.status).toBe(201);
+		expect(prismaMock.guildSocialSubscription.count).toHaveBeenCalledWith({
+			where: { guildId: BigInt(GuildId), source: { provider: "Rss" } },
+		});
+	});
+
 	it("answers a conflict for a target the channel already follows", async () => {
 		prismaMock.guildSocialSubscription.findFirst.mockResolvedValue({});
 
@@ -533,7 +565,7 @@ describe("POST /guilds/:guild/subscriptions", () => {
 		expect(answer).toEqual({ status: 409, body: { error: "duplicate" } });
 	});
 
-	it("names the limit once the guild follows as many as it may", async () => {
+	it("names the limit once the guild follows as many of the provider as it may", async () => {
 		prismaMock.guildSocialSubscription.count.mockResolvedValue(25);
 
 		const answer = await call(AddRoute, { body });
@@ -680,6 +712,60 @@ describe("POST /guilds/:guild/twitch", () => {
 
 		expect(answer.status).toBe(201);
 		expect(addEventSubscription).not.toHaveBeenCalled();
+	});
+
+	it("refuses a sixteenth Twitch live notification, before asking Twitch", async () => {
+		prismaMock.guildSubscription.count.mockResolvedValue(15);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "limit-reached" } });
+		expect(addEventSubscription).not.toHaveBeenCalled();
+		expect(fetchUsers).not.toHaveBeenCalled();
+	});
+
+	// The first count lets it through; another add takes the last place before the insert.
+	it("refuses when a parallel add took the last place, joining an existing streamer", async () => {
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(
+			liveRow().twitchSubscription,
+		);
+		prismaMock.guildSubscription.count
+			.mockResolvedValueOnce(14)
+			.mockResolvedValueOnce(15);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "limit-reached" } });
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+		expect(prismaMock.$queryRaw).toHaveBeenCalled();
+	});
+
+	it("removes the EventSub subscription it made when a parallel add took the last place", async () => {
+		prismaMock.guildSubscription.count
+			.mockResolvedValueOnce(14)
+			.mockResolvedValueOnce(15);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "limit-reached" } });
+		expect(addEventSubscription).toHaveBeenCalledOnce();
+		expect(removeEventSubscription).toHaveBeenCalledWith("eventsub-1");
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+	});
+
+	it("allows more Twitch live notifications to a guild Ring raised", async () => {
+		vi.stubEnv("INTERNAL_RING_URL", "https://ring.test/guilds");
+		vi.stubEnv("INTERNAL_RING_TOKEN", "ring-token");
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => Response.json({ maximumTwitchSubscriptions: 25 })),
+		);
+		prismaMock.guildSubscription.count.mockResolvedValue(15);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		vi.unstubAllGlobals();
+		expect(answer.status).toBe(201);
 	});
 
 	it("asks for a message before an offline notification, as the command does", async () => {

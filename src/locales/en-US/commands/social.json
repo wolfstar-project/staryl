@@ -3,7 +3,7 @@
 	"addDuplicated": "{{REDCROSS}} That channel already follows this.",
 	"addFailedDatabase": "{{REDCROSS}} I could not save the subscription. Please try again later.",
 	"addFilterUnsupported": "{{REDCROSS}} This provider does not have the data for one of the filters you picked.",
-	"addLimitReached": "{{REDCROSS}} This server already follows the maximum of 25 feeds and accounts. Remove one first.",
+	"addLimitReached": "{{REDCROSS}} This server already follows the most feeds and accounts it can for this provider. Remove one first.",
 	"addName": "add",
 	"addProviderNotConfigured": "{{REDCROSS}} This provider is not available on this bot yet.",
 	"addSuccess": "{{GREENTICK}} Success! Whenever **{{name}}** publishes something, I will post it in {{channel}}.",

@@ -84,6 +84,10 @@ const SubscriptionId = 900n;
 const BotRoleId = "900000000000000001";
 
 const prismaMock = {
+	$queryRaw: vi.fn(async () => []),
+	$transaction: vi.fn(async (run: (transaction: unknown) => unknown) =>
+		run(prismaMock),
+	),
 	guild: { findUnique: vi.fn() },
 	guildSocialSubscription: {
 		findFirst: vi.fn(),
