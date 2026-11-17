@@ -33,18 +33,25 @@ export function assertEditChannel(
 	current: bigint,
 	edit: EditSubscriptionBody,
 ): Promise<boolean> | boolean {
-	if (edit.channelId === undefined || edit.channelId === current) return true;
+	if (!editMovesChannel(current, edit)) return true;
 	return assertNotificationChannel(response, guildId, edit.channelId);
 }
 
+/** Whether an edit puts the subscription in another channel than `current`. */
+export function editMovesChannel(
+	current: bigint,
+	edit: EditSubscriptionBody,
+): boolean {
+	return edit.channelId !== undefined && edit.channelId !== current;
+}
+
 /**
- * The columns an edit writes. A move clears the last delivery error, which was the old channel's.
- * The seen items move with the row, so the new channel is not sent what the old one already got.
+ * The channel and the message an edit writes, the columns both tables share. The seen items stay
+ * on the row, so a moved subscription does not send the new channel what the old one already got.
  */
 export function toEditData(current: bigint, edit: EditSubscriptionBody) {
-	const moves = edit.channelId !== undefined && edit.channelId !== current;
 	return {
-		...(moves ? { channelId: edit.channelId } : {}),
+		...(editMovesChannel(current, edit) ? { channelId: edit.channelId } : {}),
 		...(edit.message === undefined ? {} : { message: edit.message }),
 	};
 }

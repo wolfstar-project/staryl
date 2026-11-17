@@ -4,6 +4,7 @@ import { authorizeGuildRequest, parseSnowflake } from "#utils/guildApi/auth";
 import { parseEditSubscriptionBody } from "#utils/guildApi/body";
 import {
 	assertEditChannel,
+	editMovesChannel,
 	EditWriteErrors,
 	toEditData,
 	toEditWriteError,
@@ -70,9 +71,8 @@ export class UserRoute extends Route {
 				where: { guildId_channelId_sourceId: key },
 				data: {
 					...toEditData(channelId, edit),
-					...(edit.channelId === undefined || edit.channelId === channelId
-						? {}
-						: { deliveryError: null }),
+					// The last delivery error was the old channel's. Twitch live keeps none.
+					...(editMovesChannel(channelId, edit) ? { deliveryError: null } : {}),
 				},
 				include: { source: true },
 			}),
