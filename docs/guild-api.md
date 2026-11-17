@@ -36,6 +36,7 @@ subscription, `:subscription` the `subscriptionId` of a Twitch live one.
 | `DELETE` | `/guilds/:guild/subscriptions/:channel/:source` | Removes a subscription                     |
 | `POST`   | `/guilds/:guild/twitch`                         | Adds a Twitch live subscription            |
 | `DELETE` | `/guilds/:guild/twitch/:channel/:subscription`  | Removes a Twitch live subscription         |
+| `GET`    | `/guilds/:guild/targets`                        | Suggests accounts while a member types     |
 
 ### State
 
@@ -161,6 +162,19 @@ subscription. It answers `201` with `{ "subscription", "twitch" }`.
 subscription on Twitch, go once no channel uses them. It answers `200` with
 `{ "removed", "twitch" }`. A failed cleanup on Twitch is logged and does not
 undo the removal.
+
+### Target search
+
+`GET /guilds/:guild/targets?source=Bluesky&query=bsky` answers
+`{ "suggestions": [{ "name", "value" }] }`: the accounts the provider finds, as
+the autocomplete of `/subscriptions <provider> add` offers them. `value` is what
+an add takes as its `target`. `source` is a provider name or `TwitchLive`, which
+searches Twitch channels.
+
+The search shares the cache and the one-minute lifetime of the autocomplete, so
+the two spend one budget. A source without a search (RSS), without credentials,
+a query under 2 characters, or a search that fails or takes over 2.5 seconds
+answers no suggestion. The member can still type the target in full.
 
 ### Limits
 

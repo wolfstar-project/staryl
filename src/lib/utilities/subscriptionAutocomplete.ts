@@ -12,7 +12,7 @@ const MaximumChoices = 25;
 const MaximumChoiceLength = 100;
 
 /** One letter matches too much to be worth a request. */
-const MinimumQueryLength = 2;
+export const MinimumQueryLength = 2;
 /** Discord drops an answer after 3 seconds, so a slower search is given up on to answer in time. */
 const SearchDeadline = Time.Second * 2.5;
 /**
@@ -126,8 +126,11 @@ export function canSearchTargets(
 	);
 }
 
-/** Answers from the cache when the same search ran recently, or `null` when the search failed or ran out of time. */
-async function searchTargets(
+/**
+ * Answers from the cache when the same search ran recently, or `null` when the search failed or ran
+ * out of time. Shared by the autocomplete of `add` and the guild API, so both spend one budget.
+ */
+export async function searchTargets(
 	provider: SocialProvider & Required<Pick<SocialProvider, "searchTargets">>,
 	query: string,
 ) {
