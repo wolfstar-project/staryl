@@ -32,7 +32,7 @@ export async function readGuildLimits(guildId: bigint): Promise<RingLimits> {
 	const token = process.env.INTERNAL_RING_TOKEN;
 	if (!url || !token) return DefaultLimits;
 
-	const result = await Json<Record<string, unknown>>(
+	const result = await Json<object>(
 		safeTimedFetch(`${url}/${guildId}`, RingTimeout, {
 			headers: { authorization: token, "content-type": "application/json" },
 		}),
@@ -47,10 +47,15 @@ export async function readGuildLimits(guildId: bigint): Promise<RingLimits> {
 	return parseRingLimits(result.unwrap());
 }
 
-/** A field Ring does not send, or sends broken, takes its free value: Ring may predate it. */
-export function parseRingLimits(value: Record<string, unknown>): RingLimits {
+/**
+ * A field Ring does not send, or sends broken, takes its free value: Ring may predate it. A body
+ * that is no object at all, `null` included, gives every field its free value.
+ */
+export function parseRingLimits(value: unknown): RingLimits {
+	const fields: Record<string, unknown> =
+		typeof value === "object" && value !== null ? { ...value } : {};
 	const read = (field: keyof RingLimits) => {
-		const limit = value[field];
+		const limit = fields[field];
 		return typeof limit === "number" &&
 			Number.isSafeInteger(limit) &&
 			limit >= 0

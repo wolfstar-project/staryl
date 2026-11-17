@@ -477,6 +477,24 @@ export async function addSubscription(
 		return err("commands/twitch:addMessageForOfflineRequired");
 	}
 
+	// Each streamer and event of a channel counts once, as the list shows them. Ring sets the
+	// limit, or the free value when it does not answer. Checked before the streamer is looked up, so a full
+	// guild costs no request to Twitch, and again with the insert, which is what holds against parallel adds.
+	const countResult = await Result.fromAsync(() =>
+		container.prisma.guildSubscription.count({ where: { guildId } }),
+	);
+	if (countResult.isErr()) {
+		container.logger.error(
+			"[twitch-subscriptions] Failed to count the guild subscriptions",
+			countResult.unwrapErr(),
+		);
+		return err("commands/twitch:addFailedDatabase");
+	}
+	const { maximumTwitchSubscriptions } = await readGuildLimits(guildId);
+	if (countResult.unwrap() >= maximumTwitchSubscriptions) {
+		return err("commands/twitch:addLimitReached");
+	}
+
 	const lookup = await lookupStreamer(streamerLogin);
 	if (lookup.isErr()) {
 		return err("commands/twitch:addFailedTwitch");
@@ -516,24 +534,6 @@ export async function addSubscription(
 
 	if (alreadyHasEntry) {
 		return err("commands/twitch:addDuplicated");
-	}
-
-	// Each streamer and event of a channel counts once, as the list shows them. Ring sets the
-	// limit, or the free value when it does not answer. Checked here so a full guild costs no
-	// request to Twitch, and again with the insert, which is what holds against parallel adds.
-	const countResult = await Result.fromAsync(() =>
-		container.prisma.guildSubscription.count({ where: { guildId } }),
-	);
-	if (countResult.isErr()) {
-		container.logger.error(
-			"[twitch-subscriptions] Failed to count the guild subscriptions",
-			countResult.unwrapErr(),
-		);
-		return err("commands/twitch:addFailedDatabase");
-	}
-	const { maximumTwitchSubscriptions } = await readGuildLimits(guildId);
-	if (countResult.unwrap() >= maximumTwitchSubscriptions) {
-		return err("commands/twitch:addLimitReached");
 	}
 
 	if (streamerForType) {

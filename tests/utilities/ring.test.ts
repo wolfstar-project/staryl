@@ -66,6 +66,8 @@ describe("readGuildLimits", () => {
 	});
 
 	it.each([
+		["answers null", () => ringAnswers(200, null)],
+		["answers a list", () => ringAnswers(200, [20, 25])],
 		["answers an error", () => ringAnswers(500, { success: false })],
 		[
 			"cannot be reached",

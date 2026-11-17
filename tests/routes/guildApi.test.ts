@@ -721,6 +721,7 @@ describe("POST /guilds/:guild/twitch", () => {
 
 		expect(answer).toEqual({ status: 422, body: { error: "limit-reached" } });
 		expect(addEventSubscription).not.toHaveBeenCalled();
+		expect(fetchUsers).not.toHaveBeenCalled();
 	});
 
 	// The first count lets it through; another add takes the last place before the insert.
