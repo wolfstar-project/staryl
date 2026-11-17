@@ -122,3 +122,39 @@ export function parseAddTwitchBody(
 		message: trimmedMessage === "" ? null : trimmedMessage,
 	};
 }
+
+/** What an edit changes. A key that is absent keeps its value. */
+export interface EditSubscriptionBody {
+	channelId?: bigint;
+	/** `null`, or an empty text, removes the message. */
+	message?: string | null;
+}
+
+/**
+ * The account, the provider and, for Twitch live, the event name the subscription, so an edit
+ * cannot change them: those are a removal and an add. A body that changes nothing is refused.
+ */
+export function parseEditSubscriptionBody(
+	body: Result<unknown, unknown>,
+): EditSubscriptionBody | null {
+	const value = body.unwrapOr(null);
+	if (!isObject(value)) return null;
+
+	const { channelId, message } = value as Record<string, unknown>;
+	const edit: EditSubscriptionBody = {};
+	if (channelId !== undefined) {
+		if (typeof channelId !== "string") return null;
+		const channel = parseSnowflake(channelId);
+		if (channel === null) return null;
+		edit.channelId = channel;
+	}
+	if (message !== undefined) {
+		if (message !== null && typeof message !== "string") return null;
+		const trimmed = message?.trim() ?? "";
+		if (trimmed.length > MaximumMessageLength) return null;
+		edit.message = trimmed === "" ? null : trimmed;
+	}
+	return edit.channelId === undefined && edit.message === undefined
+		? null
+		: edit;
+}

@@ -33,8 +33,10 @@ subscription, `:subscription` the `subscriptionId` of a Twitch live one.
 | `GET`    | `/guilds/:guild/notifications`                  | Reads the state of the server              |
 | `PATCH`  | `/guilds/:guild/notifications`                  | Turns the server's notifications on or off |
 | `POST`   | `/guilds/:guild/subscriptions`                  | Adds a subscription                        |
+| `PATCH`  | `/guilds/:guild/subscriptions/:channel/:source` | Edits a subscription                       |
 | `DELETE` | `/guilds/:guild/subscriptions/:channel/:source` | Removes a subscription                     |
 | `POST`   | `/guilds/:guild/twitch`                         | Adds a Twitch live subscription            |
+| `PATCH`  | `/guilds/:guild/twitch/:channel/:subscription`  | Edits a Twitch live subscription           |
 | `DELETE` | `/guilds/:guild/twitch/:channel/:subscription`  | Removes a Twitch live subscription         |
 
 ### State
@@ -138,6 +140,31 @@ there.
 `{ "removed", "subscriptions" }`: the subscription it removed, and the list the
 server has left.
 
+### Edit
+
+`PATCH /guilds/:guild/subscriptions/:channel/:source` takes either key, or both:
+
+```json
+{
+	"channelId": "800000000000000002",
+	"message": "New post!"
+}
+```
+
+A key that is absent keeps its value. A `message` of `null` or `""` removes the
+message. A body without either key is `400 invalid-body`. The account, the
+provider and the filters stay: to change the account, remove the subscription
+and add it again.
+
+A new channel is checked as for an add. A move clears the last delivery error,
+which was the old channel's, and keeps the items already sent, so the new
+channel gets only what comes next. A check of the source that runs during a move
+can lose what it records, and the next check may then post an item once more. A
+channel that already follows the source answers `409 duplicate`.
+
+It answers `200` with `{ "previous", "subscription", "subscriptions" }`: the
+subscription before and after the edit, and the server's list.
+
 ### Twitch live
 
 `POST /guilds/:guild/twitch` takes:
@@ -162,6 +189,11 @@ subscription on Twitch, go once no channel uses them. It answers `200` with
 `{ "removed", "twitch" }`. A failed cleanup on Twitch is logged and does not
 undo the removal.
 
+`PATCH /guilds/:guild/twitch/:channel/:subscription` takes the same body as the
+edit of a subscription. The streamer and the event stay. An offline notification
+keeps a message: a body that removes it answers `422 message-required`. It
+answers `200` with `{ "previous", "subscription", "twitch" }`.
+
 ### Limits
 
 Each provider has its own limit, and there is no total:
@@ -181,8 +213,8 @@ commands enforce the same limits.
 
 ### A write that cannot list
 
-An add and a remove read the list after they write. If that read fails, the
-write still went through, so the route answers its success status with
+An add, an edit and a remove read the list after they write. If that read fails,
+the write still went through, so the route answers its success status with
 `"subscriptions": null` (or `"twitch": null`), and `"subscription": null` for an
 add. A caller that gets `null` reads the list again with `GET`. It must not send
 the write again: a second add would answer `409 duplicate`, and a second remove
@@ -193,7 +225,7 @@ the write again: a second add would answer `409 duplicate`, and a second remove
 Instagram and TikTok follow an account its owner connected. The connection
 starts from a link that only `/subscriptions <provider> connect` gives. The
 guild API lists their subscriptions with `"manageable": false` and answers
-`422 provider-not-manageable` to an add or a remove.
+`422 provider-not-manageable` to an add, an edit or a remove.
 
 ## Errors
 
