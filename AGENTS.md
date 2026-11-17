@@ -124,6 +124,11 @@ to read and change a server's subscriptions. It needs `GUILD_API_SECRET` and
 answers 503 without it. Its routes, payloads and error codes are in
 `docs/guild-api.md`.
 
+A route piece is stored under its file name, and a second piece with the same
+name unloads the first. Two routes whose files share a name (the OAuth
+`callback.get.ts` of Instagram and TikTok) each set `name`, `route` and
+`methods` with `@ApplyOptions`.
+
 Quick smoke test once running:
 
 ```bash
