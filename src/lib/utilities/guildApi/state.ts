@@ -6,11 +6,12 @@ import type {
 import type { SocialFilterName } from "#social/filters";
 import type { SourceHealth } from "#social/schedule";
 import type { GuildSocialSubscriptionWithSource } from "#social/subscriptions";
+import type { RingLimits } from "#utils/ring";
 import { getActiveFilters, parseSocialFilters } from "#social/filters";
 import { getSocialProvider, SocialProviders } from "#social/registry";
 import { describeSourceHealth } from "#social/schedule";
 import {
-	MaximumSocialSubscriptionsPerGuild,
+	getProviderLimit,
 	MaximumXAccountsPerGuild,
 } from "#social/subscriptions";
 import {
@@ -18,6 +19,7 @@ import {
 	MaximumMessageLength,
 } from "#twitch/subscriptions";
 import { api } from "#utils/discordApi";
+import { readGuildLimits } from "#utils/ring";
 import { DiscordAPIError } from "@discordjs/rest";
 import { Result } from "@sapphire/result";
 import { container } from "@wolfstar/http-framework";
@@ -46,6 +48,8 @@ export interface GuildApiProvider {
 	configured: boolean;
 	/** Whether the guild API adds and removes its subscriptions. */
 	manageable: boolean;
+	/** How many subscriptions of this provider the guild may hold. */
+	maximum: number;
 }
 
 export interface GuildApiSubscription {
@@ -84,7 +88,13 @@ export interface GuildApiState {
 	/** The switch of the guild's notifications. */
 	enabled: boolean;
 	limits: {
+		/**
+		 * The most subscriptions the guild may hold across every provider: the sum of their
+		 * `maximum`. Each provider is held to its own, which is what an add checks.
+		 */
 		subscriptions: number;
+		/** The most Twitch live notifications: each streamer and event of a channel counts once. */
+		twitchLive: number;
 		xAccounts: number;
 		messageLength: number;
 		targetLength: number;
@@ -99,19 +109,29 @@ export interface GuildApiState {
 	twitch: GuildApiTwitchSubscription[];
 }
 
-export const GuildApiLimits: GuildApiState["limits"] = {
-	subscriptions: MaximumSocialSubscriptionsPerGuild,
-	xAccounts: MaximumXAccountsPerGuild,
-	messageLength: MaximumMessageLength,
-	targetLength: MaximumTargetInputLength,
-};
-
-export function listGuildApiProviders(): GuildApiProvider[] {
+export function listGuildApiProviders(limits: RingLimits): GuildApiProvider[] {
 	return SocialProviders.map((provider) => ({
 		name: provider.name,
 		configured: provider.getAuthRequirements().satisfied,
 		manageable: isManageableProvider(provider.name),
+		maximum: getProviderLimit(provider.name, limits),
 	}));
+}
+
+function toGuildApiLimits(
+	providers: readonly GuildApiProvider[],
+	limits: RingLimits,
+): GuildApiState["limits"] {
+	return {
+		subscriptions: providers.reduce(
+			(total, provider) => total + provider.maximum,
+			0,
+		),
+		twitchLive: limits.maximumTwitchSubscriptions,
+		xAccounts: MaximumXAccountsPerGuild,
+		messageLength: MaximumMessageLength,
+		targetLength: MaximumTargetInputLength,
+	};
 }
 
 export function toGuildApiSubscription(
@@ -189,17 +209,21 @@ export function setGuildNotificationsEnabled(
 export async function readGuildApiState(
 	guildId: bigint,
 ): Promise<GuildApiState> {
-	const [installed, enabled, subscriptions, twitch] = await Promise.all([
-		isInstalled(guildId),
-		isGuildNotificationsEnabled(guildId),
-		readGuildApiSubscriptions(guildId),
-		readTwitchSubscriptions(guildId),
-	]);
+	const [installed, enabled, subscriptions, twitch, limits] = await Promise.all(
+		[
+			isInstalled(guildId),
+			isGuildNotificationsEnabled(guildId),
+			readGuildApiSubscriptions(guildId),
+			readTwitchSubscriptions(guildId),
+			readGuildLimits(guildId),
+		],
+	);
+	const providers = listGuildApiProviders(limits);
 	return {
 		installed,
 		enabled,
-		limits: GuildApiLimits,
-		providers: listGuildApiProviders(),
+		limits: toGuildApiLimits(providers, limits),
+		providers,
 		twitchLiveConfigured: isTwitchLiveConfigured(),
 		subscriptions,
 		twitch,

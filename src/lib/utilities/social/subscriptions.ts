@@ -14,12 +14,14 @@ import type {
 	TargetError,
 } from "#social/provider";
 import type { NotificationDeliveryError } from "#utils/notificationDelivery";
+import type { RingLimits } from "#utils/ring";
 import type { APIChannel } from "discord-api-types/v10";
 import { getActiveFilters } from "#social/filters";
 import { isNsfwChannel, socialDelivery } from "#social/notifications";
 import { parseXHandle } from "#social/providers/x";
 import { getSocialProvider } from "#social/registry";
 import { MaximumFetchedItems, toSeenId } from "#social/seen";
+import { readGuildLimits } from "#utils/ring";
 import { SlashCommandStringOption } from "@discordjs/builders";
 import { err, ok, Result } from "@sapphire/result";
 import { cast, cutText } from "@sapphire/utilities";
@@ -27,10 +29,26 @@ import { container } from "@wolfstar/http-framework";
 import { applyLocalizedBuilder } from "@wolfstar/plugin-i18next";
 
 /**
- * A guild can follow this many sources. Each one costs requests to a third party on a timer, so
- * the limit is what keeps one guild from turning the bot into a crawler.
+ * A guild can follow this many sources of one provider, unless Ring sets the provider's limit.
+ * Each one costs requests to a third party on a timer, so the limit is what keeps one guild from
+ * turning the bot into a crawler.
  */
-export const MaximumSocialSubscriptionsPerGuild = 25;
+export const MaximumSubscriptionsPerProvider = 25;
+
+/** How many subscriptions of a provider a guild may hold, with the limits Ring gave it. */
+export function getProviderLimit(
+	provider: SocialProviderName,
+	limits: RingLimits,
+) {
+	switch (provider) {
+		case "YouTube":
+			return limits.maximumYouTubeSubscriptions;
+		case "Reddit":
+			return limits.maximumRedditSubscriptions;
+		default:
+			return MaximumSubscriptionsPerProvider;
+	}
+}
 export const MaximumXAccountsPerGuild = 2;
 
 /** Match the columns of `SocialSource`, so a long feed title cannot fail the insert. */
@@ -151,7 +169,8 @@ export async function addSocialSubscription(options: {
 	);
 	if (unsupported) return err("commands/social:addFilterUnsupported");
 
-	const limitError = await checkGuildLimit(guildId);
+	const limit = getProviderLimit(providerName, await readGuildLimits(guildId));
+	const limitError = await checkProviderLimit(guildId, providerName, limit);
 	if (limitError) return err(limitError);
 
 	let xTargets: Set<string> | undefined;
@@ -235,7 +254,11 @@ export async function addSocialSubscription(options: {
 
 	// Asked again: validating a target can take seconds, which is plenty of time for parallel adds
 	// to all pass the first check.
-	const finalLimitError = await checkGuildLimit(guildId);
+	const finalLimitError = await checkProviderLimit(
+		guildId,
+		providerName,
+		limit,
+	);
 	if (finalLimitError) return err(finalLimitError);
 
 	const createInput = {
@@ -287,7 +310,11 @@ export async function addSocialSubscription(options: {
 					.map((subscription) => subscription.source.target),
 			);
 
-			if (subscriptions.length >= MaximumSocialSubscriptionsPerGuild)
+			if (
+				subscriptions.filter(
+					(subscription) => subscription.source.provider === "X",
+				).length >= limit
+			)
 				return "commands/social:addLimitReached" as const;
 			if (!accounts.has(target) && accounts.size >= MaximumXAccountsPerGuild)
 				return "commands/social:addXLimitReached" as const;
@@ -418,14 +445,14 @@ async function callProvider<T, E>(
 	}
 }
 
-async function checkGuildLimit(
+async function checkProviderLimit(
 	guildId: bigint,
+	provider: SocialProviderName,
+	limit: number,
 ): Promise<AddSocialSubscriptionError | null> {
 	const countResult = await Result.fromAsync(() =>
 		container.prisma.guildSocialSubscription.count({
-			where: {
-				guildId,
-			},
+			where: { guildId, source: { provider } },
 		}),
 	);
 	if (countResult.isErr()) {
@@ -433,7 +460,7 @@ async function checkGuildLimit(
 		return "commands/social:addFailedDatabase";
 	}
 
-	return countResult.unwrap() >= MaximumSocialSubscriptionsPerGuild
+	return countResult.unwrap() >= limit
 		? "commands/social:addLimitReached"
 		: null;
 }

@@ -18,6 +18,7 @@ import {
 import { handleSubscriptionRevoked } from "#twitch/revocations";
 import { parseTwitchLogin } from "#twitch/target";
 import { NotificationDeliveryError } from "#utils/notificationDelivery";
+import { readGuildLimits } from "#utils/ring";
 import {
 	SlashCommandChannelOption,
 	SlashCommandStringOption,
@@ -55,6 +56,7 @@ export type AddSubscriptionErrorKey =
 	| "commands/twitch:streamerNotFound"
 	| "commands/twitch:addFailedDatabase"
 	| "commands/twitch:addDuplicated"
+	| "commands/twitch:addLimitReached"
 	| "commands/twitch:addFailedTwitch";
 
 /**
@@ -498,6 +500,23 @@ export async function addSubscription(
 
 	if (alreadyHasEntry) {
 		return err("commands/twitch:addDuplicated");
+	}
+
+	// Each streamer and event of a channel counts once, as the list shows them. Ring sets the
+	// limit, or the free value when it does not answer.
+	const countResult = await Result.fromAsync(() =>
+		container.prisma.guildSubscription.count({ where: { guildId } }),
+	);
+	if (countResult.isErr()) {
+		container.logger.error(
+			"[twitch-subscriptions] Failed to count the guild subscriptions",
+			countResult.unwrapErr(),
+		);
+		return err("commands/twitch:addFailedDatabase");
+	}
+	const { maximumTwitchSubscriptions } = await readGuildLimits(guildId);
+	if (countResult.unwrap() >= maximumTwitchSubscriptions) {
+		return err("commands/twitch:addLimitReached");
 	}
 
 	if (streamerForType) {

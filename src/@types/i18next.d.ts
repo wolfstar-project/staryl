@@ -127,7 +127,7 @@ declare module "i18next" {
         addDuplicated: "{{REDCROSS}} That channel already follows this.";
         addFailedDatabase: "{{REDCROSS}} I could not save the subscription. Please try again later.";
         addFilterUnsupported: "{{REDCROSS}} This provider does not have the data for one of the filters you picked.";
-        addLimitReached: "{{REDCROSS}} This server already follows the maximum of 25 feeds and accounts. Remove one first.";
+        addLimitReached: "{{REDCROSS}} This server already follows the most feeds and accounts it can for this provider. Remove one first.";
         addName: "add";
         addProviderNotConfigured: "{{REDCROSS}} This provider is not available on this bot yet.";
         addSuccess: "{{GREENTICK}} Success! Whenever **{{name}}** publishes something, I will post it in {{channel}}.";
@@ -269,6 +269,7 @@ declare module "i18next" {
         addSuccessLive: "{{GREENTICK}} Success! Whenever {{name}} goes live, I will post a new message in {{channel}}.";
         addMessageForOfflineRequired: "{{REDCROSS}} I'm sorry but it is required to provide a message when making an offline subscription.";
         addFailedTwitch: "{{REDCROSS}} I could not create the subscription on Twitch's side. If this keeps happening, ask the bot administrator to check that `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_EVENT_SUB_SECRET`, and `TWITCH_EVENT_SUB_CALLBACK` are configured.";
+        addLimitReached: "{{REDCROSS}} This server already has the most Twitch live notifications it can have. Remove one first.";
         addFailedDatabase: "{{REDCROSS}} I could not save the subscription. Please try again later.";
         removeFailed: "{{REDCROSS}} I could not remove the subscription. Please try again later.";
         resetFailed: "{{REDCROSS}} I could not remove the subscriptions. Please try again later.";

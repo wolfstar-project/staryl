@@ -101,6 +101,7 @@ const prismaMock = {
 		updateMany: vi.fn(),
 	},
 	guildSubscription: {
+		count: vi.fn(async () => 0),
 		findMany: vi.fn(),
 		create: vi.fn(),
 		delete: vi.fn(),

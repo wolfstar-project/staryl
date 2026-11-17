@@ -46,12 +46,15 @@ subscription, `:subscription` the `subscriptionId` of a Twitch live one.
 	"installed": true, // Staryl is a member of the server
 	"enabled": true, // the switch of the server's notifications
 	"limits": {
-		"subscriptions": 25,
+		"subscriptions": 240, // the sum of every provider's maximum: there is no total of its own
+		"twitchLive": 15, // Twitch live notifications, each streamer and event of a channel once
 		"xAccounts": 2,
 		"messageLength": 200,
 		"targetLength": 500,
 	},
-	"providers": [{ "name": "Rss", "configured": true, "manageable": true }],
+	"providers": [
+		{ "name": "Rss", "configured": true, "manageable": true, "maximum": 25 },
+	],
 	"subscriptions": [
 		{
 			"provider": "Rss",
@@ -159,6 +162,23 @@ subscription on Twitch, go once no channel uses them. It answers `200` with
 `{ "removed", "twitch" }`. A failed cleanup on Twitch is logged and does not
 undo the removal.
 
+### Limits
+
+Each provider has its own limit, and there is no total:
+
+| Provider    | Limit                                |
+| ----------- | ------------------------------------ |
+| YouTube     | Ring's `maximumYouTubeSubscriptions` |
+| Reddit      | Ring's `maximumRedditSubscriptions`  |
+| Any other   | 25                                   |
+| X           | 25, and at most 2 accounts           |
+| Twitch live | Ring's `maximumTwitchSubscriptions`  |
+
+Ring (`INTERNAL_RING_URL`, `INTERNAL_RING_TOKEN`) is asked on each add and each
+read of the state. Without it, or when it does not answer within a second, a
+server gets the free values: 10 YouTube, 30 Reddit and 15 Twitch live. The
+commands enforce the same limits.
+
 ### A write that cannot list
 
 An add and a remove read the list after they write. If that read fails, the
@@ -195,7 +215,7 @@ for a code.
 | 422    | `missing-permissions`     | Staryl cannot post in the channel                              |
 | 422    | `provider-not-configured` | Staryl has no credentials for the provider, or for Twitch live |
 | 422    | `provider-not-manageable` | The provider needs a connected account                         |
-| 422    | `limit-reached`           | The server has its maximum of subscriptions                    |
+| 422    | `limit-reached`           | The server has its maximum for the provider, or of Twitch live |
 | 422    | `x-limit-reached`         | The server has its maximum of X accounts                       |
 | 422    | `target-invalid`          | The target is not something the provider can read              |
 | 422    | `target-not-found`        | The provider has no such account or feed                       |

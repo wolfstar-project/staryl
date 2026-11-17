@@ -5,7 +5,7 @@ import type {
 } from "discord-api-types/v10";
 import { readFileSync } from "node:fs";
 import { SocialProviders } from "#social/registry";
-import { MaximumSocialSubscriptionsPerGuild } from "#social/subscriptions";
+import { MaximumSubscriptionsPerProvider } from "#social/subscriptions";
 import { err, ok } from "@sapphire/result";
 import {
 	applicationCommandRegistry,
@@ -353,23 +353,27 @@ describe("subscriptions social add", () => {
 
 	it("refuses past the limit of the guild, before touching the network", async () => {
 		prismaMock.guildSocialSubscription.count.mockResolvedValue(
-			MaximumSocialSubscriptionsPerGuild,
+			MaximumSubscriptionsPerProvider,
 		);
 
 		await runner.run(buildInteraction("add", addOptions()));
 
-		expect(reply().content).toContain("maximum");
+		expect(reply().content).toContain(
+			"the most feeds and accounts it can for this provider",
+		);
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
 	it("checks the limit again after the slow part, for adds racing each other", async () => {
 		prismaMock.guildSocialSubscription.count
-			.mockResolvedValueOnce(MaximumSocialSubscriptionsPerGuild - 1)
-			.mockResolvedValueOnce(MaximumSocialSubscriptionsPerGuild);
+			.mockResolvedValueOnce(MaximumSubscriptionsPerProvider - 1)
+			.mockResolvedValueOnce(MaximumSubscriptionsPerProvider);
 
 		await runner.run(buildInteraction("add", addOptions()));
 
-		expect(reply().content).toContain("maximum");
+		expect(reply().content).toContain(
+			"the most feeds and accounts it can for this provider",
+		);
 		expect(prismaMock.guildSocialSubscription.create).not.toHaveBeenCalled();
 	});
 
@@ -520,7 +524,7 @@ describe("subscriptions social show", () => {
 describe("subscriptions social show limits", () => {
 	it("shows every subscription of a full server, within Discord's limits", async () => {
 		prismaMock.guildSocialSubscription.findMany.mockResolvedValue(
-			Array.from({ length: MaximumSocialSubscriptionsPerGuild }, (_, index) =>
+			Array.from({ length: MaximumSubscriptionsPerProvider }, (_, index) =>
 				makeSubscription({
 					sourceId: BigInt(index),
 					deliveryError: "MissingPermissions",
@@ -538,7 +542,7 @@ describe("subscriptions social show limits", () => {
 
 		const descriptions = reply().embeds!.map(({ description }) => description);
 		expect(descriptions.join("\n").match(/\(RSS or Atom feed\)/g)).toHaveLength(
-			MaximumSocialSubscriptionsPerGuild,
+			MaximumSubscriptionsPerProvider,
 		);
 		expect(
 			Math.max(...descriptions.map(({ length }) => length)),
