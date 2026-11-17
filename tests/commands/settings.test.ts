@@ -84,6 +84,7 @@ const SubscriptionId = 900n;
 const BotRoleId = "900000000000000001";
 
 const prismaMock = {
+	guild: { findUnique: vi.fn() },
 	guildSocialSubscription: {
 		findFirst: vi.fn(),
 		create: vi.fn(),
@@ -118,6 +119,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
 	vi.clearAllMocks();
+	prismaMock.guild.findUnique.mockResolvedValue(null);
 	prismaMock.guildSocialSubscription.findFirst.mockResolvedValue(null);
 	prismaMock.guildSocialSubscription.create.mockResolvedValue({});
 	prismaMock.guildSocialSubscription.count.mockResolvedValue(0);
@@ -695,6 +697,29 @@ describe("settings command chatInputRun (overview, unchanged)", () => {
 		const serialized = JSON.stringify(patchedBody());
 		expect(serialized).toContain("Current notifications:** 2");
 		expect(serialized).toContain(buildSettingsCustomId(OwnerId, "navigate"));
+		expect(serialized).not.toContain("Notifications are off");
+	});
+
+	it("says the notifications are off, which no subscription shows on its own", async () => {
+		prismaMock.guild.findUnique.mockResolvedValue({
+			notificationsEnabled: false,
+		});
+
+		await runner.run(buildChatInputInteraction() as never);
+
+		expect(JSON.stringify(patchedBody())).toContain(
+			"Notifications are off for this server",
+		);
+	});
+
+	it("does not claim the notifications are off when the switch cannot be read", async () => {
+		prismaMock.guild.findUnique.mockRejectedValue(new Error("connection lost"));
+
+		await runner.run(buildChatInputInteraction() as never);
+
+		expect(JSON.stringify(patchedBody())).not.toContain(
+			"Notifications are off",
+		);
 	});
 });
 

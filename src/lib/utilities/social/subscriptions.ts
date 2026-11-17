@@ -136,7 +136,9 @@ export async function addSocialSubscription(options: {
 	input: string;
 	message: string | null;
 	filters: SocialFilters;
-}): Promise<Result<{ displayName: string }, AddSocialSubscriptionError>> {
+}): Promise<
+	Result<{ displayName: string; target: string }, AddSocialSubscriptionError>
+> {
 	const { guildId, channelId, providerName, input, message, filters } = options;
 
 	const provider = getSocialProvider(providerName);
@@ -311,7 +313,7 @@ export async function addSocialSubscription(options: {
 		);
 	}
 
-	return ok({ displayName });
+	return ok({ displayName, target });
 }
 
 /** Removes a subscription and, in the same breath, a source nothing follows anymore. */

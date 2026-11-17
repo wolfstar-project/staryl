@@ -25,7 +25,11 @@ export class UserListener extends Listener {
 					streamerId: data.broadcaster_user_id,
 					subscriptionType: "StreamOffline",
 				},
-				include: { guildSubscription: true },
+				include: {
+					guildSubscription: {
+						include: { guild: { select: { notificationsEnabled: true } } },
+					},
+				},
 			});
 
 		if (!twitchSubscription) {
@@ -41,6 +45,13 @@ export class UserListener extends Listener {
 
 		// Iterate over all the guilds that are subscribed to this streamer and subscription type
 		for (const guildSubscription of twitchSubscription.guildSubscription) {
+			if (!guildSubscription.guild.notificationsEnabled) {
+				this.container.logger.debug(
+					`[twitch-stream-offline] Notifications are off in guild ${guildSubscription.guildId}, skipping channel ${guildSubscription.channelId}`,
+				);
+				continue;
+			}
+
 			// The offline notification is the custom message; without one there is nothing to send.
 			if (isNullishOrEmpty(guildSubscription.message)) {
 				this.container.logger.debug(

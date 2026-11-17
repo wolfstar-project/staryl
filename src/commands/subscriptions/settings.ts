@@ -1,9 +1,11 @@
 import type { AnyNamespace, TFunction } from "@wolfstar/plugin-i18next";
+import { isGuildNotificationsEnabled } from "#utils/guildApi/state";
 import { getSettingsSubscriptionCount } from "#utils/settingsCounts";
 import {
 	buildSettingsMenu,
 	SettingsInteractionHandlerName,
 } from "#utils/settingsMenu";
+import { Result } from "@sapphire/result";
 import { cast } from "@sapphire/utilities";
 import { Command, RegisterCommand } from "@wolfstar/http-framework";
 import {
@@ -39,9 +41,11 @@ export class UserCommand extends Command {
 		const deferred = await interaction.defer({ flags: MessageFlags.Ephemeral });
 
 		const t = cast<TFunction<AnyNamespace>>(getSupportedLanguageT(interaction));
-		const subscriptionCountResult = await getSettingsSubscriptionCount(
-			BigInt(interaction.guildId),
-		);
+		const guildId = BigInt(interaction.guildId);
+		const [subscriptionCountResult, enabledResult] = await Promise.all([
+			getSettingsSubscriptionCount(guildId),
+			Result.fromAsync(() => isGuildNotificationsEnabled(guildId)),
+		]);
 		if (subscriptionCountResult.isErr()) {
 			this.container.logger.error(
 				`[${SettingsInteractionHandlerName}] Failed to read subscriptions for guild ${interaction.guildId}`,
@@ -57,9 +61,14 @@ export class UserCommand extends Command {
 				// silently showing zero.
 				subscriptionCount: subscriptionCountResult.unwrapOr(0),
 				userId: interaction.user.id,
+				// The switch is on the WolfStar.rocks dashboard only. Without this line a member who finds
+				// every subscription healthy here has no way to learn why nothing is posted. A failed
+				// read says nothing, since a wrong "off" would send them to fix what is not broken.
 				notice: subscriptionCountResult.isErr()
 					? cast<string>(t("commands/twitch:testFailed"))
-					: undefined,
+					: enabledResult.unwrapOr(true)
+						? undefined
+						: `${cast<string>(t("commands/settings:notificationsOff"))}\n`,
 			},
 			t,
 		);

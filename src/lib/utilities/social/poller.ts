@@ -1,5 +1,4 @@
 // oxlint-disable no-await-in-loop -- each worker checks its sources one at a time on purpose
-import type { GuildSocialSubscription } from "#lib/setup/prisma";
 import type { SocialDelivery } from "#social/notifications";
 import type {
 	FetchOutcome,
@@ -7,7 +6,11 @@ import type {
 	SocialItem,
 	SocialProvider,
 } from "#social/provider";
-import type { SocialSourceWithSubscriptions, SocialStore } from "#social/store";
+import type {
+	PolledSubscription,
+	SocialSourceWithSubscriptions,
+	SocialStore,
+} from "#social/store";
 import { SocialProviderName } from "#generated/prisma";
 import { evaluateItem, parseSocialFilters } from "#social/filters";
 import { isNsfwChannel, parseItemUrl } from "#social/notifications";
@@ -295,7 +298,7 @@ export class SocialPoller {
 	async #notify(
 		provider: SocialProvider,
 		source: SocialSourceWithSubscriptions,
-		subscription: GuildSocialSubscription,
+		subscription: PolledSubscription,
 		items: readonly SocialItem[],
 		holdsClaim: () => Promise<boolean>,
 	) {
@@ -314,6 +317,14 @@ export class SocialPoller {
 			sourceId: subscription.sourceId,
 		};
 		const now = this.#now();
+
+		if (!subscription.guild.notificationsEnabled) {
+			// Counted as seen, so turning the notifications back on does not post what was missed.
+			await store.updateSubscription(key, {
+				seenItemIds: mergeSeenIds(subscription.seenItemIds, fresh),
+			});
+			return false;
+		}
 
 		const target = await delivery.prepare(key.guildId, key.channelId);
 		if (target.isErr()) {

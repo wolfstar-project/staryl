@@ -61,10 +61,10 @@ generic name. A provider may say "post" or "video" in its own copy. **Casing:**
 
 ## Banned
 
-| Never       | Use instead     | Why                                             |
-| ----------- | --------------- | ----------------------------------------------- |
-| integration | Social Provider | The issues use it, the code settled on provider |
-| dashboard   | `/settings`     | Staryl has no dashboard, only slash commands    |
+| Never       | Use instead     | Why                                                                                                                       |
+| ----------- | --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| integration | Social Provider | The issues use it, the code settled on provider                                                                           |
+| dashboard   | `/settings`     | Staryl has no dashboard, only slash commands. The word names only the WolfStar.rocks dashboard, a caller of the guild API |
 
 ## Open questions
 

@@ -80,6 +80,7 @@ declare module "i18next" {
           twitch: "{{notice}}## Server settings › Twitch live\nAdd subscriptions for live or offline events, manage existing subscriptions or send a test notification. Videos and clips have their own provider sections.";
         };
         closed: "## Settings closed\nRun `/settings` whenever you need it again.";
+        notificationsOff: "⚠️ Notifications are off for this server. Turn them on in the Social module of the WolfStar.rocks dashboard.";
         errors: {
           invalid: "This settings menu is invalid. Run `/settings` to open a new one.";
           ownerOnly: "Only the member who opened this settings menu can use it.";
