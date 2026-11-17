@@ -19,7 +19,9 @@ const ChannelErrors = {
 	[NotificationDeliveryError.GuildUnavailable]: [409, "guild-unavailable"],
 	[NotificationDeliveryError.ChannelNotFound]: [422, "channel-not-found"],
 	[NotificationDeliveryError.MissingPermissions]: [422, "missing-permissions"],
-	[NotificationDeliveryError.SendFailed]: [422, "channel-not-found"],
+	// Checking a channel posts nothing, so this is here for the type. It gets a code of its own all
+	// the same: "the channel is gone" would send a member to fix what is not broken.
+	[NotificationDeliveryError.SendFailed]: [422, "send-failed"],
 } as const satisfies Record<
 	NotificationDeliveryError,
 	readonly [number, string]
@@ -99,26 +101,30 @@ export class UserRoute extends Route {
 			`[guild-api] ${body.provider} subscription added to channel ${body.channelId} of guild ${guild.guildId} by ${guild.actor ?? "an unnamed member"}`,
 		);
 
-		const subscriptions = await Result.fromAsync(() =>
-			readGuildApiSubscriptions(guild.guildId),
-		);
-		if (subscriptions.isErr()) {
-			response.error(500, "database");
-			return;
-		}
+		// The subscription is saved by now. A list that cannot be read must not turn that into a
+		// failure: the caller would try again and be told the subscription is a duplicate.
+		const subscriptions = (
+			await Result.fromAsync(() => readGuildApiSubscriptions(guild.guildId))
+		)
+			.inspectErr((error) =>
+				this.container.logger.error(
+					`[guild-api] Added a subscription in guild ${guild.guildId}, but could not list them`,
+					error,
+				),
+			)
+			.unwrapOr(null);
+
 		// Found by its canonical target: the same account can be typed in more than one way.
 		const { target: canonical } = added.unwrap();
-		const subscription = subscriptions
-			.unwrap()
-			.find(
-				(entry) =>
-					entry.channelId === String(body.channelId) &&
-					entry.provider === body.provider &&
-					entry.target === canonical,
-			);
+		const subscription = subscriptions?.find(
+			(entry) =>
+				entry.channelId === String(body.channelId) &&
+				entry.provider === body.provider &&
+				entry.target === canonical,
+		);
 		response.status(201).json({
 			subscription: subscription ?? null,
-			subscriptions: subscriptions.unwrap(),
+			subscriptions,
 		});
 	}
 }

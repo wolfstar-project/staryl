@@ -129,6 +129,14 @@ there.
 `{ "removed", "subscriptions" }`: the subscription it removed, and the list the
 server has left.
 
+### A write that cannot list
+
+An add and a remove read the list after they write. If that read fails, the
+write still went through, so the route answers its success status with
+`"subscriptions": null` (and `"subscription": null` for an add). A caller that
+gets `null` reads the list again with `GET`. It must not send the write again: a
+second add would answer `409 duplicate`, and a second remove `404`.
+
 ## Not manageable providers
 
 Instagram and TikTok follow an account its owner connected. The connection
@@ -152,6 +160,7 @@ for a code.
 | 409    | `guild-unavailable`       | Staryl cannot read the server. It is probably not in it  |
 | 422    | `channel-not-found`       | The channel is not in the server                         |
 | 422    | `channel-not-supported`   | The channel is not a text or announcement channel        |
+| 422    | `send-failed`             | Discord rejected a message for the channel               |
 | 422    | `missing-permissions`     | Staryl cannot post in the channel                        |
 | 422    | `provider-not-configured` | Staryl has no credentials for the provider               |
 | 422    | `provider-not-manageable` | The provider needs a connected account                   |

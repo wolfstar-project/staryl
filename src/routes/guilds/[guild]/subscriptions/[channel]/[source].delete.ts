@@ -61,16 +61,21 @@ export class UserRoute extends Route {
 			`[guild-api] ${subscription.source.provider} subscription removed from channel ${channelId} of guild ${guild.guildId} by ${guild.actor ?? "an unnamed member"}`,
 		);
 
-		const subscriptions = await Result.fromAsync(() =>
-			readGuildApiSubscriptions(guild.guildId),
-		);
-		if (subscriptions.isErr()) {
-			response.error(500, "database");
-			return;
-		}
+		// The subscription is gone by now. A list that cannot be read must not turn that into a
+		// failure: the caller would try again and be told there is no such subscription.
+		const subscriptions = (
+			await Result.fromAsync(() => readGuildApiSubscriptions(guild.guildId))
+		)
+			.inspectErr((error) =>
+				this.container.logger.error(
+					`[guild-api] Removed a subscription in guild ${guild.guildId}, but could not list them`,
+					error,
+				),
+			)
+			.unwrapOr(null);
 		response.json({
 			removed: toGuildApiSubscription(subscription),
-			subscriptions: subscriptions.unwrap(),
+			subscriptions,
 		});
 	}
 }

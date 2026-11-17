@@ -152,19 +152,30 @@ export async function isGuildNotificationsEnabled(guildId: bigint) {
 	return guild?.notificationsEnabled ?? true;
 }
 
-/** Stores the switch and answers what it was, so a caller can tell a change from a repeat. */
-export async function setGuildNotificationsEnabled(
+/**
+ * Stores the switch and answers what it was, so a caller can tell a change from a repeat.
+ *
+ * The read and the write share a lock on the guild: two requests at once would otherwise both read
+ * the same value, and both report a change only one of them made.
+ */
+export function setGuildNotificationsEnabled(
 	guildId: bigint,
 	enabled: boolean,
 ) {
-	const previous = await isGuildNotificationsEnabled(guildId);
-	await container.prisma.guild.upsert({
-		where: { id: guildId },
-		create: { id: guildId, notificationsEnabled: enabled },
-		update: { notificationsEnabled: enabled },
-		select: { id: true },
+	return container.prisma.$transaction(async (transaction) => {
+		await transaction.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(${guildId})`;
+		const guild = await transaction.guild.findUnique({
+			where: { id: guildId },
+			select: { notificationsEnabled: true },
+		});
+		await transaction.guild.upsert({
+			where: { id: guildId },
+			create: { id: guildId, notificationsEnabled: enabled },
+			update: { notificationsEnabled: enabled },
+			select: { id: true },
+		});
+		return guild?.notificationsEnabled ?? true;
 	});
-	return previous;
 }
 
 export async function readGuildApiState(

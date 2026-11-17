@@ -38,6 +38,8 @@ const FeedUrl = "https://example.com/feed.xml";
 const BotRoleId = "900000000000000001";
 
 const prismaMock = {
+	$queryRaw: vi.fn(),
+	$transaction: vi.fn(),
 	guild: { findUnique: vi.fn(), upsert: vi.fn() },
 	guildSubscription: { findMany: vi.fn() },
 	guildSocialSubscription: {
@@ -157,6 +159,10 @@ beforeEach(() => {
 	vi.mocked(fetchUsers).mockResolvedValue({
 		data: [{ id: "123", display_name: "CoolStreamer" }],
 	} as never);
+	prismaMock.$queryRaw.mockResolvedValue([]);
+	prismaMock.$transaction.mockImplementation(
+		(run: (transaction: typeof prismaMock) => unknown) => run(prismaMock),
+	);
 	prismaMock.guild.findUnique.mockResolvedValue(null);
 	prismaMock.guild.upsert.mockResolvedValue({});
 	prismaMock.guildSubscription.findMany.mockResolvedValue([]);
@@ -359,6 +365,16 @@ describe("PATCH /guilds/:guild/notifications", () => {
 		);
 	});
 
+	it("answers what the switch was, so a repeat reads as one", async () => {
+		prismaMock.guild.findUnique.mockResolvedValue({
+			notificationsEnabled: false,
+		});
+
+		const answer = await call(PatchRoute, { body: { enabled: false } });
+
+		expect(answer.body).toEqual({ enabled: false, previous: false });
+	});
+
 	it.each([[{}], [{ enabled: "false" }], [null], ["off"]])(
 		"refuses the body %j",
 		async (body) => {
@@ -392,6 +408,21 @@ describe("POST /guilds/:guild/subscriptions", () => {
 			channelId: BigInt(ChannelId),
 			message: "New post!",
 		});
+	});
+
+	it("still answers 201 when the list cannot be read after the subscription was saved", async () => {
+		prismaMock.guildSocialSubscription.findMany.mockRejectedValue(
+			new Error("connection lost"),
+		);
+
+		const answer = await call(AddRoute, { body });
+
+		// A 500 here would have the caller try again, and be told the subscription is a duplicate.
+		expect(answer).toEqual({
+			status: 201,
+			body: { subscription: null, subscriptions: null },
+		});
+		expect(prismaMock.guildSocialSubscription.create).toHaveBeenCalledOnce();
 	});
 
 	it.each([
@@ -498,6 +529,22 @@ describe("DELETE /guilds/:guild/subscriptions/:channel/:source", () => {
 				},
 			}),
 		);
+	});
+
+	it("still answers 200 when the list cannot be read after the removal", async () => {
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription(),
+		);
+		prismaMock.guildSocialSubscription.findMany.mockRejectedValue(
+			new Error("connection lost"),
+		);
+
+		const answer = await call(RemoveRoute, { params });
+
+		expect(answer).toMatchObject({
+			status: 200,
+			body: { removed: { sourceId: "5" }, subscriptions: null },
+		});
 	});
 
 	it("answers 404 for a subscription the guild does not have", async () => {
