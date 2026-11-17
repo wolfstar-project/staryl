@@ -21,10 +21,7 @@ import { api } from "#utils/discordApi";
 import { DiscordAPIError } from "@discordjs/rest";
 import { Result } from "@sapphire/result";
 import { container } from "@wolfstar/http-framework";
-import {
-	areTwitchClientCredentialsSet,
-	areTwitchEventSubCredentialsSet,
-} from "@wolfstar/twitch-helpers";
+import { areTwitchClientCredentialsSet } from "@wolfstar/twitch-helpers";
 
 /** The longest target `add` takes, as the option of the command does. */
 export const MaximumTargetInputLength = 500;
@@ -93,7 +90,10 @@ export interface GuildApiState {
 		targetLength: number;
 	};
 	providers: GuildApiProvider[];
-	/** Whether the bot can follow a new Twitch streamer live: it needs the Helix and EventSub credentials. */
+	/**
+	 * Whether the bot can look a Twitch streamer up, which every live add needs. A streamer no
+	 * channel follows yet also needs the EventSub credentials, and answers `twitch-failed` without them.
+	 */
 	twitchLiveConfigured: boolean;
 	subscriptions: GuildApiSubscription[];
 	twitch: GuildApiTwitchSubscription[];
@@ -232,7 +232,7 @@ async function isInstalled(guildId: bigint) {
 }
 
 export function isTwitchLiveConfigured() {
-	return areTwitchClientCredentialsSet() && areTwitchEventSubCredentialsSet();
+	return areTwitchClientCredentialsSet();
 }
 
 /** The guild's Twitch live subscriptions, with the streamers' names when Twitch answers. */

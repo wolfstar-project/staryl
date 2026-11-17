@@ -314,9 +314,15 @@ export async function resolveSubscription(
 	return ok(match);
 }
 
-export async function getStreamer(streamerName: string) {
+/**
+ * Looks a streamer up by login. Answers `null` when Twitch has no such login, and an error when
+ * Twitch could not be asked: a caller that writes must not read an outage as "no such streamer".
+ */
+export async function lookupStreamer(
+	streamerName: string,
+): Promise<Result<TwitchHelixUsersSearchResult | null, "unavailable">> {
 	const login = parseTwitchLogin(streamerName);
-	if (!login) return null;
+	if (!login) return ok(null);
 	// `Result.fromAsync` flattens the returned `FetchResult` and additionally catches the errors
 	// `fetchUsers` throws when the Twitch client credentials are missing.
 	const result = await Result.fromAsync(() => fetchUsers({ logins: [login] }));
@@ -325,14 +331,19 @@ export async function getStreamer(streamerName: string) {
 			`[twitch-subscriptions] Failed to look up the streamer "${streamerName}"`,
 			result.unwrapErr(),
 		);
-		return null;
+		return err("unavailable");
 	}
 
 	const { data } = result.unwrap();
 	container.logger.debug(
 		`[twitch-subscriptions] Look-up of the streamer "${streamerName}" returned ${data.length} result(s)`,
 	);
-	return data.length > 0 ? data[0] : null;
+	return ok(data[0] ?? null);
+}
+
+/** {@link lookupStreamer}, reading a failed look-up as no streamer, for the commands that only read. */
+export async function getStreamer(streamerName: string) {
+	return (await lookupStreamer(streamerName)).unwrapOr(null);
 }
 
 /**
@@ -448,7 +459,11 @@ export async function addSubscription(
 		return err("commands/twitch:addMessageForOfflineRequired");
 	}
 
-	const streamer = await getStreamer(streamerLogin);
+	const lookup = await lookupStreamer(streamerLogin);
+	if (lookup.isErr()) {
+		return err("commands/twitch:addFailedTwitch");
+	}
+	const streamer = lookup.unwrap();
 	if (isNullish(streamer)) {
 		return err("commands/twitch:streamerNotFound");
 	}

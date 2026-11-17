@@ -255,7 +255,7 @@ describe("GET /guilds/:guild/notifications", () => {
 	});
 
 	it("says whether a Twitch live subscription can be added", async () => {
-		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+		vi.mocked(areTwitchClientCredentialsSet).mockReturnValue(false);
 
 		const { body } = await call(GetRoute);
 
@@ -694,6 +694,16 @@ describe("POST /guilds/:guild/twitch", () => {
 		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
 	});
 
+	// The member would otherwise be told to check a spelling that is right.
+	it("names Twitch, not the streamer, when Twitch cannot be asked", async () => {
+		vi.mocked(fetchUsers).mockRejectedValue(new Error("Twitch is down"));
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "twitch-failed" } });
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+	});
+
 	it("says Twitch has no such streamer", async () => {
 		vi.mocked(fetchUsers).mockResolvedValue({ data: [] } as never);
 
@@ -723,8 +733,8 @@ describe("POST /guilds/:guild/twitch", () => {
 		expect(answer).toEqual({ status: 422, body: { error: "twitch-failed" } });
 	});
 
-	it("refuses before anything else when the bot has no EventSub credentials", async () => {
-		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+	it("refuses before anything else when the bot cannot look a streamer up", async () => {
+		vi.mocked(areTwitchClientCredentialsSet).mockReturnValue(false);
 
 		const answer = await call(TwitchAddRoute, { body });
 
@@ -733,6 +743,26 @@ describe("POST /guilds/:guild/twitch", () => {
 			body: { error: "provider-not-configured" },
 		});
 		expect(fetchUsers).not.toHaveBeenCalled();
+	});
+
+	// Joining a streamer another channel follows asks nothing of EventSub.
+	it("still joins a followed streamer when the bot has no EventSub credentials", async () => {
+		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(
+			liveRow().twitchSubscription,
+		);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer.status).toBe(201);
+	});
+
+	it("answers that Twitch failed for a new streamer when the bot has no EventSub credentials", async () => {
+		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "twitch-failed" } });
 	});
 
 	it("refuses a channel the bot cannot post in", async () => {

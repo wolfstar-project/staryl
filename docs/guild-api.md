@@ -88,7 +88,9 @@ subscription, `:subscription` the `subscriptionId` of a Twitch live one.
 - `health` is the value `/subscriptions <provider> show` reports. `unavailable`
   means the provider's credentials are not configured.
 - `twitch` lists the Twitch live subscriptions. `twitchLiveConfigured` is
-  `false` while the bot lacks the Twitch Helix or EventSub credentials.
+  `false` while the bot lacks the Twitch Helix credentials, which every live add
+  needs. A streamer no channel follows yet also needs the EventSub credentials,
+  and answers `twitch-failed` without them.
 
 ### Switch
 
@@ -182,7 +184,7 @@ for a code.
 | ------ | ------------------------- | -------------------------------------------------------------- |
 | 400    | `invalid-guild`           | `:guild` is not a Discord id                                   |
 | 400    | `invalid-body`            | The body has the wrong shape, or a field is over a limit       |
-| 400    | `invalid-subscription`    | `:channel` or `:source` is not an id                           |
+| 400    | `invalid-subscription`    | `:channel`, `:source` or `:subscription` is not an id          |
 | 401    | `unauthorized`            | The token is missing or wrong                                  |
 | 404    | `subscription-not-found`  | The server has no such subscription                            |
 | 409    | `duplicate`               | The channel already follows the target                         |
@@ -202,7 +204,7 @@ for a code.
 | 422    | `target-unreachable`      | The provider did not answer. Try again later                   |
 | 422    | `message-required`        | A Twitch offline notification needs a message                  |
 | 422    | `streamer-not-found`      | Twitch has no streamer with that login                         |
-| 422    | `twitch-failed`           | Twitch refused the EventSub subscription                       |
+| 422    | `twitch-failed`           | Twitch refused, or could not be asked. Try again later         |
 | 500    | `database`                | Staryl could not read or write its database                    |
 | 503    | `guild-api-disabled`      | `GUILD_API_SECRET` is not set                                  |
 
