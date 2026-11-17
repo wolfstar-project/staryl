@@ -723,6 +723,35 @@ describe("POST /guilds/:guild/twitch", () => {
 		expect(addEventSubscription).not.toHaveBeenCalled();
 	});
 
+	// The first count lets it through; another add takes the last place before the insert.
+	it("refuses when a parallel add took the last place, joining an existing streamer", async () => {
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(
+			liveRow().twitchSubscription,
+		);
+		prismaMock.guildSubscription.count
+			.mockResolvedValueOnce(14)
+			.mockResolvedValueOnce(15);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "limit-reached" } });
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+		expect(prismaMock.$queryRaw).toHaveBeenCalled();
+	});
+
+	it("removes the EventSub subscription it made when a parallel add took the last place", async () => {
+		prismaMock.guildSubscription.count
+			.mockResolvedValueOnce(14)
+			.mockResolvedValueOnce(15);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "limit-reached" } });
+		expect(addEventSubscription).toHaveBeenCalledOnce();
+		expect(removeEventSubscription).toHaveBeenCalledWith("eventsub-1");
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+	});
+
 	it("allows more Twitch live notifications to a guild Ring raised", async () => {
 		vi.stubEnv("INTERNAL_RING_URL", "https://ring.test/guilds");
 		vi.stubEnv("INTERNAL_RING_TOKEN", "ring-token");

@@ -86,6 +86,10 @@ const ChannelId = "800000000000000001";
 const SubscriptionId = 900n;
 
 const prismaMock = {
+	$queryRaw: vi.fn(async () => []),
+	$transaction: vi.fn(async (run: (transaction: unknown) => unknown) =>
+		run(prismaMock),
+	),
 	guildSocialSubscription: {
 		findMany: vi.fn(),
 		delete: vi.fn(),
