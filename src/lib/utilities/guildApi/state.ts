@@ -21,6 +21,10 @@ import { api } from "#utils/discordApi";
 import { DiscordAPIError } from "@discordjs/rest";
 import { Result } from "@sapphire/result";
 import { container } from "@wolfstar/http-framework";
+import {
+	areTwitchClientCredentialsSet,
+	areTwitchEventSubCredentialsSet,
+} from "@wolfstar/twitch-helpers";
 
 /** The longest target `add` takes, as the option of the command does. */
 export const MaximumTargetInputLength = 500;
@@ -65,6 +69,8 @@ export interface GuildApiSubscription {
 }
 
 export interface GuildApiTwitchSubscription {
+	/** The id of the shared Twitch subscription: with the channel, what a removal names. */
+	subscriptionId: string;
 	streamerId: string;
 	/** `null` when Twitch did not answer with the name. */
 	streamerName: string | null;
@@ -87,6 +93,8 @@ export interface GuildApiState {
 		targetLength: number;
 	};
 	providers: GuildApiProvider[];
+	/** Whether the bot can follow a new Twitch streamer live: it needs the Helix and EventSub credentials. */
+	twitchLiveConfigured: boolean;
 	subscriptions: GuildApiSubscription[];
 	twitch: GuildApiTwitchSubscription[];
 }
@@ -192,6 +200,7 @@ export async function readGuildApiState(
 		enabled,
 		limits: GuildApiLimits,
 		providers: listGuildApiProviders(),
+		twitchLiveConfigured: isTwitchLiveConfigured(),
 		subscriptions,
 		twitch,
 	};
@@ -222,12 +231,19 @@ async function isInstalled(guildId: bigint) {
 	return true;
 }
 
-async function readTwitchSubscriptions(
+export function isTwitchLiveConfigured() {
+	return areTwitchClientCredentialsSet() && areTwitchEventSubCredentialsSet();
+}
+
+/** The guild's Twitch live subscriptions, with the streamers' names when Twitch answers. */
+export async function readTwitchSubscriptions(
 	guildId: bigint,
 ): Promise<GuildApiTwitchSubscription[]> {
 	const subscriptions = await container.prisma.guildSubscription.findMany({
 		where: { guildId },
 		include: { twitchSubscription: true },
+		// A stable order. The shared row is the closest thing to a creation date this table has.
+		orderBy: { subscriptionId: "asc" },
 	});
 	if (subscriptions.length === 0) return [];
 
@@ -236,6 +252,7 @@ async function readTwitchSubscriptions(
 		subscriptions.map((entry) => entry.twitchSubscription.streamerId),
 	);
 	return subscriptions.map((entry) => ({
+		subscriptionId: String(entry.subscriptionId),
 		streamerId: entry.twitchSubscription.streamerId,
 		streamerName: names.get(entry.twitchSubscription.streamerId) ?? null,
 		channelId: String(entry.channelId),

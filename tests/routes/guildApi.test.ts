@@ -3,13 +3,21 @@ import { readFileSync } from "node:fs";
 import { DiscordAPIError } from "@discordjs/rest";
 import { ok } from "@sapphire/result";
 import { container } from "@wolfstar/http-framework";
-import { fetchUsers } from "@wolfstar/twitch-helpers";
+import {
+	addEventSubscription,
+	areTwitchClientCredentialsSet,
+	areTwitchEventSubCredentialsSet,
+	fetchUsers,
+	removeEventSubscription,
+} from "@wolfstar/twitch-helpers";
 import { PermissionFlagsBits } from "discord-api-types/v10";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UserRoute as GetRoute } from "../../src/routes/guilds/[guild]/notifications.get.ts";
 import { UserRoute as PatchRoute } from "../../src/routes/guilds/[guild]/notifications.patch.ts";
 import { UserRoute as AddRoute } from "../../src/routes/guilds/[guild]/subscriptions.post.ts";
 import { UserRoute as RemoveRoute } from "../../src/routes/guilds/[guild]/subscriptions/[channel]/[source].delete.ts";
+import { UserRoute as TwitchAddRoute } from "../../src/routes/guilds/[guild]/twitch.post.ts";
+import { UserRoute as TwitchRemoveRoute } from "../../src/routes/guilds/[guild]/twitch/[channel]/[subscription].delete.ts";
 
 const fetchMock = vi.hoisted(() => vi.fn());
 vi.mock("#social/publicFetch", () => ({ fetchPublicUrl: fetchMock }));
@@ -23,7 +31,14 @@ vi.mock("#utils/discordApi", () => ({ api: () => apiMock }));
 vi.mock("@wolfstar/twitch-helpers", async (importOriginal) => {
 	const actual =
 		await importOriginal<typeof import("@wolfstar/twitch-helpers")>();
-	return { ...actual, fetchUsers: vi.fn() };
+	return {
+		...actual,
+		addEventSubscription: vi.fn(),
+		areTwitchClientCredentialsSet: vi.fn(),
+		areTwitchEventSubCredentialsSet: vi.fn(),
+		fetchUsers: vi.fn(),
+		removeEventSubscription: vi.fn(),
+	};
 });
 
 const Rss = readFileSync(
@@ -41,7 +56,13 @@ const prismaMock = {
 	$queryRaw: vi.fn(),
 	$transaction: vi.fn(),
 	guild: { findUnique: vi.fn(), upsert: vi.fn() },
-	guildSubscription: { findMany: vi.fn() },
+	guildSubscription: {
+		create: vi.fn(),
+		delete: vi.fn(),
+		findMany: vi.fn(),
+		findUnique: vi.fn(),
+	},
+	twitchSubscription: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
 	guildSocialSubscription: {
 		count: vi.fn(),
 		create: vi.fn(),
@@ -163,6 +184,17 @@ beforeEach(() => {
 	prismaMock.$transaction.mockImplementation(
 		(run: (transaction: typeof prismaMock) => unknown) => run(prismaMock),
 	);
+	vi.mocked(areTwitchClientCredentialsSet).mockReturnValue(true);
+	vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(true);
+	vi.mocked(addEventSubscription).mockResolvedValue({
+		id: "eventsub-1",
+	} as never);
+	vi.mocked(removeEventSubscription).mockResolvedValue(undefined as never);
+	prismaMock.guildSubscription.create.mockResolvedValue({});
+	prismaMock.guildSubscription.delete.mockResolvedValue({});
+	prismaMock.guildSubscription.findUnique.mockResolvedValue(null);
+	prismaMock.twitchSubscription.findFirst.mockResolvedValue(null);
+	prismaMock.twitchSubscription.delete.mockResolvedValue({});
 	prismaMock.guild.findUnique.mockResolvedValue(null);
 	prismaMock.guild.upsert.mockResolvedValue({});
 	prismaMock.guildSubscription.findMany.mockResolvedValue([]);
@@ -220,6 +252,14 @@ describe("GET /guilds/:guild/notifications", () => {
 			subscriptions: [],
 			twitch: [],
 		});
+	});
+
+	it("says whether a Twitch live subscription can be added", async () => {
+		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+
+		const { body } = await call(GetRoute);
+
+		expect(body).toMatchObject({ twitchLiveConfigured: false });
 	});
 
 	it("reports the switch once it was turned off", async () => {
@@ -326,6 +366,7 @@ describe("GET /guilds/:guild/notifications", () => {
 
 		expect((body as { twitch: unknown[] }).twitch).toEqual([
 			{
+				subscriptionId: "1",
 				streamerId: "123",
 				streamerName: "CoolStreamer",
 				channelId: ChannelId,
@@ -576,6 +617,215 @@ describe("DELETE /guilds/:guild/subscriptions/:channel/:source", () => {
 	it("refuses a source that is not an id", async () => {
 		const answer = await call(RemoveRoute, {
 			params: { channel: ChannelId, source: "feed" },
+		});
+
+		expect(answer).toEqual({
+			status: 400,
+			body: { error: "invalid-subscription" },
+		});
+	});
+});
+
+const liveRow = (overrides: Record<string, unknown> = {}) => ({
+	guildId: BigInt(GuildId),
+	channelId: BigInt(ChannelId),
+	message: null,
+	subscriptionId: 7n,
+	twitchSubscription: {
+		id: 7n,
+		streamerId: "123",
+		subscriptionId: "eventsub-1",
+		subscriptionType: "StreamOnline",
+		revokedReason: null,
+	},
+	...overrides,
+});
+
+describe("POST /guilds/:guild/twitch", () => {
+	const body = {
+		streamer: "CoolStreamer",
+		channelId: ChannelId,
+		type: "StreamOnline",
+	};
+
+	it("follows the streamer through EventSub and answers with the new subscription", async () => {
+		prismaMock.guildSubscription.findMany
+			.mockResolvedValueOnce([])
+			.mockResolvedValue([liveRow()]);
+
+		const answer = await call(TwitchAddRoute, {
+			body: { ...body, streamer: "@coolstreamer" },
+		});
+
+		expect(answer.status).toBe(201);
+		expect(answer.body).toMatchObject({
+			subscription: {
+				subscriptionId: "7",
+				streamerId: "123",
+				type: "StreamOnline",
+			},
+			twitch: [{ subscriptionId: "7", streamerName: "CoolStreamer" }],
+		});
+		expect(fetchUsers).toHaveBeenCalledWith({ logins: ["coolstreamer"] });
+		expect(addEventSubscription).toHaveBeenCalledOnce();
+		expect(prismaMock.guildSubscription.create).toHaveBeenCalledOnce();
+	});
+
+	it("joins the streamer's existing subscription without asking Twitch again", async () => {
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue(
+			liveRow().twitchSubscription,
+		);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer.status).toBe(201);
+		expect(addEventSubscription).not.toHaveBeenCalled();
+	});
+
+	it("asks for a message before an offline notification, as the command does", async () => {
+		const answer = await call(TwitchAddRoute, {
+			body: { ...body, type: "StreamOffline" },
+		});
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "message-required" },
+		});
+		expect(prismaMock.guildSubscription.create).not.toHaveBeenCalled();
+	});
+
+	it("says Twitch has no such streamer", async () => {
+		vi.mocked(fetchUsers).mockResolvedValue({ data: [] } as never);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "streamer-not-found" },
+		});
+	});
+
+	it("answers a conflict for a streamer the channel already follows for that event", async () => {
+		prismaMock.guildSubscription.findMany.mockResolvedValue([liveRow()]);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 409, body: { error: "duplicate" } });
+	});
+
+	it("names Twitch, not Staryl, when Twitch refuses the EventSub subscription", async () => {
+		vi.mocked(addEventSubscription).mockRejectedValue(
+			new Error("409 Conflict"),
+		);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({ status: 422, body: { error: "twitch-failed" } });
+	});
+
+	it("refuses before anything else when the bot has no EventSub credentials", async () => {
+		vi.mocked(areTwitchEventSubCredentialsSet).mockReturnValue(false);
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "provider-not-configured" },
+		});
+		expect(fetchUsers).not.toHaveBeenCalled();
+	});
+
+	it("refuses a channel the bot cannot post in", async () => {
+		apiMock.guilds.getMember.mockResolvedValue({ roles: [] });
+
+		const answer = await call(TwitchAddRoute, { body });
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "missing-permissions" },
+		});
+		expect(fetchUsers).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a login with a space", { ...body, streamer: "cool streamer" }],
+		["an unknown event", { ...body, type: "StreamRaid" }],
+		["a channel that is not an id", { ...body, channelId: "general" }],
+		["a message over the limit", { ...body, message: "x".repeat(201) }],
+	])("refuses %s", async (_name, invalid) => {
+		const answer = await call(TwitchAddRoute, { body: invalid });
+
+		expect(answer).toEqual({ status: 400, body: { error: "invalid-body" } });
+	});
+});
+
+describe("DELETE /guilds/:guild/twitch/:channel/:subscription", () => {
+	const params = { channel: ChannelId, subscription: "7" };
+
+	it("removes the channel's row, and the EventSub subscription nobody else uses", async () => {
+		prismaMock.guildSubscription.findUnique.mockResolvedValue(liveRow());
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue({
+			...liveRow().twitchSubscription,
+			guildSubscription: [],
+		});
+
+		const answer = await call(TwitchRemoveRoute, { params });
+
+		expect(answer).toMatchObject({
+			status: 200,
+			body: {
+				removed: {
+					subscriptionId: "7",
+					streamerName: "CoolStreamer",
+					type: "StreamOnline",
+				},
+				twitch: [],
+			},
+		});
+		expect(prismaMock.guildSubscription.delete).toHaveBeenCalledOnce();
+		expect(removeEventSubscription).toHaveBeenCalledWith("eventsub-1");
+	});
+
+	it("keeps the EventSub subscription another channel still uses", async () => {
+		prismaMock.guildSubscription.findUnique.mockResolvedValue(liveRow());
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue({
+			...liveRow().twitchSubscription,
+			guildSubscription: [liveRow({ channelId: 9n })],
+		});
+
+		await call(TwitchRemoveRoute, { params });
+
+		expect(removeEventSubscription).not.toHaveBeenCalled();
+	});
+
+	it("still answers 200 when Twitch fails the cleanup after the removal", async () => {
+		prismaMock.guildSubscription.findUnique.mockResolvedValue(liveRow());
+		prismaMock.twitchSubscription.findFirst.mockResolvedValue({
+			...liveRow().twitchSubscription,
+			guildSubscription: [],
+		});
+		vi.mocked(removeEventSubscription).mockRejectedValue(
+			new Error("Twitch is down"),
+		);
+
+		const answer = await call(TwitchRemoveRoute, { params });
+
+		expect(answer.status).toBe(200);
+	});
+
+	it("answers 404 for a subscription the guild does not have", async () => {
+		const answer = await call(TwitchRemoveRoute, { params });
+
+		expect(answer).toEqual({
+			status: 404,
+			body: { error: "subscription-not-found" },
+		});
+		expect(prismaMock.guildSubscription.delete).not.toHaveBeenCalled();
+	});
+
+	it("refuses a subscription that is not an id", async () => {
+		const answer = await call(TwitchRemoveRoute, {
+			params: { channel: ChannelId, subscription: "../7" },
 		});
 
 		expect(answer).toEqual({

@@ -26,7 +26,7 @@ Authorization: Bearer <GUILD_API_SECRET>
 ## Routes
 
 `:guild`, `:channel` are Discord ids. `:source` is the `sourceId` of a
-subscription.
+subscription, `:subscription` the `subscriptionId` of a Twitch live one.
 
 | Method   | Path                                            | Does                                       |
 | -------- | ----------------------------------------------- | ------------------------------------------ |
@@ -34,6 +34,8 @@ subscription.
 | `PATCH`  | `/guilds/:guild/notifications`                  | Turns the server's notifications on or off |
 | `POST`   | `/guilds/:guild/subscriptions`                  | Adds a subscription                        |
 | `DELETE` | `/guilds/:guild/subscriptions/:channel/:source` | Removes a subscription                     |
+| `POST`   | `/guilds/:guild/twitch`                         | Adds a Twitch live subscription            |
+| `DELETE` | `/guilds/:guild/twitch/:channel/:subscription`  | Removes a Twitch live subscription         |
 
 ### State
 
@@ -66,8 +68,10 @@ subscription.
 			"lastCheckedAt": "2026-11-02T10:00:00.000Z",
 		},
 	],
+	"twitchLiveConfigured": true, // whether a Twitch live subscription can be added
 	"twitch": [
 		{
+			"subscriptionId": "7",
 			"streamerId": "123",
 			"streamerName": "CoolStreamer", // null when Twitch does not answer
 			"channelId": "800000000000000001",
@@ -83,8 +87,8 @@ subscription.
   Discord outage does not read as "Staryl was removed".
 - `health` is the value `/subscriptions <provider> show` reports. `unavailable`
   means the provider's credentials are not configured.
-- `twitch` lists the Twitch live subscriptions. The guild API does not change
-  them.
+- `twitch` lists the Twitch live subscriptions. `twitchLiveConfigured` is
+  `false` while the bot lacks the Twitch Helix or EventSub credentials.
 
 ### Switch
 
@@ -129,13 +133,38 @@ there.
 `{ "removed", "subscriptions" }`: the subscription it removed, and the list the
 server has left.
 
+### Twitch live
+
+`POST /guilds/:guild/twitch` takes:
+
+```json
+{
+	"streamer": "coolstreamer",
+	"channelId": "800000000000000001",
+	"type": "StreamOnline",
+	"message": "Live now!"
+}
+```
+
+It runs the same code as `/subscriptions twitch add`. `streamer` is a Twitch
+login, with or without `@`. `type` is `StreamOnline` or `StreamOffline`, and an
+offline notification needs a `message`. The channel is checked as for a
+subscription. It answers `201` with `{ "subscription", "twitch" }`.
+
+`DELETE /guilds/:guild/twitch/:channel/:subscription` runs the same code as
+`/subscriptions twitch remove`. The shared subscription, and its EventSub
+subscription on Twitch, go once no channel uses them. It answers `200` with
+`{ "removed", "twitch" }`. A failed cleanup on Twitch is logged and does not
+undo the removal.
+
 ### A write that cannot list
 
 An add and a remove read the list after they write. If that read fails, the
 write still went through, so the route answers its success status with
-`"subscriptions": null` (and `"subscription": null` for an add). A caller that
-gets `null` reads the list again with `GET`. It must not send the write again: a
-second add would answer `409 duplicate`, and a second remove `404`.
+`"subscriptions": null` (or `"twitch": null`), and `"subscription": null` for an
+add. A caller that gets `null` reads the list again with `GET`. It must not send
+the write again: a second add would answer `409 duplicate`, and a second remove
+`404`.
 
 ## Not manageable providers
 
@@ -149,30 +178,33 @@ guild API lists their subscriptions with `"manageable": false` and answers
 Every error is `{ "error": "<code>" }`. The caller owns the sentence it shows
 for a code.
 
-| Status | Code                      | Means                                                    |
-| ------ | ------------------------- | -------------------------------------------------------- |
-| 400    | `invalid-guild`           | `:guild` is not a Discord id                             |
-| 400    | `invalid-body`            | The body has the wrong shape, or a field is over a limit |
-| 400    | `invalid-subscription`    | `:channel` or `:source` is not an id                     |
-| 401    | `unauthorized`            | The token is missing or wrong                            |
-| 404    | `subscription-not-found`  | The server has no such subscription                      |
-| 409    | `duplicate`               | The channel already follows the target                   |
-| 409    | `guild-unavailable`       | Staryl cannot read the server. It is probably not in it  |
-| 422    | `channel-not-found`       | The channel is not in the server                         |
-| 422    | `channel-not-supported`   | The channel is not a text or announcement channel        |
-| 422    | `send-failed`             | Discord rejected a message for the channel               |
-| 422    | `missing-permissions`     | Staryl cannot post in the channel                        |
-| 422    | `provider-not-configured` | Staryl has no credentials for the provider               |
-| 422    | `provider-not-manageable` | The provider needs a connected account                   |
-| 422    | `limit-reached`           | The server has its maximum of subscriptions              |
-| 422    | `x-limit-reached`         | The server has its maximum of X accounts                 |
-| 422    | `target-invalid`          | The target is not something the provider can read        |
-| 422    | `target-not-found`        | The provider has no such account or feed                 |
-| 422    | `target-blocked`          | The target is not allowed                                |
-| 422    | `target-unsupported`      | The provider cannot follow this kind of target           |
-| 422    | `target-unreachable`      | The provider did not answer. Try again later             |
-| 500    | `database`                | Staryl could not read or write its database              |
-| 503    | `guild-api-disabled`      | `GUILD_API_SECRET` is not set                            |
+| Status | Code                      | Means                                                          |
+| ------ | ------------------------- | -------------------------------------------------------------- |
+| 400    | `invalid-guild`           | `:guild` is not a Discord id                                   |
+| 400    | `invalid-body`            | The body has the wrong shape, or a field is over a limit       |
+| 400    | `invalid-subscription`    | `:channel` or `:source` is not an id                           |
+| 401    | `unauthorized`            | The token is missing or wrong                                  |
+| 404    | `subscription-not-found`  | The server has no such subscription                            |
+| 409    | `duplicate`               | The channel already follows the target                         |
+| 409    | `guild-unavailable`       | Staryl cannot read the server. It is probably not in it        |
+| 422    | `channel-not-found`       | The channel is not in the server                               |
+| 422    | `channel-not-supported`   | The channel is not a text or announcement channel              |
+| 422    | `send-failed`             | Discord rejected a message for the channel                     |
+| 422    | `missing-permissions`     | Staryl cannot post in the channel                              |
+| 422    | `provider-not-configured` | Staryl has no credentials for the provider, or for Twitch live |
+| 422    | `provider-not-manageable` | The provider needs a connected account                         |
+| 422    | `limit-reached`           | The server has its maximum of subscriptions                    |
+| 422    | `x-limit-reached`         | The server has its maximum of X accounts                       |
+| 422    | `target-invalid`          | The target is not something the provider can read              |
+| 422    | `target-not-found`        | The provider has no such account or feed                       |
+| 422    | `target-blocked`          | The target is not allowed                                      |
+| 422    | `target-unsupported`      | The provider cannot follow this kind of target                 |
+| 422    | `target-unreachable`      | The provider did not answer. Try again later                   |
+| 422    | `message-required`        | A Twitch offline notification needs a message                  |
+| 422    | `streamer-not-found`      | Twitch has no streamer with that login                         |
+| 422    | `twitch-failed`           | Twitch refused the EventSub subscription                       |
+| 500    | `database`                | Staryl could not read or write its database                    |
+| 503    | `guild-api-disabled`      | `GUILD_API_SECRET` is not set                                  |
 
 ## Adding a route
 

@@ -1,5 +1,6 @@
 import type { SocialProviderName } from "#lib/setup/prisma";
 import type { Result } from "@sapphire/result";
+import { TwitchSubscriptionType } from "#generated/prisma";
 import { SocialProviderName as ProviderNames } from "#generated/prisma";
 import { MaximumMessageLength } from "#twitch/subscriptions";
 import { parseSnowflake } from "#utils/guildApi/auth";
@@ -69,4 +70,55 @@ export function parseAddSubscriptionBody(
 
 function isProviderName(value: string): value is SocialProviderName {
 	return Object.hasOwn(ProviderNames, value);
+}
+
+export interface AddTwitchBody {
+	/** The login a member types, as `/subscriptions twitch add` takes it. */
+	streamer: string;
+	channelId: bigint;
+	type: TwitchSubscriptionType;
+	message: string | null;
+}
+
+/** A Twitch login: up to 25 letters, digits and underscores. Twitch says whether it exists. */
+const TwitchLoginPattern = /^\w{1,25}$/;
+
+export function parseAddTwitchBody(
+	body: Result<unknown, unknown>,
+): AddTwitchBody | null {
+	const value = body.unwrapOr(null);
+	if (!isObject(value)) return null;
+
+	const { streamer, channelId, type, message } = value as Record<
+		string,
+		unknown
+	>;
+	if (typeof streamer !== "string" || typeof channelId !== "string") {
+		return null;
+	}
+	// The same login with or without the @ a member may copy from Twitch.
+	const login = streamer.trim().replace(/^@/, "");
+	if (!TwitchLoginPattern.test(login)) return null;
+
+	if (type !== "StreamOnline" && type !== "StreamOffline") return null;
+
+	const channel = parseSnowflake(channelId);
+	if (channel === null) return null;
+
+	if (
+		message !== undefined &&
+		message !== null &&
+		typeof message !== "string"
+	) {
+		return null;
+	}
+	const trimmedMessage = message?.trim() ?? "";
+	if (trimmedMessage.length > MaximumMessageLength) return null;
+
+	return {
+		streamer: login,
+		channelId: channel,
+		type: TwitchSubscriptionType[type],
+		message: trimmedMessage === "" ? null : trimmedMessage,
+	};
 }

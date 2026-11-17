@@ -1,31 +1,16 @@
 import type { AddSocialSubscriptionError } from "#social/subscriptions";
 import type { ApiRequest, ApiResponse } from "@wolfstar/plugin-api";
 import { DefaultSocialFilters } from "#social/filters";
-import { socialDelivery } from "#social/notifications";
 import { addSocialSubscription } from "#social/subscriptions";
 import { authorizeGuildRequest } from "#utils/guildApi/auth";
 import { parseAddSubscriptionBody } from "#utils/guildApi/body";
+import { assertNotificationChannel } from "#utils/guildApi/channel";
 import {
 	isManageableProvider,
 	readGuildApiSubscriptions,
 } from "#utils/guildApi/state";
-import { NotificationDeliveryError } from "#utils/notificationDelivery";
 import { Result } from "@sapphire/result";
 import { Route } from "@wolfstar/plugin-api";
-import { ChannelType } from "discord-api-types/v10";
-
-/** What the caller reads when the channel cannot receive the subscription. */
-const ChannelErrors = {
-	[NotificationDeliveryError.GuildUnavailable]: [409, "guild-unavailable"],
-	[NotificationDeliveryError.ChannelNotFound]: [422, "channel-not-found"],
-	[NotificationDeliveryError.MissingPermissions]: [422, "missing-permissions"],
-	// Checking a channel posts nothing, so this is here for the type. It gets a code of its own all
-	// the same: "the channel is gone" would send a member to fix what is not broken.
-	[NotificationDeliveryError.SendFailed]: [422, "send-failed"],
-} as const satisfies Record<
-	NotificationDeliveryError,
-	readonly [number, string]
->;
 
 /** The answers of `/subscriptions <provider> add`, as a status and a code instead of a sentence. */
 const AddErrors = {
@@ -66,22 +51,14 @@ export class UserRoute extends Route {
 			return;
 		}
 
-		// The command gets a channel Discord already vetted. Here it is an id from outside, so it is
-		// checked against the guild, which also proves the bot can post there before anything is saved.
-		const target = await socialDelivery.prepare(guild.guildId, body.channelId);
-		if (target.isErr()) {
-			const [status, code] = ChannelErrors[target.unwrapErr()];
-			response.error(status, code);
-			return;
-		}
-		const { type } = target.unwrap().channel;
 		if (
-			type !== ChannelType.GuildText &&
-			type !== ChannelType.GuildAnnouncement
-		) {
-			response.error(422, "channel-not-supported");
+			!(await assertNotificationChannel(
+				response,
+				guild.guildId,
+				body.channelId,
+			))
+		)
 			return;
-		}
 
 		const added = await addSocialSubscription({
 			guildId: guild.guildId,
