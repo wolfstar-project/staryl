@@ -38,6 +38,7 @@ subscription, `:subscription` the `subscriptionId` of a Twitch live one.
 | `POST`   | `/guilds/:guild/twitch`                         | Adds a Twitch live subscription            |
 | `PATCH`  | `/guilds/:guild/twitch/:channel/:subscription`  | Edits a Twitch live subscription           |
 | `DELETE` | `/guilds/:guild/twitch/:channel/:subscription`  | Removes a Twitch live subscription         |
+| `GET`    | `/guilds/:guild/targets`                        | Suggests accounts while a member types     |
 
 ### State
 
@@ -194,6 +195,21 @@ edit of a subscription. The streamer and the event stay. An offline notification
 keeps a message: a body that removes it answers `422 message-required`. It
 answers `200` with `{ "previous", "subscription", "twitch" }`.
 
+### Target search
+
+`GET /guilds/:guild/targets?source=Bluesky&query=bsky` answers
+`{ "suggestions": [{ "name", "value" }] }`: the accounts the provider finds, as
+the autocomplete of `/subscriptions <provider> add` offers them. `value` is what
+an add takes as its `target`. `source` is a provider name or `TwitchLive`, which
+searches Twitch channels.
+
+The search shares the cache and the one-minute lifetime of the autocomplete, so
+the two spend one budget, and it answers the same list: at most 25 accounts,
+without a `value` over 100 characters. An unknown source, a source without a
+search (RSS) or without credentials, a query under 2 or over 100 characters, or
+a search that fails or takes over 2.5 seconds answers no suggestion. The member
+can still type the target in full.
+
 ### Limits
 
 Each provider has its own limit, and there is no total:
@@ -236,6 +252,7 @@ for a code.
 | ------ | ------------------------- | -------------------------------------------------------------- |
 | 400    | `invalid-guild`           | `:guild` is not a Discord id                                   |
 | 400    | `invalid-body`            | The body has the wrong shape, or a field is over a limit       |
+| 400    | `invalid-query`           | `source` or `query` is missing, or is given more than once     |
 | 400    | `invalid-subscription`    | `:channel`, `:source` or `:subscription` is not an id          |
 | 401    | `unauthorized`            | The token is missing or wrong                                  |
 | 404    | `subscription-not-found`  | The server has no such subscription                            |
