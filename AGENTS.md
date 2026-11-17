@@ -107,10 +107,10 @@ API, and an approved OAuth app plus a stable 32-byte-hex `SOCIAL_TOKEN_KEY`
 
 ### Running the app
 
-| Service                             | Port | Purpose                                     |
-| ----------------------------------- | ---- | ------------------------------------------- |
-| Discord HTTP interactions           | 3000 | Slash commands (`HTTP_PORT`)                |
-| Plugin API (`@wolfstar/plugin-api`) | 3001 | Twitch EventSub + health route (`API_PORT`) |
+| Service                             | Port | Purpose                                                      |
+| ----------------------------------- | ---- | ------------------------------------------------------------ |
+| Discord HTTP interactions           | 3000 | Slash commands (`HTTP_PORT`)                                 |
+| Plugin API (`@wolfstar/plugin-api`) | 3001 | Twitch EventSub, health route and the guild API (`API_PORT`) |
 
 ```bash
 pnpm dev          # build, watch and restart via stars CLI
@@ -118,6 +118,11 @@ pnpm lint         # oxlint + oxfmt
 pnpm build        # tsdown build (CI also runs prisma:generate first)
 pnpm test         # vitest run (CI also runs prisma:generate first)
 ```
+
+The guild API (`/guilds/:guild/...`) is what the WolfStar.rocks dashboard calls
+to read and change a server's subscriptions. It needs `GUILD_API_SECRET` and
+answers 503 without it. Its routes, payloads and error codes are in
+`docs/guild-api.md`.
 
 Quick smoke test once running:
 

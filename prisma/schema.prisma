@@ -9,6 +9,8 @@ datasource db {
 
 model Guild {
   id                  BigInt                    @id
+  // Off stops every notification of the guild. Its subscriptions stay, and so does what they have seen.
+  notificationsEnabled Boolean                  @default(true) @map("notifications_enabled")
   subscriptions       GuildSubscription[]
   socialSubscriptions GuildSocialSubscription[]
 

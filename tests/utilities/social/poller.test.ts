@@ -74,6 +74,7 @@ function makeSource(
 				seenItemIds: [],
 				deliveryError: null,
 				createdAt: new Date(0),
+				guild: { notificationsEnabled: true },
 				...subscriptionOverrides,
 			},
 		],
@@ -194,6 +195,43 @@ describe("SocialPoller", () => {
 		await makePoller([provider], store, delivery).tick();
 
 		expect(posted).toEqual(["new"]);
+	});
+
+	it("posts nothing in a guild whose notifications are off, and counts the items as seen", async () => {
+		const source = makeSource(
+			{},
+			{ seenItemIds: ["old"], guild: { notificationsEnabled: false } },
+		);
+		const { store, updates } = makeStore([source]);
+		const { delivery, posted } = makeDelivery();
+		const provider = makeProvider(async () =>
+			items(makeItem("new"), makeItem("old")),
+		);
+
+		await makePoller([provider], store, delivery).tick();
+
+		expect(posted).toEqual([]);
+		expect(delivery.prepare).not.toHaveBeenCalled();
+		// Seen, so turning the notifications back on does not post what was missed.
+		expect(updates.at(-1)!.update).toEqual({ seenItemIds: ["old", "new"] });
+	});
+
+	it("keeps posting to the other guilds of a source one guild turned off", async () => {
+		const source = makeSource();
+		source.subscriptions.push({
+			...source.subscriptions[0],
+			guildId: 11n,
+			channelId: 21n,
+			guild: { notificationsEnabled: false },
+		});
+		const { store } = makeStore([source]);
+		const { delivery } = makeDelivery();
+		const provider = makeProvider(async () => items(makeItem("new")));
+
+		await makePoller([provider], store, delivery).tick();
+
+		expect(delivery.prepare).toHaveBeenCalledTimes(1);
+		expect(delivery.prepare).toHaveBeenCalledWith(10n, 20n);
 	});
 
 	it("records each post before the next, so a crash cannot repeat what went out", async () => {

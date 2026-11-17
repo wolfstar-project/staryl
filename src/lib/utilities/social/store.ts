@@ -11,8 +11,13 @@ import {
 	SocialProviderName,
 } from "#generated/prisma";
 
+/** A subscription as the poller reads it, with the switch of its guild. */
+export type PolledSubscription = GuildSocialSubscription & {
+	guild: { notificationsEnabled: boolean };
+};
+
 export type SocialSourceWithSubscriptions = SocialSource & {
-	subscriptions: GuildSocialSubscription[];
+	subscriptions: PolledSubscription[];
 };
 
 export type SubscriptionKey = Pick<
@@ -77,7 +82,11 @@ export function createSocialStore(prisma: PrismaClient): SocialStore {
 						{ OR: [{ claimedUntil: null }, { claimedUntil: { lte: now } }] },
 					],
 				},
-				include: { subscriptions: true },
+				include: {
+					subscriptions: {
+						include: { guild: { select: { notificationsEnabled: true } } },
+					},
+				},
 				orderBy: [{ checkRequested: "desc" }, { nextCheckAt: "asc" }],
 				take: limit,
 			});
