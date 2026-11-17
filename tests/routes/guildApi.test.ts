@@ -16,8 +16,10 @@ import { UserRoute as GetRoute } from "../../src/routes/guilds/[guild]/notificat
 import { UserRoute as PatchRoute } from "../../src/routes/guilds/[guild]/notifications.patch.ts";
 import { UserRoute as AddRoute } from "../../src/routes/guilds/[guild]/subscriptions.post.ts";
 import { UserRoute as RemoveRoute } from "../../src/routes/guilds/[guild]/subscriptions/[channel]/[source].delete.ts";
+import { UserRoute as EditRoute } from "../../src/routes/guilds/[guild]/subscriptions/[channel]/[source].patch.ts";
 import { UserRoute as TwitchAddRoute } from "../../src/routes/guilds/[guild]/twitch.post.ts";
 import { UserRoute as TwitchRemoveRoute } from "../../src/routes/guilds/[guild]/twitch/[channel]/[subscription].delete.ts";
+import { UserRoute as TwitchEditRoute } from "../../src/routes/guilds/[guild]/twitch/[channel]/[subscription].patch.ts";
 
 const fetchMock = vi.hoisted(() => vi.fn());
 vi.mock("#social/publicFetch", () => ({ fetchPublicUrl: fetchMock }));
@@ -62,6 +64,7 @@ const prismaMock = {
 		delete: vi.fn(),
 		findMany: vi.fn(),
 		findUnique: vi.fn(),
+		update: vi.fn(),
 	},
 	twitchSubscription: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
 	guildSocialSubscription: {
@@ -71,6 +74,7 @@ const prismaMock = {
 		findFirst: vi.fn(),
 		findMany: vi.fn(),
 		findUnique: vi.fn(),
+		update: vi.fn(),
 	},
 	socialSource: { deleteMany: vi.fn() },
 };
@@ -947,6 +951,266 @@ describe("DELETE /guilds/:guild/twitch/:channel/:subscription", () => {
 		expect(answer).toEqual({
 			status: 400,
 			body: { error: "invalid-subscription" },
+		});
+	});
+});
+
+const OtherChannelId = "800000000000000002";
+
+/** The guild has a second channel the bot may post in. */
+function allowSecondChannel() {
+	apiMock.guilds.getChannels.mockResolvedValue([
+		{ id: ChannelId, name: "general", type: 0, guild_id: GuildId },
+		{ id: OtherChannelId, name: "news", type: 0, guild_id: GuildId },
+	]);
+}
+
+/** What Prisma throws for a unique key that is taken, or a row that is gone. */
+const prismaError = (code: string) => Object.assign(new Error(code), { code });
+
+describe("PATCH /guilds/:guild/subscriptions/:channel/:source", () => {
+	const params = { channel: ChannelId, source: "5" };
+
+	it("moves the subscription, keeping its filters and clearing the old channel's error", async () => {
+		allowSecondChannel();
+		const previous = makeSubscription({
+			filters: { keywords: ["release"] },
+			deliveryError: "MissingPermissions",
+		});
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(previous);
+		prismaMock.guildSocialSubscription.update.mockResolvedValue({
+			...previous,
+			channelId: BigInt(OtherChannelId),
+			deliveryError: null,
+		});
+
+		const answer = await call(EditRoute, {
+			params,
+			body: { channelId: OtherChannelId },
+		});
+
+		expect(answer).toMatchObject({
+			status: 200,
+			body: {
+				previous: { channelId: ChannelId, deliveryError: "MissingPermissions" },
+				subscription: { channelId: OtherChannelId, deliveryError: null },
+				subscriptions: [],
+			},
+		});
+		expect(prismaMock.guildSocialSubscription.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: { channelId: BigInt(OtherChannelId), deliveryError: null },
+			}),
+		);
+	});
+
+	it("changes the message without checking the channel again", async () => {
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription({ message: "Old" }),
+		);
+		prismaMock.guildSocialSubscription.update.mockResolvedValue(
+			makeSubscription({ message: "New post!" }),
+		);
+
+		const answer = await call(EditRoute, {
+			params,
+			body: { channelId: ChannelId, message: "  New post!  " },
+		});
+
+		expect(answer).toMatchObject({
+			status: 200,
+			body: {
+				previous: { message: "Old" },
+				subscription: { message: "New post!" },
+			},
+		});
+		expect(prismaMock.guildSocialSubscription.update).toHaveBeenCalledWith(
+			expect.objectContaining({ data: { message: "New post!" } }),
+		);
+		expect(apiMock.guilds.getChannels).not.toHaveBeenCalled();
+	});
+
+	it("removes the message when it is sent empty", async () => {
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription({ message: "Old" }),
+		);
+		prismaMock.guildSocialSubscription.update.mockResolvedValue(
+			makeSubscription(),
+		);
+
+		await call(EditRoute, { params, body: { message: "" } });
+
+		expect(prismaMock.guildSocialSubscription.update).toHaveBeenCalledWith(
+			expect.objectContaining({ data: { message: null } }),
+		);
+	});
+
+	it("refuses a body that changes nothing", async () => {
+		const answer = await call(EditRoute, { params, body: {} });
+
+		expect(answer).toEqual({ status: 400, body: { error: "invalid-body" } });
+	});
+
+	it("refuses to move the subscription to a channel of another guild", async () => {
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription(),
+		);
+
+		const answer = await call(EditRoute, {
+			params,
+			body: { channelId: OtherChannelId },
+		});
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "channel-not-found" },
+		});
+		expect(prismaMock.guildSocialSubscription.update).not.toHaveBeenCalled();
+	});
+
+	it("answers a conflict when the new channel already follows the source", async () => {
+		allowSecondChannel();
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription(),
+		);
+		prismaMock.guildSocialSubscription.update.mockRejectedValue(
+			prismaError("P2002"),
+		);
+
+		const answer = await call(EditRoute, {
+			params,
+			body: { channelId: OtherChannelId },
+		});
+
+		expect(answer).toEqual({ status: 409, body: { error: "duplicate" } });
+	});
+
+	it("answers 404 when the subscription went away before the write", async () => {
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription(),
+		);
+		prismaMock.guildSocialSubscription.update.mockRejectedValue(
+			prismaError("P2025"),
+		);
+
+		const answer = await call(EditRoute, { params, body: { message: "Hi" } });
+
+		expect(answer).toEqual({
+			status: 404,
+			body: { error: "subscription-not-found" },
+		});
+	});
+
+	it("keeps the subscription of a connected account", async () => {
+		prismaMock.guildSocialSubscription.findUnique.mockResolvedValue(
+			makeSubscription({
+				source: { ...makeSubscription().source, provider: "TikTok" },
+			}),
+		);
+
+		const answer = await call(EditRoute, { params, body: { message: "Hi" } });
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "provider-not-manageable" },
+		});
+	});
+
+	it("answers 404 for a subscription the guild does not have", async () => {
+		const answer = await call(EditRoute, { params, body: { message: "Hi" } });
+
+		expect(answer).toEqual({
+			status: 404,
+			body: { error: "subscription-not-found" },
+		});
+	});
+});
+
+describe("PATCH /guilds/:guild/twitch/:channel/:subscription", () => {
+	const params = { channel: ChannelId, subscription: "7" };
+
+	it("moves the notification and changes its message", async () => {
+		allowSecondChannel();
+		prismaMock.guildSubscription.findUnique.mockResolvedValue(liveRow());
+		prismaMock.guildSubscription.update.mockResolvedValue(
+			liveRow({ channelId: BigInt(OtherChannelId), message: "Live now!" }),
+		);
+
+		const answer = await call(TwitchEditRoute, {
+			params,
+			body: { channelId: OtherChannelId, message: "Live now!" },
+		});
+
+		expect(answer).toMatchObject({
+			status: 200,
+			body: {
+				previous: { channelId: ChannelId, message: null },
+				subscription: {
+					subscriptionId: "7",
+					streamerName: "CoolStreamer",
+					channelId: OtherChannelId,
+					message: "Live now!",
+				},
+				twitch: [],
+			},
+		});
+		expect(prismaMock.guildSubscription.update).toHaveBeenCalledWith({
+			where: {
+				guildId_channelId_subscriptionId: {
+					guildId: BigInt(GuildId),
+					channelId: BigInt(ChannelId),
+					subscriptionId: 7n,
+				},
+			},
+			data: { channelId: BigInt(OtherChannelId), message: "Live now!" },
+		});
+	});
+
+	it("keeps the message of an end-of-stream notification", async () => {
+		prismaMock.guildSubscription.findUnique.mockResolvedValue(
+			liveRow({
+				message: "Thanks for watching",
+				twitchSubscription: {
+					...liveRow().twitchSubscription,
+					subscriptionType: "StreamOffline",
+				},
+			}),
+		);
+
+		const answer = await call(TwitchEditRoute, {
+			params,
+			body: { message: "" },
+		});
+
+		expect(answer).toEqual({
+			status: 422,
+			body: { error: "message-required" },
+		});
+		expect(prismaMock.guildSubscription.update).not.toHaveBeenCalled();
+	});
+
+	it("answers a conflict when the new channel already has the notification", async () => {
+		allowSecondChannel();
+		prismaMock.guildSubscription.findUnique.mockResolvedValue(liveRow());
+		prismaMock.guildSubscription.update.mockRejectedValue(prismaError("P2002"));
+
+		const answer = await call(TwitchEditRoute, {
+			params,
+			body: { channelId: OtherChannelId },
+		});
+
+		expect(answer).toEqual({ status: 409, body: { error: "duplicate" } });
+	});
+
+	it("answers 404 for a notification the guild does not have", async () => {
+		const answer = await call(TwitchEditRoute, {
+			params,
+			body: { message: "Hi" },
+		});
+
+		expect(answer).toEqual({
+			status: 404,
+			body: { error: "subscription-not-found" },
 		});
 	});
 });
