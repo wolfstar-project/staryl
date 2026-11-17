@@ -55,7 +55,7 @@
 		"@wolfstar/plugin-api": "^3.0.1",
 		"@wolfstar/plugin-i18next": "3.0.1",
 		"@wolfstar/plugin-logger": "^0.6.1",
-		"@wolfstar/plugin-subcommands-advanced": "^2.3.1",
+		"@wolfstar/plugin-subcommands-advanced": "^3.0.2",
 		"@wolfstar/safe-fetch": "^1.1.10",
 		"@wolfstar/shared-http-pieces": "2.1.1",
 		"@wolfstar/start-banner": "^2.1.3",
