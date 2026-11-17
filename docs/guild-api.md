@@ -172,9 +172,11 @@ an add takes as its `target`. `source` is a provider name or `TwitchLive`, which
 searches Twitch channels.
 
 The search shares the cache and the one-minute lifetime of the autocomplete, so
-the two spend one budget. A source without a search (RSS), without credentials,
-a query under 2 characters, or a search that fails or takes over 2.5 seconds
-answers no suggestion. The member can still type the target in full.
+the two spend one budget, and it answers the same list: at most 25 accounts,
+without a `value` over 100 characters. An unknown source, a source without a
+search (RSS) or without credentials, a query under 2 or over 100 characters, or
+a search that fails or takes over 2.5 seconds answers no suggestion. The member
+can still type the target in full.
 
 ### Limits
 
@@ -218,6 +220,7 @@ for a code.
 | ------ | ------------------------- | -------------------------------------------------------------- |
 | 400    | `invalid-guild`           | `:guild` is not a Discord id                                   |
 | 400    | `invalid-body`            | The body has the wrong shape, or a field is over a limit       |
+| 400    | `invalid-query`           | `source` or `query` is missing, or is given more than once     |
 | 400    | `invalid-subscription`    | `:channel`, `:source` or `:subscription` is not an id          |
 | 401    | `unauthorized`            | The token is missing or wrong                                  |
 | 404    | `subscription-not-found`  | The server has no such subscription                            |

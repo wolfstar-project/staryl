@@ -78,6 +78,22 @@ describe("GET /guilds/:guild/targets", () => {
 		expect(providers.Bluesky!.searchTargets).toHaveBeenCalledWith("bsky");
 	});
 
+	it("leaves out what the autocomplete leaves out, and cuts a long name as it does", async () => {
+		const longName = "n".repeat(120);
+		providers.Bluesky!.searchTargets!.mockResolvedValue(
+			ok([
+				{ name: "Too long", value: "v".repeat(101) },
+				{ name: longName, value: "kept.example" },
+			]),
+		);
+
+		const answer = await search({ source: "Bluesky", query: "kept" });
+
+		expect(answer.body).toEqual({
+			suggestions: [{ name: `${"n".repeat(99)}…`, value: "kept.example" }],
+		});
+	});
+
 	// Twitch live follows a channel by its login, which the Twitch channel search gives.
 	it("suggests Twitch channels for Twitch live", async () => {
 		providers.TwitchVideos!.searchTargets!.mockResolvedValue(

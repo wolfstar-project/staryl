@@ -103,16 +103,26 @@ async function autocompleteTarget(
 	const suggestions = await searchTargets(provider, trimmed);
 	if (suggestions === null) return interaction.replyEmpty();
 
-	return interaction.reply({
-		choices: suggestions
+	return interaction.reply({ choices: toTargetChoices(suggestions) });
+}
+
+/**
+ * The suggestions as Discord takes them in an autocomplete. The guild API answers the same list, so
+ * the dashboard and the command offer the same accounts.
+ */
+export function toTargetChoices(
+	suggestions: readonly TargetSuggestion[],
+): TargetSuggestion[] {
+	return (
+		suggestions
 			// A longer value cannot be sent back as a choice; the member can still type it.
 			.filter(({ value }) => value.length <= MaximumChoiceLength)
 			.slice(0, MaximumChoices)
 			.map(({ name, value }) => ({
 				name: cutText(name, MaximumChoiceLength),
 				value,
-			})),
-	});
+			}))
+	);
 }
 
 /** Whether `add` can suggest accounts of this provider: it has a search, and the credentials the search needs. */

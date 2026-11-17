@@ -7,11 +7,10 @@ import {
 	canSearchTargets,
 	MinimumQueryLength,
 	searchTargets,
+	toTargetChoices,
 } from "#utils/subscriptionAutocomplete";
 import { Route } from "@wolfstar/plugin-api";
 
-/** As many as Discord shows in an autocomplete, so both offer the same accounts. */
-const MaximumSuggestions = 25;
 /** Longer than any handle, feed or channel a search could match. */
 const MaximumQueryLength = 100;
 
@@ -55,6 +54,6 @@ export class UserRoute extends Route {
 		}
 
 		const suggestions = (await searchTargets(provider, trimmed)) ?? [];
-		response.json({ suggestions: suggestions.slice(0, MaximumSuggestions) });
+		response.json({ suggestions: toTargetChoices(suggestions) });
 	}
 }
