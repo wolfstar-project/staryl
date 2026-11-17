@@ -131,7 +131,7 @@ export interface EditSubscriptionBody {
 }
 
 /**
- * The account, the provider and, for Twitch live, the event name the subscription, so an edit
+ * The account, the provider and, for Twitch live, the event identify the subscription, so an edit
  * cannot change them: those are a removal and an add. A body that changes nothing is refused.
  */
 export function parseEditSubscriptionBody(
