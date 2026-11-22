@@ -73,7 +73,7 @@
 		"@commitlint/config-conventional": "^21.2.4",
 		"@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
 		"@rollup/plugin-alias": "^6.0.1",
-		"@sapphire/ts-config": "^5.0.3",
+		"@sapphire/ts-config": "^6.0.0",
 		"@tolgee/cli": "^2.21.0",
 		"@types/node": "^26.6.6",
 		"@wolfstar/cli": "^2.12.0",
