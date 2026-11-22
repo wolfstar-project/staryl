@@ -46,7 +46,7 @@
 		"@prisma/client": "^7.10.1",
 		"@sapphire/bitfield": "^2.0.0",
 		"@sapphire/ratelimits": "^3.0.0",
-		"@sapphire/result": "^2.8.0",
+		"@sapphire/result": "^3.0.0",
 		"@sapphire/time-utilities": "^1.7.14",
 		"@sapphire/utilities": "^3.18.3",
 		"@wolfstar/decorators": "^0.1.3",
