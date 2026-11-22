@@ -45,7 +45,7 @@
 		"@prisma/adapter-pg": "^7.10.1",
 		"@prisma/client": "^7.10.1",
 		"@sapphire/bitfield": "^1.2.4",
-		"@sapphire/ratelimits": "^2.4.11",
+		"@sapphire/ratelimits": "^3.0.0",
 		"@sapphire/result": "^2.8.0",
 		"@sapphire/time-utilities": "^1.7.14",
 		"@sapphire/utilities": "^3.18.3",
