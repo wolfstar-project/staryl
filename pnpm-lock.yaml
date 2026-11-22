@@ -197,8 +197,8 @@ importers:
         specifier: ^1.2.4
         version: 1.2.4
       '@sapphire/ratelimits':
-        specifier: ^2.4.11
-        version: 2.4.11
+        specifier: ^3.0.0
+        version: 3.0.0
       '@sapphire/result':
         specifier: ^2.8.0
         version: 2.8.0
@@ -1483,9 +1483,9 @@ packages:
     resolution: {integrity: sha512-2v49P++RzHGb23bdjSa9u7flkdvhrq94IUO9PneY538TILN5QiMxfaXVK+pDR2YR7jpQYBy9APwtFDes2Svykg==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@sapphire/ratelimits@2.4.11':
-    resolution: {integrity: sha512-O6FNA/P0wxU4Ve9gxL948CoZw7+sSpujyUR2CLyLLCNuNvuFGFxPCJVl5crFVLXMIyBIrc2qk+/H9bsqsyQK1Q==}
-    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+  '@sapphire/ratelimits@3.0.0':
+    resolution: {integrity: sha512-tzActQnGDxLLYsIatY3uMi6juh+h9arc0IAwdpSP3Jth04vJ38YudI2g73fD8CLGFxz1c7KDpyhpDpXFV1IWyA==}
+    engines: {node: '>=v24.0.0', npm: '>=11.0.0'}
 
   '@sapphire/result@2.8.0':
     resolution: {integrity: sha512-693yWouX+hR9uJm1Jgq0uSSjbSD3UrblMaxiuGbHPjSwzLCSZTcm0h3kvdVhq3o/yl4+oeAWW3hiaJ0TELuRJQ==}
@@ -1494,6 +1494,7 @@ packages:
   '@sapphire/shapeshift@4.0.0':
     resolution: {integrity: sha512-d9dUmWVA7MMiKobL3VpLF8P2aeanRTu6ypG2OIaEv/ZHH/SUQ2iHOVyi5wAPjQ+HmnMuL0whK9ez8I/raWbtIg==}
     engines: {node: '>=v16'}
+    deprecated: Shapeshift was created when other validation libraries had significant limitations in performance and error reporting. Those advantages have diminished as libraries such as Zod have become faster and improved their error messages, while also gaining broader environment support, a larger community, and custom error printers.
 
   '@sapphire/snowflake@3.5.5':
     resolution: {integrity: sha512-xzvBr1Q1c4lCe7i6sRnrofxeO1QTP/LKQ6A6qy0iB4x5yfiSfARMEQEghojzTNALDTcv8En04qYNIco9/K9eZQ==}
@@ -5024,7 +5025,7 @@ snapshots:
       '@sapphire/utilities': 3.18.3
       tslib: 2.9.1
 
-  '@sapphire/ratelimits@2.4.11': {}
+  '@sapphire/ratelimits@3.0.0': {}
 
   '@sapphire/result@2.8.0': {}
 
