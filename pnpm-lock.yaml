@@ -194,8 +194,8 @@ importers:
         specifier: ^7.10.1
         version: 7.10.1(prisma@7.10.1)(typescript@7.0.2)
       '@sapphire/bitfield':
-        specifier: ^1.2.4
-        version: 1.2.4
+        specifier: ^2.0.0
+        version: 2.0.0
       '@sapphire/ratelimits':
         specifier: ^3.0.0
         version: 3.0.0
@@ -1463,9 +1463,9 @@ packages:
     resolution: {integrity: sha512-cvGzxbba6sav2zZkH8GPf2oGk9yYoD5qrNWdu9fRehifgnFZJMV+nuy2nON2roRO4yQQ+v7MK/Pktl/HgfsUXg==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@sapphire/bitfield@1.2.4':
-    resolution: {integrity: sha512-x0Zvb5jbn8A9fOdWksvxPuXdHGzk6v0Z5ogcYKKg06Az/Ih2WupKZ88CIX1/pZWk6vBWqH5LAU0lOVtEaw7D/A==}
-    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+  '@sapphire/bitfield@2.0.0':
+    resolution: {integrity: sha512-0P7S6NuIZ2KQYdXzzE6oJMeumdGc2e/LrbdiUblEMPnjrpKaDAM4vdaiWlyM4Xg20MoNzE8YiNhBKSnoDcyE4g==}
+    engines: {node: '>=v24.0.0', npm: '>=11.0.0'}
 
   '@sapphire/cron@1.2.1':
     resolution: {integrity: sha512-K96GX4UkzgC/Y2VHXVjhM2Bl4D04552nr/fDiOj9bOACW1+wqeFfLJ3eV6jleTSXmzPIwDvkPIUJLf8A5KSD+w==}
@@ -5033,7 +5033,7 @@ snapshots:
 
   '@sapphire/async-queue@1.5.5': {}
 
-  '@sapphire/bitfield@1.2.4': {}
+  '@sapphire/bitfield@2.0.0': {}
 
   '@sapphire/cron@1.2.1':
     dependencies:
