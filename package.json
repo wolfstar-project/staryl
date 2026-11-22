@@ -44,7 +44,7 @@
 		"@discordjs/core": "^2.7.0",
 		"@prisma/adapter-pg": "^7.10.1",
 		"@prisma/client": "^7.10.1",
-		"@sapphire/bitfield": "^1.2.4",
+		"@sapphire/bitfield": "^2.0.0",
 		"@sapphire/ratelimits": "^3.0.0",
 		"@sapphire/result": "^3.0.0",
 		"@sapphire/time-utilities": "^1.7.14",
