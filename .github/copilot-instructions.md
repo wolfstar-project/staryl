@@ -70,7 +70,8 @@
   the one remaining explicit side-effect import, since command/route
   registration isn't part of this auto-activation.
 - **Database**: PostgreSQL with Prisma ORM. Models use `@@map()` for snake_case
-  table names, `@map()` for snake_case column names
+  table names, `@map()` for snake_case column names. `DATABASE_URL` has no
+  default (`src/lib/setup/prisma.ts`) — the boot stops without it.
 - **Event System**: Twitch EventSub webhooks trigger internal events
   (`Events.TwitchStreamOnline`, `Events.TwitchStreamOffline`) that listeners
   handle
@@ -118,6 +119,16 @@
   `SocialProvider` runs once, after the source and its first subscription are
   saved, for a provider that needs a side effect only once a member actually
   subscribes (e.g. YouTube's WebSub verification request).
+- **Subscription Limits**: Each provider is capped on its own, not against one
+  guild-wide total. `getProviderLimit` (`#social/subscriptions`) and the
+  Twitch live add path (`#twitch/subscriptions`) read a guild's limits from
+  `#utils/ring`'s `readGuildLimits(guildId)`, which asks Ring
+  (`INTERNAL_RING_URL`/`INTERNAL_RING_TOKEN`) and falls back to
+  `DefaultLimits` when Ring is unset or does not answer within a second.
+  YouTube, Reddit and Twitch live each get Ring's limit; every other provider
+  is capped at `MaximumSubscriptionsPerProvider` (25). The Twitch live insert
+  takes a `pg_advisory_xact_lock` on the guild so concurrent adds cannot
+  together overshoot the limit. See `docs/guild-api.md`'s Limits table.
 - **Connected Accounts (OAuth)**: Instagram and TikTok authorize a specific
   owner's account instead of reading a public feed or app-level API. Each
   implements `ConnectedAccountApi` (`#social/connectedAccounts`): `authorize`
@@ -151,8 +162,11 @@
 ### Directory Structure
 
 - `src/main.ts` - Application entry point
-- `src/routes/` - HTTP API endpoints (`@wolfstar/plugin-api` `Route` pieces,
-  e.g. Twitch EventSub webhooks)
+- `src/routes/` - HTTP API endpoints (`@wolfstar/plugin-api` `Route` pieces):
+  Twitch EventSub webhooks (`twitch/`), YouTube WebSub (`youtube/`), OAuth
+  callbacks (`social/<provider>/callback.get.ts`), and the WolfStar.rocks
+  dashboard's guild API (`guilds/[guild]/`, gated by `GUILD_API_SECRET`; see
+  `docs/guild-api.md`)
 - `src/middlewares/` - HTTP API middlewares (`@wolfstar/plugin-api` `Middleware`
   pieces)
 - `src/commands/` - Discord slash commands using decorator pattern

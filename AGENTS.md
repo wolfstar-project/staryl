@@ -84,8 +84,10 @@ still boots, but the social poller logs an error on every tick.
 
 Copy `src/.env` values into `src/.env.local` for local overrides. The HTTP
 framework requires non-empty `DISCORD_PUBLIC_KEY` and `DISCORD_TOKEN` to boot.
-Without real Discord credentials, use placeholder values in `.env.local` and
-start with:
+`DATABASE_URL` has no default either (`src/lib/setup/prisma.ts`) — the boot
+stops immediately without it, so set it in `.env.local` before running
+`pnpm start` or `pnpm dev`. Without real Discord credentials, use placeholder
+values in `.env.local` and start with:
 
 ```bash
 NODE_OPTIONS='--unhandled-rejections=warn' pnpm start
