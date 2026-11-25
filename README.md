@@ -47,7 +47,7 @@ Network.</sup>
 - [⌨️ Local Development](#️-local-development)
 - [💻 Online Development](#-online-development)
 - [🤝 Contributing](#-contributing)
-- [❤️ Sponsor](#️-sponsor)
+- [❤️ Sponsors](#️-sponsors)
 
 <br/>
 
@@ -194,18 +194,24 @@ Thank you to all the people who already contributed to Starly!
 
 </div>
 
-<div id="️-sponsor">
+<div id="️-sponsors">
 
-## ❤️ Sponsor
+## ❤️ Sponsors
 
-If you like Starly and want to support the project, consider making a donation.
-Every contribution helps to maintain and improve the bot.
+WolfStar is free, open-source and self-hosted, but the servers, database and
+CI/CD it runs on have real costs. Sponsorships go directly to hosting, tooling
+and maintenance. Staryl is part of the WolfStar ecosystem.
 
-[![Support on Ko-fi](https://img.shields.io/badge/Support%20on%20Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)][ko-fi-link]
-[![Support on Patreon](https://img.shields.io/badge/Support%20on%20Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)][patreon-link]
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on%20GitHub-ffcb47?style=for-the-badge&logo=github&logoColor=white)][github-sponsor-link]
+### How to sponsor
 
-Thank you for your support!
+- [GitHub Sponsors](https://github.com/sponsors/RedStar071)
+- [Open Collective](https://opencollective.com/wolfstar)
+- [Ko-fi](https://ko-fi.com/redstar071)
+- [Patreon](https://www.patreon.com/RedStar071)
+
+### Current Sponsors
+
+<!-- sponsors:start --><!-- sponsors:end -->
 
 </div>
 
@@ -228,9 +234,6 @@ Copyright © 2024 [WolfStar][profile-link]. <br /> This project is
 
 <!-- LINK GROUP -->
 
-[ko-fi-link]: https://ko-fi.com/redstar071
-[patreon-link]: https://www.patreon.com/RedStar071
-[github-sponsor-link]: https://github.com/sponsors/wolfstar-project
 [back-to-top]:
   https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square
 [discord-link]: https://discord.gg/gqAnRyUXG8
