@@ -198,9 +198,9 @@ Thank you to all the people who already contributed to Starly!
 
 ## ❤️ Sponsors
 
-WolfStar is free, open-source and self-hosted, but the servers, database and
-CI/CD it runs on have real costs. Sponsorships go directly to hosting, tooling
-and maintenance. Staryl is part of the WolfStar ecosystem.
+WolfStar is free and open-source, but the servers, database and CI/CD it runs on
+have real costs. Sponsorships go directly to hosting, tooling and maintenance.
+Staryl is part of the WolfStar ecosystem.
 
 ### How to sponsor
 
